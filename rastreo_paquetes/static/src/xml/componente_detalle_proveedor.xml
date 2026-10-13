@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="rastreo_paquetes.componente_detalle_proveedor_embed">
-        <Dialog title="'Editar el anticipo del proveedor ' state.numeroAnticipo" size="'md'">
+        <Dialog title="'Editar el anticipo del proveedor ' + state.numeroAnticipo" size="'md'">
+            
                 <div class="o_form_view p-2 border rounded bg-light">
                     <div class="row g-3">
                         
@@ -54,10 +55,10 @@
 
 
             <t t-set-slot="footer">
-                <button class="btn btn-secondary" t-on-click="onGuardar">
+                <button class="btn btn-secondary" t-on-click="onConfirmar">
                     Guardar y salir
                 </button>
-                <button class="btn btn-secondary" t-on-click="onCancelarEdicion">
+                <button class="btn btn-secondary" t-on-click="onCancelar">
                     Cancelar
                 </button>
             </t>

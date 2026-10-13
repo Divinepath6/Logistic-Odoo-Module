@@ -40,7 +40,6 @@ export class componente_creacion_pedido extends Component {
             );
             this.state.clientes = resultado
         } catch (e) {
-            console.error("Error al listar clientes:", e);
             this.state.clientes = [];
         } finally {
             this.state.cargando = false;

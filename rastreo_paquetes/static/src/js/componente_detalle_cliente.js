@@ -4,8 +4,9 @@ import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks"; 
 
 
-export class componente_detalle_racks extends Component{
-    static template = "rastreo_paquetes.componente_detalle_racks_embed";
+export class componente_detalle_cliente extends Component{
+    static template = "rastreo_paquetes.componente_detalle_cliente_embed";
+    static components = { Dialog }; 
     setup(){
         this.state = useState({
             fechaEdicion: "",
@@ -19,10 +20,27 @@ export class componente_detalle_racks extends Component{
     async cargarAnticipo(){
         
     }
-    async onGuardar(){
+    async guardarPDF(){
 
     }
-    async onCancelarEdicion(){
+    async onConfirmar() {
+        await guardarPDF();
+        const anticipo = {
+            fechaEdicion: this.state.fechaEdicion,
+            fechaAnticipo: this.state.fechaAnticipo,
+            cantidadAnticipo: this.state.cantidadAnticipo,
+            precioDolar: this.state.precioDolar,
+            numeroAnticipo: this.state.numeroAnticipo,
+            PDFAnticipo: true,
+        };
 
+        this.props.confirm(anticipo);
+        this.props.close();
+    }
+    onCancel() {
+        if (this.props.cancel) {
+            this.props.cancel();
+        }
+        this.props.close();
     }
 }

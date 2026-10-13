@@ -71,7 +71,6 @@ class rastreo_paquetes(models.Model):
     )
 
 
-
     ##LLave foranea para lo de clientes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     cliente_id = fields.Many2one(
         'res.partner',  
@@ -212,13 +211,38 @@ class rastreo_paquetes(models.Model):
 
 
     @api.model
-    def actualizar_pedido(self, pedido_id, nuevos_valores):
-        pedido = self.browse(pedido_id)
+    def actualizar_pedido(self, pedido_id, detalle_pedido ,detalle_cliente,detalle_proveedor,datos):
+        if not pedido_id:
+            raise UserError("Debes indicar un pedido")
+        pedido = self.env['rastreo.pedido'].browse(pedido_id)
         if not pedido.exists():
-            return {'success': False, 'error': 'Pedido no encontrado'}
+            raise UserError("El pedido indicado no existe.")
         
-        pedido.write(nuevos_valores)
-        return {'success': True, 'id': pedido.id}
+        with self.env.cr.savepoint():
+            pedido.write({
+                'total_proveedor': datos.get('total_proveedor') or 0,
+                'numero_contrato': datos.get('numero_contrato') or '',
+                'racks_acordados': datos.get('racks_acordados') or 0,
+                'forwarder': datos.get('forwarder') or False,
+            })
+            pedido.detalle_cotizacion_ids.unlink()
+            dp = self.env['rastreo.cotizacion_detalle']
+
+            for d in detalle_pedido:
+                dp.create({
+                    'clave': d.get('clave') or '',
+                    'numero': d.get('numero') or '',
+                    'costo_rack': d.get('costo_rack') or '',
+                    'rack_id': int(d.get('rack_id')) or '',
+                    'rack_nombre':d.get('rack_nombre') or '',
+                    'cantidad_racks': d.get('cantidad_racks') or '',
+                })
+                
+        return {
+            'success': True,
+        }
+
+
 
     @api.model
     def eliminar_pedido(self, pedido_id):
@@ -497,3 +521,48 @@ class rastreo_paquetes(models.Model):
             })       
 
         return {'success': True, 'id': pedido_id}
+
+
+
+    ############### Buscar la cotización ###########################
+    @api.model
+    def buscar_cotizacion(self, termino_busqueda=None):
+        domain = []
+        if not termino_busqueda:
+            return {'error': 'Se necesita un número', 'success': False}
+    
+        domain = [
+            ('state', 'in', ['draft', 'sent','sale','done']),
+            ('name', '=', termino_busqueda)
+        ]
+                    
+        cotizacion = self.env['sale.order'].search(domain, order='id desc',limit=1)
+
+        if not cotizacion.exists():
+            return  {'error': 'Cotización no encontrada', 'success': False}
+        
+        lista_productos = []
+
+        for linea in cotizacion.order_line:
+            lista_productos.append({
+                'id': linea.product_id.id,
+                'nombre': linea.product_id.name,
+                'codigo': linea.product_id.default_code or '',
+                'precio': linea.price_unit,
+                'unidad': linea.product_uom_id.name, 
+                'cantidad': linea.product_uom_qty,
+                'subtotal': linea.price_subtotal
+            })
+
+        return {
+            'success': True,
+            'cotizacion_info': {
+                'id': cotizacion.id,
+                'nombre': cotizacion.name,
+                'cliente': cotizacion.partner_id.name,
+                'total': cotizacion.amount_total,
+                'moneda': cotizacion.currency_id.name,
+                'fecha': cotizacion.date_order,
+            },
+            'data': lista_productos
+        }

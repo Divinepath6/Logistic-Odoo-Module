@@ -312,3 +312,47 @@
 .cc-croquis-legend b {
     color: var(--odoo-accent);
 }
+
+/* ============================================================
+   REPARACIÓN DEL LAYOUT PRINCIPAL
+   ============================================================ */
+
+/* Contenedor de las columnas principales (Izquierda y Derecha) */
+.odoo-screen-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); /* 50% y 50% */
+    gap: 20px;
+    align-items: start;
+    /* Quitamos la altura fija de 100vh para que la tabla de actualizaciones baje naturalmente */
+    height: auto; 
+    min-height: 520px;
+}
+
+/* Columnas individuales (Izquierda y Derecha) */
+.odoo-col-left,
+.odoo-col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Espacio entre tarjetas */
+    min-width: 0;
+}
+
+/* Sub-grid para poner Cliente y Proveedor lado a lado */
+.odoo-sub-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
+    gap: 16px;
+    margin-top: 0; 
+}
+
+@media (max-width: 992px) {
+    .odoo-screen-grid,
+    .odoo-sub-grid {
+        grid-template-columns: 1fr; 
+    }
+}
+
+.odoo-card.mt-3 {
+    margin-top: 20px !important;
+    width: 100%;
+}

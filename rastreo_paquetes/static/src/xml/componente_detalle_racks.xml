@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
     <t t-name="rastreo_paquetes.componente_detalle_racks_embed">
        <Dialog title="'Editar el detalle'" size="'md'">
-            <button class="btn btn-primary" t-on-click="onBuscarRack">
+            <button class="btn btn-primary" t-on-click="onBuscarProducto">
                     <i class="oi oi-check me-1"/> Buscar Producto
             </button> 
             
@@ -59,10 +59,10 @@
 
 
             <t t-set-slot="footer">
-                <button class="btn btn-secondary" t-on-click="onGuardar">
+                <button class="btn btn-secondary" t-on-click="onConfirmar">
                     Guardar y salir
                 </button>
-                <button class="btn btn-secondary" t-on-click="onCancelarEdicion">
+                <button class="btn btn-secondary" t-on-click="onCancel">
                     Cancelar
                 </button>
             </t>

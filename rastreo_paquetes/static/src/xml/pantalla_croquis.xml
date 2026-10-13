@@ -55,13 +55,14 @@
                         <div class="odoo-field">
                             <label class="odoo-label">Elegir rack:</label>
                             <select class="odoo-select"
-                                    t-model="state.rackSeleccionadoIndex"
-                                    t-on-change="onRackChange">
-                                <option value="">— Selecciona un rack —</option>
-                                <t t-foreach="state.rackTipos" t-as="rack" t-key="rack_index">
-                                    <option t-att-value="rack_index" t-esc="rack[0]"/>
-                                </t>
-                            </select>
+                                t-on-change="onRackChange">
+                            <option value="">— Selecciona un rack —</option>
+                            <t t-foreach="state.rackTipos" t-as="rack" t-key="rack_index">
+                                <option t-att-value="rack_index"
+                                        t-att-selected="state.rackSeleccionadoIndex == rack_index"
+                                        t-esc="rack[0]"/>
+                            </t>
+                        </select>
                         </div>
 
                         <div class="odoo-field">

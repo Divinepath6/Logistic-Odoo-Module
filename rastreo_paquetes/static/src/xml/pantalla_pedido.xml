@@ -9,7 +9,7 @@
             <div class="odoo-screen-header">
                 <h2>
                     <i class="fa fa-cube me-2"/>
-                    Guía: <t t-esc="state.guia or 'Sin número'"/>
+                    Cotización: <t t-esc="state.guia or 'Sin número'"/>
                 </h2>
 
                 <div class="ms-auto d-flex gap-2">
@@ -31,33 +31,31 @@
                 </div>
             </div>
 
-            <!-- ============================================
-                 GRID PRINCIPAL
-                 ============================================ -->
             <div class="odoo-screen-grid">
 
-                <!-- ============ COLUMNA IZQUIERDA ============ -->
-                <div>
+                <div class="odoo-col-left">
 
                    
                     <div class="odoo-card odoo-card-accent">
                         <div class="odoo-card-title">
-                            <i class="fa fa-info-circle"/> Detalle del pedido
+                            <i class="fa fa-info-circle"/> Detalle de el pedido:
                         </div>
 
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="odoo-field">
-                                    <label class="odoo-label" for="numero_guia">Número de Guía</label>
+                                    <label class="odoo-label" for="numero_guia">Número de Cotización:</label>
                                     <input type="text"
-                                           id="numero_guia"
-                                           class="odoo-input"
-                                           placeholder="Ej. GUIA-001"
-                                           t-att-value="state.guia or ''"
-                                           t-on-change="(ev) => this.onFieldChange('guia', ev.target.value)"/>
+                                            id="numero_guia"
+                                            class="odoo-input"
+                                            placeholder="Ej. GUIA-001"
+                                            t-model="state.guia"/>
                                 </div>
                             </div>
 
+                            <button class="btn btn-primary" t-on-click="() => this.onCambiarCotizacion()">
+                                Buscar Cotización
+                            </button>
                             <div class="col-md-6">
                                 <div class="odoo-field">
                                     <label class="odoo-label" for="numero_contrato">Número de Contrato</label>
@@ -65,7 +63,7 @@
                                            id="numero_contrato"
                                            class="odoo-input"
                                            t-att-value="state.numeroContrato or ''"
-                                           t-on-change="(ev) => this.onFieldChange('numeroContrato', ev.target.value)"/>
+                                           t-on-change="(ev) => this.onCambiarNumeroContrato()"/>
                                 </div>
                             </div>
 
@@ -82,11 +80,11 @@
                             <div class="col-md-6">
                                 <div class="odoo-field">
                                     <label class="odoo-label" for="forwarder">Forwarder</label>
-                                    <input type="text"
+                                    <input type="checkbox"
                                            id="forwarder"
                                            class="odoo-input"
                                            t-att-value="state.forwarder or ''"
-                                           t-on-change="(ev) => this.onFieldChange('forwarder', ev.target.value)"/>
+                                           t-on-change="(ev) => this.onVerificarForwarder()"/>
                                 </div>
                             </div>
 
@@ -143,7 +141,7 @@
                                             <td class="text-end"><t t-esc="r.total or 0"/></td>
                                             <td class="text-end">
                                                 <button class="odoo-btn odoo-btn-sm odoo-btn-ghost"
-                                                        t-on-click="() => this.onEditarRack(r)">
+                                                        t-on-click="() => this.onEditarDetalleRacks(r)">
                                                     <i class="fa fa-pencil"/>
                                                 </button>
                                             </td>
@@ -161,7 +159,7 @@
                         </div>
 
                         <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
-                                t-on-click="onAgregarRack">
+                                t-on-click="() => this.onEditarDetalleRacks()">
                             <i class="fa fa-plus"/> Agregar Rack
                         </button>
                     </div>
@@ -192,8 +190,8 @@
                                             <td class="text-end"><t t-esc="d.precio or 0"/></td>
                                             <td class="text-center">
                                                 <button class="odoo-btn odoo-btn-sm odoo-btn-cyan"
-                                                        t-on-click="() => this.onVerPdfAnticipo(d, 'cliente')">
-                                                    Ver / Editar
+                                                        t-on-click="() => this.onEditarDetalleCliente(d)">
+                                                    Editar
                                                 </button>
                                             </td>
                                         </tr>
@@ -210,9 +208,9 @@
                         </div>
 
                         <div class="text-center">
-                            <button class="odoo-btn odoo-btn-sm odoo-btn-primary"
-                                    t-on-click="onAgregarCliente">
-                                <i class="fa fa-plus"/>
+                            <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                    t-on-click="() => this.onEditarDetalleCliente()">
+                                <i class="fa fa-plus"/> Agregar Nuevo Anticipo
                             </button>
                         </div>
                     </div>
@@ -241,10 +239,11 @@
                                             <td><t t-esc="d.fecha or ''"/></td>
                                             <td class="text-end"><t t-esc="d.cantidad or 0"/></td>
                                             <td class="text-end"><t t-esc="d.precio or 0"/></td>
+                                            
                                             <td class="text-center">
                                                 <button class="odoo-btn odoo-btn-sm odoo-btn-cyan"
-                                                        t-on-click="() => this.onVerPdfAnticipo(d, 'proveedor')">
-                                                    Ver / Editar
+                                                        t-on-click="() => this.onEditarDetalleProveedor(d)">
+                                                    Editar 
                                                 </button>
                                             </td>
                                         </tr>
@@ -261,17 +260,16 @@
                         </div>
 
                         <div class="text-center">
-                            <button class="odoo-btn odoo-btn-sm odoo-btn-primary"
-                                    t-on-click="onAgregarProveedor">
-                                <i class="fa fa-plus"/>
+                            <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                    t-on-click="() => this.onEditarDetalleProveedor()">
+                                <i class="fa fa-plus"/> Agregar Nuevo Anticipo
                             </button>
                         </div>
                     </div>
 
                 </div>
 
-                <!-- ============ COLUMNA DERECHA ============ -->
-                <div>
+                <div class="odoo-col-right">
 
                     <!-- ESTADO DEL PEDIDO  -->
                     <div class="odoo-card">
