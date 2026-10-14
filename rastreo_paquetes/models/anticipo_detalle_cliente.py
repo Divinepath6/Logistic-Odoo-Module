@@ -1,4 +1,8 @@
-from odoo import models, fields
+from odoo import models, fields, api
+from odoo.exceptions import UserError
+import base64
+import json
+from datetime import datetime
 
 class rastreo_anticipo_detalle_cliente(models.Model):
     _name = 'rastreo.detalle_cliente'
@@ -27,7 +31,51 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         string='Precio de los dolares al momento'
     )
     pdf_anticipo_cliente = fields.Binary(
-        string='Documento PDF',
-        attachment=True
+       string='Documento PDF', attachment=True
     )
+    pdf_anticipo_cliente_nombre = fields.Char(
+        string='Nombre del PDF'
+    )
+
+    fecha_anticipo = fields.Date(string='Fecha del anticipo')
     
+    @api.model
+    def guardar_detalle(self, pedido_id, datos, pdf=None, pdf_name=None):
+        if not pedido_id:
+            return {'success': False, 'error': 'Pedido no indicado'}
+        pedido = self.env['rastreo.pedido'].browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False, 'error': 'Pedido no encontrado'}
+
+        usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
+        cantidad = self.search_count([('pedido_id', '=', pedido_id)])
+
+        valores = {
+            'numero': cantidad,
+            'pedido_id': pedido_id,
+            'currency_id': usd_currency.id if usd_currency else False,
+            'fecha_editado': fields.Datetime.now(),
+            'fecha_anticipo': datos.get('fecha_anticipo') or False,
+            'cantidad': datos.get('cantidad') or 0.0,
+            'precio_dolar': datos.get('precio_dolar') or 0.0,
+        }
+        if pdf:
+            valores['pdf_anticipo_cliente'] = pdf
+            valores['pdf_anticipo_cliente_nombre'] = pdf_name or 'anticipo.pdf'
+
+        with self.env.cr.savepoint():
+            self.create(valores)
+
+        return {'success': True}
+
+
+    @api.model
+    def obtener_pdf(self, detalle_id):
+        detalle = self.browse(detalle_id)
+        if not detalle.exists():
+            return {'success': False, 'error': 'Detalle no encontrado'}
+        return {
+            'success': True,
+            'pdf': detalle.pdf_anticipo_cliente or False,
+            'filename': detalle.pdf_anticipo_cliente_nombre or 'anticipo.pdf',
+        }

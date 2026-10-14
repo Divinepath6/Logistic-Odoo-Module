@@ -211,10 +211,10 @@ class rastreo_paquetes(models.Model):
 
 
     @api.model
-    def actualizar_pedido(self, pedido_id, detalle_pedido ,detalle_cliente,detalle_proveedor,datos):
+    def actualizar_pedido(self, pedido_id, detalle_pedido, datos):
         if not pedido_id:
             raise UserError("Debes indicar un pedido")
-        pedido = self.env['rastreo.pedido'].browse(pedido_id)
+        pedido = self.browse(pedido_id)
         if not pedido.exists():
             raise UserError("El pedido indicado no existe.")
         
@@ -224,10 +224,15 @@ class rastreo_paquetes(models.Model):
                 'numero_contrato': datos.get('numero_contrato') or '',
                 'racks_acordados': datos.get('racks_acordados') or 0,
                 'forwarder': datos.get('forwarder') or False,
+                'total_cliente': datos.get('total_cliente'),
             })
             pedido.detalle_cotizacion_ids.unlink()
             dp = self.env['rastreo.cotizacion_detalle']
-
+            cambio = d.get('cambio') or false
+            if cambio == True:
+                return {
+                    'success': True,
+                }
             for d in detalle_pedido:
                 dp.create({
                     'clave': d.get('clave') or '',
@@ -237,7 +242,7 @@ class rastreo_paquetes(models.Model):
                     'rack_nombre':d.get('rack_nombre') or '',
                     'cantidad_racks': d.get('cantidad_racks') or '',
                 })
-                
+
         return {
             'success': True,
         }
@@ -384,52 +389,7 @@ class rastreo_paquetes(models.Model):
 # =============================================================================================================
 # MÉTODOS CRUD detalles
 # =============================================================================================================
-    @api.model
-    def guardar_detalle_cliente(self, pedido_id, numero, datos, pdf_anticipo_cliente=None):
-        pedido = self.browse(pedido_id)
-        if not pedido.exists():
-            return {'success': False, 'error': 'Pedido no encontrado'}
-
-        currency_id = pedido.currency_id.id or self.env.company.currency_id.id
-
-        valores = {
-            'pedido_id': pedido.id,
-            'currency_id': currency_id,
-            'fecha_editado': datetime.now(),
-            'cantidad': datos.get('cantidad') if datos else 0,
-            'precio_dolar': datos.get('precio_dolar') if datos else 0,
-        }
-
-        if pdf_anticipo_cliente:
-            valores['pdf_anticipo_cliente'] = pdf_anticipo_cliente
-
-        Detalle = self.env['rastreo.detalle_cliente']
-
-   
-        if not numero:  
-            cantidad = Detalle.search_count([('pedido_id', '=', pedido_id)])
-            valores['numero'] = cantidad + 1
-            detalle = Detalle.create(valores)
-        else:
-            detalle = Detalle.search([
-                ('pedido_id', '=', pedido_id),
-                ('numero', '=', numero),
-            ], limit=1)
-            if not detalle:
-                return {'success': False, 'error': 'Detalle no encontrado'}
-            valores['numero'] = numero
-            detalle.write(valores)
-
-        return {'success': True, 'id': detalle.id}
-
-    @api.model
-    def eliminar_detalle_cliente(self, pedido_id):
-        pedido = self.browse(pedido_id)
-        if not pedido.exists():
-            return {'success': False, 'error': 'Pedido no encontrado'}
-        
-        pedido.unlink()
-        return {'success': True}
+ 
 
 
     

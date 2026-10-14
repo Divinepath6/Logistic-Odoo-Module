@@ -25,7 +25,7 @@ export class PantallaPedido extends Component {
             clienteId: 0,
             clienteNombre: "",
             estado: "",
-
+            cambioRacks: false,
             // Listas de detalles
             detalleRacks:[],
             detalleCliente: [],
@@ -68,7 +68,6 @@ export class PantallaPedido extends Component {
                 [pedidoId]
             );
             if(resultado.success){
-                console.log(resultado.data);
                 const p = resultado.data;
                 this.state.guia = p.numero_guia;
                 this.state.guiaConfirmada = p.numero_guia;
@@ -162,18 +161,16 @@ export class PantallaPedido extends Component {
     }
 
 
-    async onEditarDetalleRacks(r) {
-        
-    const fila = r || {
-        numero: 0,
-        clave: '',
-        rack_nombre: '',
-        rack_id: false,
-        costo_rack: 0,
-        cantidad_racks: 1,
-    };
-    console.log("PantallaPedido: ",fila)
-
+    async onEditarDetalleRacks(r) {     
+        const fila = r || {
+            numero: this.state.detalleRacks.length + 1,
+            clave: '',
+            rack_nombre: '',
+            rack_id: false,
+            costo_rack: 0,
+            cantidad_racks: 1,
+        };
+        fila.pedidoId = this.state.pedidoId;
         this.dialogService.add(componente_detalle_racks,  {
                 title: fila.numero === 0 ? _t("Nuevo Rack") : _t("Editar Rack"),
                 objeto: fila,
@@ -192,6 +189,17 @@ export class PantallaPedido extends Component {
     }
 
     async onEditarDetalleCliente(d) {
+        if(!d){
+            d = {
+                numero: this.state.detalleRacks.length + 1,
+                fechaEdicion: "",
+                fechaAnticipo: "",
+                cantidadAnticipo: 0.0,
+                precioDolar: 0.0,
+                PDFAnticipo: null, 
+            }
+        }
+        d.pedidoId = this.state.pedidoId;
         this.dialogService.add(componente_detalle_cliente,  {
                 title: "Confirmación",
                 objeto:d,
@@ -240,9 +248,8 @@ export class PantallaPedido extends Component {
     }
     
     async onCambiarCotizacion (){
-        console.log(this.state.guia)
+
         const guiaActual = this.state.guia; 
-        console.log(guiaActual)
 
         const guiaConfirmada = this.state.guiaConfirmada;
         if (!guiaConfirmada) {
@@ -260,9 +267,29 @@ export class PantallaPedido extends Component {
                         [guiaActual] 
                     );
                     console.log(resultado)
+                    if(resultado.success){
+                        const c = resultado.cotizacion_info;
+                        this.state.guiaActual =  c.nombre;         
+                        this.state.clienteNombre = c.cliente;
+                        this.state.totalCliente = c.total;
+                        this.state.fechaCreacion = c.fecha;
+                        const l = resultado.data;
+                        
+                        this.state.detalleRacks = l.map((d,i)=> {
+                            return{
+                                clave: d.codigo,
+                                numero: d.codigo,
+                                costo_rack: d.precio, 
+                                rack_id: d.id,
+                                rack_nombre: d.nombre,
+                                cantidad_racks: d.cantidad,
+                                total: d.subtotal
+                            }
+                        })                
+                    }
 
                 } catch (error) {
-                    console.error("Error al buscar cotización:", error);
+                    
                 } finally {
                     this.state.cargando = false;
                     this.state.guiaActual = guiaActual; 
@@ -275,20 +302,74 @@ export class PantallaPedido extends Component {
             },
         });
     }
-    async guardarDetalleGeneral(){
+    async onGuardarDetalleGeneral(){
+        actualizar_pedido(self, pedido_id, detalle_pedido, datos)
+        const datos = {
+            guia: this.state.cambioRacks.guia,
+            cliente_id: this.state.cambioRacks.clienteId,
+            cambio_racks: this.state.cambioRacks,
 
+            //bool de PDF
+            forwarder: this.state.forwarder,
+            pdf_BL: this.state.pdf_BL,
+            pdf_PL: this.state.pdf_PL,
+            pdf_invoice: this.state.pdf_invoice,
+            pdf_contrato_proveedor:this.state.pdfContratoProveedor,
+            pdfFacturaProveedor: this.state.pdfFacturaProveedor,
+
+            total_proveedor: this.state.totalProveedor,
+            total_cliente: this.state.totalCliente,
+            numero_contrato: this.state.numeroContrato,
+            racks_acordados: 0,
+        }
+        const pedido_id = this.state.pedidoId;
+        const detalle_pedido = this.state.detalleRacks;
+        try {
+            const resultado = await this.orm.call(
+                "rastreo.pedido",
+                "actualizar_pedido",
+                [ pedido_id, 
+                detalle_pedido, 
+                datos] 
+            );
+                    console.log(resultado)
+                    if(resultado.success){
+                        const c = resultado.cotizacion_info;
+                        this.state.guiaActual =  c.nombre;         
+                        this.state.clienteNombre = c.cliente;
+                        this.state.totalCliente = c.total;
+                        this.state.fechaCreacion = c.fecha;
+                        const l = resultado.data;
+                        
+                        this.state.detalleRacks = l.map((d,i)=> {
+                            return{
+                                clave: d.codigo,
+                                numero: d.codigo,
+                                costo_rack: d.precio, 
+                                rack_id: d.id,
+                                rack_nombre: d.nombre,
+                                cantidad_racks: d.cantidad,
+                                total: d.subtotal
+                            }
+                        })                
+                    }
+
+                } catch (error) {
+                    
+                } finally {
+                    this.state.cargando = false;
+                    this.state.guiaActual = guiaActual; 
+                }        
     }
-    async guardarPDF(){
+    async onguardarPDF(){
 
     }
 
     // Descargar PDF ¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿
-    async onClickDescargarPDF() {
+    async onDescargarPDF() {
         
     }
-
-
-  
+    
 }
 
 PantallaPedido.template = "rastreo_paquetes.pantalla_pedido";

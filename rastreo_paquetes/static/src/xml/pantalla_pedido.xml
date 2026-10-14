@@ -20,7 +20,7 @@
                     </button>
                     <button type="button"
                             class="odoo-btn odoo-btn-primary"
-                            t-on-click="onClickGuardar">
+                            t-on-click="onGuardarDetalleGeneral">
                         <i class="fa fa-save"/> Guardar
                     </button>
                     <button type="button"

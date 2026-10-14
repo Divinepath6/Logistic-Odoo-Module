@@ -26,7 +26,6 @@
 
             'rastreo_paquetes/static/src/js/pantalla_pedido.js',
             'rastreo_paquetes/static/src/xml/pantalla_pedido.xml',
-            'rastreo_paquetes/static/src/xml/uploader_pantalla_pedido.xml',
 
             'rastreo_paquetes/static/src/xml/pantalla_croquis.xml',
             'rastreo_paquetes/static/src/js/pantalla_croquis.js',
@@ -52,6 +51,9 @@
             'rastreo_paquetes/static/src/js/componente_detalle_racks.js',
             'rastreo_paquetes/static/src/js/componente_detalle_cliente.js',
             'rastreo_paquetes/static/src/js/componente_detalle_proveedor.js',
+            
+            'rastreo_paquetes/static/src/js/Pdf_uploader.js',
+            'rastreo_paquetes/static/src/xml/Pdf_uploader.xml',
         ],
     },
     'installable': True,

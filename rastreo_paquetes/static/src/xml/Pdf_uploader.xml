@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="rastreo_paquetes.PdfUploader">
+        <div class="pdf-uploader">
+            <input type="file"
+                   accept="application/pdf"
+                   t-ref="fileInput"
+                   class="d-none"
+                   t-on-change="onFileChange"/>
+
+            <div class="d-flex gap-2 mb-2">
+                <button type="button"
+                        class="btn btn-secondary"
+                        t-on-click="openFileDialog">
+                    <i class="fa fa-upload me-1"/> Subir PDF
+                </button>
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        t-if="hasFile"
+                        t-on-click="clearFile">
+                    <i class="fa fa-trash me-1"/> Quitar
+                </button>
+                <span t-if="state.filename" class="align-self-center text-muted"
+                      t-esc="state.filename"/>
+            </div>
+
+            <t t-if="hasFile">
+                <div class="border rounded p-1">
+                    <iframe t-att-src="state.previewUrl"
+                            t-att-style="'width:100%; max-width:' + props.previewMaxWidth + 'px; height:300px;'"
+                            frameborder="0"/>
+                </div>
+            </t>
+            <t t-else="">
+                <div class="text-muted small">Sin archivo cargado</div>
+            </t>
+        </div>
+    </t>
+</templates>

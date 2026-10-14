@@ -31,7 +31,9 @@
                                    step="0.01" 
                                    id="precio" 
                                    class="form-control" 
-                                   t-model.number="state.precioUnitario"/>
+                                   t-model.number="state.precioUnitario"
+                                   t-on-change="onCambiarCantidad"
+                                   />
                         </div>
 
 
@@ -41,7 +43,9 @@
                                    step="1" 
                                    id="cantidad" 
                                    class="form-control" 
-                                   t-model.number="state.cantidadRacks"/>
+                                   t-model.number="state.cantidadRacks"
+                                   t-on-change="onCambiarCantidad"
+                                   />
                         </div>
 
                          <div class="col-md-6">

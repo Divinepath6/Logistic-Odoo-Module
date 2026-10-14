@@ -49,12 +49,15 @@
                                    t-model.number="state.precioDolar"/>
                         </div>
                 
-                        <div class="col-md-6">
-                            <!--Subir PDF anticipo-->
+                        <div class="col-12">
+                            <label class="form-label fw-bold">PDF del anticipo:</label>
+                                <PdfUploader
+                                    value="state.PDFAnticipo"
+                                    filename="state.PDFAnticipoName"
+                                    onChange="(b64, name) => this.onPdfChange(b64, name)"
+                                    previewMaxWidth="400"/>
                         </div>
-                        <div class="col-md-6">
-                            <!--Ver PDF del anticipo si existe-->
-                        </div>
+                        
                     </div>
 
                 </div>
