@@ -13,6 +13,7 @@ export class componente_detalle_racks extends Component{
         confirm: { type: Function, optional: true },
         cancel: { type: Function, optional: true },
         close: { type: Function, optional: true },
+        title: { type: String, optional: true },
     };
     setup() {
         this.action = useService("action");
@@ -54,10 +55,10 @@ export class componente_detalle_racks extends Component{
     async onBuscarProducto(ev) {
         this.dialogService.add(componente_busqueda_producto, {
             title: "Buscar producto",
-            confirm: (productoId, productoNombre, productoPrecio) => {
-               this.state.productoId = productoId;
-               this.state.productoNombre = productoNombre;
-               this.state.productoPrecio = productoPrecio;
+            confirm: (id, nombre, precio) => {
+                this.state.productoId = id;
+                this.state.productoNombre = nombre;
+                this.state.productoPrecio = precio;
             },
             cancel: () => {
             },

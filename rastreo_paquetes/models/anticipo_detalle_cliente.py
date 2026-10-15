@@ -49,7 +49,8 @@ class rastreo_anticipo_detalle_cliente(models.Model):
 
         usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
         cantidad = self.search_count([('pedido_id', '=', pedido_id)])
-
+        if cantidad == 0:
+            cantidad = 1
         valores = {
             'numero': cantidad,
             'pedido_id': pedido_id,
@@ -61,7 +62,10 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         }
         if pdf:
             valores['pdf_anticipo_cliente'] = pdf
-            valores['pdf_anticipo_cliente_nombre'] = pdf_name or 'anticipo.pdf'
+            valores['pdf_anticipo_cliente_nombre'] = (
+                pdf_name
+                or f"anticipo_{pedido.numero_guia}_{cantidad}.pdf"
+            )
 
         with self.env.cr.savepoint():
             self.create(valores)

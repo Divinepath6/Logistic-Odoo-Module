@@ -26,6 +26,7 @@ export class PantallaPedido extends Component {
             clienteNombre: "",
             estado: "",
             cambioRacks: false,
+            
             // Listas de detalles
             detalleRacks:[],
             detalleCliente: [],
@@ -43,9 +44,11 @@ export class PantallaPedido extends Component {
             // Monedas
             totalProveedor: 0.0,
             totalCliente: 0.0,
+            totalAnticiposCliente: 0.0,
+            totalAnticiposProveedor: 0.0,
+        
             numeroContrato: "",
-
-            
+         
             cargando: false,
 
         });
@@ -54,6 +57,7 @@ export class PantallaPedido extends Component {
                 const pedidoId = this.props.action.params.pedido_id || null;
                 this.state.pedidoId = pedidoId;
                 await this.cargarPedido()
+
             }
         });
         this.searchTimeout = null;
@@ -85,7 +89,7 @@ export class PantallaPedido extends Component {
                 //listas
                 this.state.actualizaciones = p.actualizaciones;
                 this.state.detalleRacks = p.detalle_racks.map((d,i)=> {
-                    this.state.totalCliente = (this.state.totalCliente + (d.costo_rack * d.cantidad_racks)).toFixed(2);
+                    this.state.totalCliente = this.state.totalCliente + (d.costo_rack * d.cantidad_racks);
                     return{
                         clave: d.clave,
                         numero: d.numero,
@@ -96,8 +100,28 @@ export class PantallaPedido extends Component {
                         total: (d.costo_rack * d.cantidad_racks).toFixed(2)
                     }
                 })
-                this.state.detalleCliente= p.detalle_cliente || [];
+                this.state.totalCliente = this.state.totalCliente.toFixed(2);
+                console.log("detalle cliente: ",p.detalleCliente)
+                if(p.detalleCliente != null || p.detalleCliente != undefined){
+                    this.state.detalleCliente = p.detalle_cliente.map((d,i)=> {
+                    this.state.totalAnticiposCliente = this.state.totalAnticiposCliente + ( d.subtotal);
+                    return{
+                        anticipo_id: d.anticipo_id,
+                        numero :  d.numero,
+                        fechaEdicion :  d.fecha_editado,
+                        fechaAnticipo: d.fecha_anticipo,
+                        cantidadAnticipo :  d.cantidad,
+                        precioDolar:  d.precio_dolar,
+                        PDFAnticipo:  d.pdf_anticipo_cliente,
+                    }
+                })
+                }else{
+                    this.state.detalleCliente = []
+                }
+    
+                this.state.totalAnticiposCliente =   (this.state.totalAnticiposCliente).toFixed(2); 
                 this.state.detalleProveedor= p.detalle_proveedor || [];
+                console.log("carga: ",resultado);
             }else{
                 console.log(resultado);
             }
@@ -134,6 +158,8 @@ export class PantallaPedido extends Component {
             );
             this.state.pedido = resultado.data ?? resultado;
 
+        }catch(e){
+            this.notification.add("No hay pedido asociado",{ type: "danger" });
         } finally {
             this.state.cargando = false;
         }
@@ -175,8 +201,9 @@ export class PantallaPedido extends Component {
                 title: fila.numero === 0 ? _t("Nuevo Rack") : _t("Editar Rack"),
                 objeto: fila,
                 confirm: async (rEditado) => {
+                    this.state.cambioRacks = true;
                     if(rEditado.numero == 0){
-                        rEditado = this.state.detalleRacks.length;
+                        rEditado.numero = this.state.detalleRacks.length;
                         this.state.detalleRacks.push(rEditado);
                     }else{
                         this.state.detalleRacks[rEditado.numero - 1] = rEditado;
@@ -191,6 +218,7 @@ export class PantallaPedido extends Component {
     async onEditarDetalleCliente(d) {
         if(!d){
             d = {
+                anticipoId: 0,
                 numero: this.state.detalleRacks.length + 1,
                 fechaEdicion: "",
                 fechaAnticipo: "",
@@ -266,15 +294,14 @@ export class PantallaPedido extends Component {
                         "buscar_cotizacion",
                         [guiaActual] 
                     );
-                    console.log(resultado)
                     if(resultado.success){
                         const c = resultado.cotizacion_info;
                         this.state.guiaActual =  c.nombre;         
                         this.state.clienteNombre = c.cliente;
+                         this.state.clienteId = c.cliente_id;
                         this.state.totalCliente = c.total;
                         this.state.fechaCreacion = c.fecha;
                         const l = resultado.data;
-                        
                         this.state.detalleRacks = l.map((d,i)=> {
                             return{
                                 clave: d.codigo,
@@ -285,11 +312,12 @@ export class PantallaPedido extends Component {
                                 cantidad_racks: d.cantidad,
                                 total: d.subtotal
                             }
-                        })                
+                        })
+                        this.state.cambioRacks = true; 
+                        this.notification.add("Cotización cambiada Exitosamente",{ type: "success" });               
                     }
-
                 } catch (error) {
-                    
+                    this.notification.add("Hubo un error",{ type: "danger" });
                 } finally {
                     this.state.cargando = false;
                     this.state.guiaActual = guiaActual; 
@@ -302,11 +330,18 @@ export class PantallaPedido extends Component {
             },
         });
     }
+    
     async onGuardarDetalleGeneral(){
-        actualizar_pedido(self, pedido_id, detalle_pedido, datos)
+        if(!this.state.guia){
+            return
+        }
+        if(!this.state.pedidoId){
+            return
+        }
+
         const datos = {
-            guia: this.state.cambioRacks.guia,
-            cliente_id: this.state.cambioRacks.clienteId,
+            numero_guia: this.state.guia,
+            cliente_id: this.state.clienteId,
             cambio_racks: this.state.cambioRacks,
 
             //bool de PDF
@@ -332,34 +367,13 @@ export class PantallaPedido extends Component {
                 detalle_pedido, 
                 datos] 
             );
-                    console.log(resultado)
-                    if(resultado.success){
-                        const c = resultado.cotizacion_info;
-                        this.state.guiaActual =  c.nombre;         
-                        this.state.clienteNombre = c.cliente;
-                        this.state.totalCliente = c.total;
-                        this.state.fechaCreacion = c.fecha;
-                        const l = resultado.data;
-                        
-                        this.state.detalleRacks = l.map((d,i)=> {
-                            return{
-                                clave: d.codigo,
-                                numero: d.codigo,
-                                costo_rack: d.precio, 
-                                rack_id: d.id,
-                                rack_nombre: d.nombre,
-                                cantidad_racks: d.cantidad,
-                                total: d.subtotal
-                            }
-                        })                
-                    }
-
-                } catch (error) {
-                    
-                } finally {
-                    this.state.cargando = false;
-                    this.state.guiaActual = guiaActual; 
-                }        
+            console.log(resultado)
+            this.notification.add("Información guardada Exitosamente",{ type: "success" });  
+        } catch (error) {
+            this.notification.add("Hubo un error",{ type: "danger" });       
+        } finally {
+            this.state.cargando = false;
+        }        
     }
     async onguardarPDF(){
 

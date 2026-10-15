@@ -39,7 +39,6 @@
                                    t-model.number="state.cantidadAnticipo"/>
                         </div>
 
-
                         <div class="col-md-6">
                             <label for="dolar" class="form-label fw-bold"> Precio dólar ($):</label>
                             <input type="number" 

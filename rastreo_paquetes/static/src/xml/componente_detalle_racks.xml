@@ -14,9 +14,8 @@
                             <span type="text" 
                                    id="clave" 
                                    class="form-control" 
-                                   t-esc="state.rackClave"/>
+                                   t-esc="state.productoId"/>
                         </div>
-
                         <div class="col-md-6">
                             <label for="nombre" class="form-label fw-bold">Nombre del Rack:</label>
                             <span type="text" 

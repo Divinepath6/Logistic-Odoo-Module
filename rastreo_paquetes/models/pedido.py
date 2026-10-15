@@ -220,6 +220,7 @@ class rastreo_paquetes(models.Model):
         
         with self.env.cr.savepoint():
             pedido.write({
+                'numero_guia': datos.get('numero_guia') or '',
                 'total_proveedor': datos.get('total_proveedor') or 0,
                 'numero_contrato': datos.get('numero_contrato') or '',
                 'racks_acordados': datos.get('racks_acordados') or 0,
@@ -228,19 +229,18 @@ class rastreo_paquetes(models.Model):
             })
             pedido.detalle_cotizacion_ids.unlink()
             dp = self.env['rastreo.cotizacion_detalle']
-            cambio = d.get('cambio') or false
-            if cambio == True:
+            cambio = datos.get('cambio_racks') or False
+            if cambio == False:
                 return {
                     'success': True,
                 }
             for d in detalle_pedido:
                 dp.create({
-                    'clave': d.get('clave') or '',
                     'numero': d.get('numero') or '',
                     'costo_rack': d.get('costo_rack') or '',
                     'rack_id': int(d.get('rack_id')) or '',
-                    'rack_nombre':d.get('rack_nombre') or '',
                     'cantidad_racks': d.get('cantidad_racks') or '',
+                    'pedido_id' : pedido_id        
                 })
 
         return {
@@ -262,7 +262,6 @@ class rastreo_paquetes(models.Model):
     @api.model
     def cargar_pedido(self, pedido_id):
         pedido = self.browse(pedido_id)
-
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
 
@@ -286,8 +285,10 @@ class rastreo_paquetes(models.Model):
         lista_anticipos_cliente = []
         for a in anticipos_cliente:
             lista_anticipos_cliente.append({
+                'anticipo_id': a.id,
                 'numero': a.numero or 0,
                 'fecha_editado': a.fecha_editado or "",
+                'fecha_anticipo': a.fecha_anticipo or "",
                 'cantidad': a.cantidad or 0,
                 'precio_dolar': a.precio_dolar or 0,
                 'pdf_anticipo_cliente': bool(a.pdf_anticipo_cliente),
@@ -299,6 +300,7 @@ class rastreo_paquetes(models.Model):
         lista_anticipos_proveedor = []
         for a in anticipos_proveedor:
             lista_anticipos_proveedor.append({
+                'anticipo_id': a.id,
                 'numero': a.numero or 0,
                 'fecha_editado': a.fecha_editado or "",
                 'cantidad': a.cantidad or 0,
@@ -319,7 +321,6 @@ class rastreo_paquetes(models.Model):
                 'rack_nombre': a.rack_id.nombre or 0,
                 'cantidad_racks': a.cantidad_racks or 0,
             })
-         
         return {
             'success': True,
             'data': {
@@ -504,6 +505,8 @@ class rastreo_paquetes(models.Model):
         lista_productos = []
 
         for linea in cotizacion.order_line:
+            #d = [('producto_id.id', '=', linea.product_id.id, )]
+            #rack = self.env['ratreo.rack_detalle'].search(d, order='id desc',limit=1)
             lista_productos.append({
                 'id': linea.product_id.id,
                 'nombre': linea.product_id.name,
@@ -520,6 +523,7 @@ class rastreo_paquetes(models.Model):
                 'id': cotizacion.id,
                 'nombre': cotizacion.name,
                 'cliente': cotizacion.partner_id.name,
+                'cliente_id': cotizacion.partner_id.id,
                 'total': cotizacion.amount_total,
                 'moneda': cotizacion.currency_id.name,
                 'fecha': cotizacion.date_order,

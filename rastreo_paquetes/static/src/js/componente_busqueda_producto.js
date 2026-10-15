@@ -66,6 +66,7 @@ export class componente_busqueda_producto extends Component {
     }
 
     onSeleccionarProducto(p) {
+        console.log("Producto seleccionado:", p);
         this.state.productoSeleccionadoId = p.id;
         this.state.productoSeleccionadoNombre = p.nombre;
         this.state.productoSeleccionadoPrecio = p.precio;
