@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="rastreo_paquetes.componente_detalle_proveedor_embed">
-        <Dialog title="'Editar el anticipo del proveedor ' + state.numeroAnticipo" size="'md'">
+        <Dialog title="state.crearEditar + ' el anticipo del proveedor numero: ' + state.numero" size="'md'">
             
                 <div class="o_form_view p-2 border rounded bg-light">
                     <div class="row g-3">
@@ -20,33 +20,41 @@
                             <span type="text" 
                                    id="fecha" 
                                    class="form-control" 
-                                   t-esc="state.fechaAnticipo"/>
+                                   t-esc="state.fechaEdicion"/>
                         </div>
 
                         <div class="col-md-6">
-                            <label for="precio" class="form-label fw-bold">Cantidad dada al proveedor ($):</label>
+                            <label for="fechaAnticipo" class="form-label fw-bold">Fecha del anticipo:</label>
+                            <input type="date" 
+                                   id="fechaAnticipo" 
+                                   class="form-control" 
+                                   t-model="state.fechaAnticipo"/>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="cantidad" class="form-label fw-bold">Cantidad dada al proveedor ($):</label>
                             <input type="number" 
                                    step="0.1" 
-                                   id="precio" 
+                                   id="cantidad" 
                                    class="form-control" 
                                    t-model.number="state.cantidadAnticipo"/>
                         </div>
-
-
                         <div class="col-md-6">
                             <label for="dolar" class="form-label fw-bold"> Precio dólar ($):</label>
                             <input type="number" 
                                    step="0.1" 
                                    id="dolar" 
                                    class="form-control" 
-                                   t-model.number="state.cantidadRacks"/>
+                                   t-model.number="state.precioDolar"/>
                         </div>
                 
-                        <div class="col-md-6">
-                            <!--Subir PDF anticipo-->
-                        </div>
-                        <div class="col-md-6">
-                            <!--Ver PDF del anticipo si existe-->
+                        <div class="col-12">
+                            <label class="form-label fw-bold">PDF del anticipo:</label>
+                                <PdfUploader
+                                    value="state.PDFAnticipo"
+                                    filename="state.PDFAnticipoNombre"
+                                    onChange="(b64, name) => this.onPdfChange(b64, name)"
+                                    previewMaxWidth="400"/>
                         </div>
                     </div>
 

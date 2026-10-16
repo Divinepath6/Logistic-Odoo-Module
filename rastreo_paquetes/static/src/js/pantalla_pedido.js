@@ -42,10 +42,10 @@ export class PantallaPedido extends Component {
             pdfFacturaProveedor: false,
 
             // Monedas
-            totalProveedor: 0.0,
-            totalCliente: 0.0,
-            totalAnticiposCliente: 0.0,
-            totalAnticiposProveedor: 0.0,
+            totalProveedor: 0,
+            totalCliente: 0,
+            totalAnticiposCliente: 0,
+            totalAnticiposProveedor: 0,
         
             numeroContrato: "",
          
@@ -78,8 +78,8 @@ export class PantallaPedido extends Component {
                 this.state.estado = p.estado;
                 this.state.clienteId = p.cliente_id;
                 this.state.clienteNombre = p.cliente_nombre;
-                this.state.totalCliente = p.total_cliente;
-                this.state.totalProveedor = p.total_proveedor;
+                this.state.totalCliente = Number(p.total_cliente) || 0;
+                this.state.totalProveedor = Number(p.total_proveedor) || 0;
                 this.state.numeroContrato = p.numero_contrato;
                 //bool
                 this.state.forwarder = p.forwarder;
@@ -87,41 +87,64 @@ export class PantallaPedido extends Component {
                 this.state.pdfFacturaProveedor = p.bool_factura_proveedor;
                 this.state.numeroContrato = p.numero_contrato;
                 //listas
+                let totalCliente = 0;
                 this.state.actualizaciones = p.actualizaciones;
                 this.state.detalleRacks = p.detalle_racks.map((d,i)=> {
-                    this.state.totalCliente = this.state.totalCliente + (d.costo_rack * d.cantidad_racks);
-                    return{
-                        clave: d.clave,
-                        numero: d.numero,
-                        costo_rack: d.costo_rack, 
-                        rack_id: d.rack_id,
-                        rack_nombre: d.rack_nombre,
-                        cantidad_racks: d.cantidad_racks,
-                        total: (d.costo_rack * d.cantidad_racks).toFixed(2)
-                    }
+                           const costo = Number(d.costo_rack) || 0;
+                            const cantidad = Number(d.cantidad_racks) || 0;
+                            const subtotal = costo * cantidad;
+                            totalCliente += subtotal;
+                            return {
+                                clave: d.clave,
+                                numero: d.numero,
+                                costo_rack: costo.toFixed(2),
+                                rack_id: d.rack_id,
+                                rack_nombre: d.rack_nombre,
+                                cantidad_racks: cantidad,
+                                subtotal: subtotal.toFixed(2),
+                            };
                 })
-                this.state.totalCliente = this.state.totalCliente.toFixed(2);
-                console.log("detalle cliente: ",p.detalleCliente)
-                if(p.detalleCliente != null || p.detalleCliente != undefined){
-                    this.state.detalleCliente = p.detalle_cliente.map((d,i)=> {
-                    this.state.totalAnticiposCliente = this.state.totalAnticiposCliente + ( d.subtotal);
-                    return{
-                        anticipo_id: d.anticipo_id,
-                        numero :  d.numero,
-                        fechaEdicion :  d.fecha_editado,
-                        fechaAnticipo: d.fecha_anticipo,
-                        cantidadAnticipo :  d.cantidad,
-                        precioDolar:  d.precio_dolar,
-                        PDFAnticipo:  d.pdf_anticipo_cliente,
-                    }
+                this.state.totalCliente = totalCliente.toFixed(2);
+                let totalAnticiposCliente = 0;
+                if(p.lista_anticipos_cliente != null || p.lista_anticipos_cliente != undefined){
+                    this.state.detalleCliente = p.lista_anticipos_cliente.map((d,i)=> {
+                        const cantidad = Number(d.cantidad) || 0;
+                        const precioDolar = Number(d.precio_dolar) || 0;
+                        totalAnticiposCliente += cantidad; 
+                        return {
+                            anticipoId: d.anticipo_id,
+                            numero: d.numero,
+                            fechaEdicion: d.fecha_editado,
+                            fechaAnticipo: d.fecha_anticipo,
+                            cantidadAnticipo: cantidad.toFixed(2),
+                            precioDolar: precioDolar.toFixed(2),
+                            PDFAnticipo: d.pdf_anticipo_cliente,
+                        };
                 })
                 }else{
                     this.state.detalleCliente = []
                 }
-    
-                this.state.totalAnticiposCliente =   (this.state.totalAnticiposCliente).toFixed(2); 
-                this.state.detalleProveedor= p.detalle_proveedor || [];
-                console.log("carga: ",resultado);
+                this.state.totalAnticiposCliente =  (totalAnticiposCliente).toFixed(2); 
+                let totalAnticiposProveedor = 0;
+                if(p.lista_anticipos_proveedor != null || p.lista_anticipos_proveedor != undefined){
+                    this.state.detalleProveedor = p.lista_anticipos_proveedor.map((d,i)=> {
+                        const cantidad = Number(d.cantidad) || 0;
+                        const precioDolar = Number(d.precio_dolar) || 0;
+                        totalAnticiposProveedor += cantidad;
+                        return {
+                            anticipoId: d.anticipo_id,
+                            numero: d.numero,
+                            fechaEdicion: d.fecha_editado,
+                            fechaAnticipo: d.fecha_anticipo,
+                            cantidadAnticipo: cantidad.toFixed(2),
+                            precioDolar: precioDolar.toFixed(2),
+                            PDFAnticipo: d.pdf_anticipo_proveedor,
+                        };
+                    })
+                }else{
+                    this.state.detalleProveedor = [];
+                }
+                this.state.totalAnticiposProveedor =   (totalAnticiposProveedor).toFixed(2); 
             }else{
                 console.log(resultado);
             }
@@ -218,8 +241,9 @@ export class PantallaPedido extends Component {
     async onEditarDetalleCliente(d) {
         if(!d){
             d = {
+                crearEditar: "Crear",
                 anticipoId: 0,
-                numero: this.state.detalleRacks.length + 1,
+                numero: this.state.detalleCliente.length + 1,
                 fechaEdicion: "",
                 fechaAnticipo: "",
                 cantidadAnticipo: 0.0,
@@ -232,11 +256,10 @@ export class PantallaPedido extends Component {
                 title: "Confirmación",
                 objeto:d,
                 confirm: async (editado) => {
-                    if(editado.numero == 0){
-                        editado.numero = this.state.detalleCliente.length;
+                    if(editado.numero >= this.state.detalleCliente.length){
                         this.state.detalleCliente.push(editado);
                     }else{
-                        this.state.detalleCliente[editado.numero - 1] = d;
+                        this.state.detalleCliente[editado.numero - 1] = editado;
                     }
                     this.state.detalleCliente = [...this.state.detalleCliente];
                 },
@@ -245,11 +268,24 @@ export class PantallaPedido extends Component {
         });
     }
     async onEditarDetalleProveedor(d) {
+        if(!d){
+            d = {
+                crearEditar: "Crear",
+                anticipoId: 0,
+                numero: this.state.detalleProveedor.length + 1,
+                fechaEdicion: "",
+                fechaAnticipo: "",
+                cantidadAnticipo: 0.0,
+                precioDolar: 0.0,
+                PDFAnticipo: null, 
+            }
+        }
+        d.pedidoId = this.state.pedidoId;
         this.dialogService.add(componente_detalle_proveedor,  {
                 title: "Confirmación",
                 objeto:d,
                 confirm: async (editado) => {
-                    if(editado.numero == 0){
+                    if(editado.numero >= this.state.detalleCliente.length){
                         this.state.detalleProveedor.push(editado);
                     }else{
                         this.state.detalleProveedor[editado.numero - 1] = d;

@@ -303,6 +303,7 @@ class rastreo_paquetes(models.Model):
                 'anticipo_id': a.id,
                 'numero': a.numero or 0,
                 'fecha_editado': a.fecha_editado or "",
+                'fecha_anticipo': a.fecha_anticipo or "",
                 'cantidad': a.cantidad or 0,
                 'precio_dolar': a.precio_dolar or 0,
                 'pdf_anticipo_proveedor': bool(a.pdf_anticipo_proveedor),

@@ -54,6 +54,9 @@
             
             'rastreo_paquetes/static/src/js/Pdf_uploader.js',
             'rastreo_paquetes/static/src/xml/Pdf_uploader.xml',
+
+            'rastreo_paquetes/static/src/js/componente_subir_pdf.js',
+            'rastreo_paquetes/static/src/xml/componente_subir_pdf.xml',
         ],
     },
     'installable': True,

@@ -4,7 +4,7 @@ import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks"; 
 
 export class componente_creacion_pedido extends Component {
-        static template = "rastreo_paquetes.componente_creacion_pedido_embed";
+    static template = "rastreo_paquetes.componente_creacion_pedido_embed";
     static components = { Dialog };
     static props = {
         close: Function,

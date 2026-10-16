@@ -22,10 +22,12 @@ export class componente_detalle_cliente extends Component{
             precioDolar: 0.0,
             PDFAnticipo: "",   // base64
             PDFAnticipoNombre: "",
+            crearEditar: "Editar",
         })
          onWillStart(async () => {
             const r = this.props.objeto;
             if (r) {
+                this.state.crearEditar= r.crearEditar || "Editar";
                 this.state.anticipoId = r.anticipoId;
                 this.state.pedidoId = r.pedidoId;
                 this.state.numero = r.numero;
@@ -33,7 +35,7 @@ export class componente_detalle_cliente extends Component{
                 this.state.fechaAnticipo= r.fechaAnticipo;
                 this.state.cantidadAnticipo = r.cantidadAnticipo;
                 this.state.precioDolar= r.precioDolar;
-                this.state.PDFAnticipo= r.PDFAnticipo;
+                await this.obtenerPDF();
             }
         });
     }
@@ -43,7 +45,27 @@ export class componente_detalle_cliente extends Component{
         this.state.PDFAnticipoNombre = filename;
     }
     async obtenerPDF(){
-
+        if(!this.state.anticipoId || this.state.anticipoId === 0){
+            return;
+        }
+        try{
+            const resultado = await this.orm.call(
+                "rastreo.detalle_cliente",
+                "obtener_pdf",
+                [
+                    this.state.anticipoId
+                ]
+            );
+            if (resultado.success){
+                this.state.PDFAnticipo = resultado.pdf || "";
+                this.state.PDFAnticipoNombre = resultado.filename || "";
+            }
+            else{
+              this.notification.add("Hubo un error "  + (resultado.error || "desconocido"),{ type: "danger" });          
+            }
+        }catch(e){
+            this.notification.add("Hubo un error desconocido" + (e.error),{ type: "danger" });  
+        }
     }
     async onConfirmar() {
          console.log("onConfirmar state:", this.state);
@@ -67,7 +89,7 @@ export class componente_detalle_cliente extends Component{
             const resultado = await this.orm.call(
                 "rastreo.detalle_cliente",
                 "guardar_detalle",
-                [this.state.pedidoId, {
+                [this.state.pedidoId, this.state.anticipoId, {
                     cantidad: this.state.cantidadAnticipo,
                     precio_dolar: this.state.precioDolar,
                     fecha_anticipo: this.state.fechaAnticipo,
@@ -75,8 +97,8 @@ export class componente_detalle_cliente extends Component{
             );
             if (resultado.success){
                 this.props.confirm({
-                    cantidadAnticipo: this.state.cantidadAnticipo,
-                    precioDolar: this.state.precioDolar,
+                    cantidadAnticipo: Number(this.state.cantidadAnticipo),
+                    precioDolar: Number(this.state.precioDolar),
                     fechaAnticipo: this.state.fechaAnticipo,
                     PDFAnticipo: true,
                 });

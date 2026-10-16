@@ -40,19 +40,21 @@ class rastreo_anticipo_detalle_cliente(models.Model):
     fecha_anticipo = fields.Date(string='Fecha del anticipo')
     
     @api.model
-    def guardar_detalle(self, pedido_id, datos, pdf=None, pdf_name=None):
+    def guardar_detalle(self, pedido_id, anticipoId, datos, pdf=None, pdf_name=None):
         if not pedido_id:
             return {'success': False, 'error': 'Pedido no indicado'}
         pedido = self.env['rastreo.pedido'].browse(pedido_id)
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
+        anticipo = self.browse(anticipoId)
 
         usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
         cantidad = self.search_count([('pedido_id', '=', pedido_id)])
         if cantidad == 0:
             cantidad = 1
+        else:
+            cantidad = cantidad + 1
         valores = {
-            'numero': cantidad,
             'pedido_id': pedido_id,
             'currency_id': usd_currency.id if usd_currency else False,
             'fecha_editado': fields.Datetime.now(),
@@ -68,7 +70,13 @@ class rastreo_anticipo_detalle_cliente(models.Model):
             )
 
         with self.env.cr.savepoint():
-            self.create(valores)
+            if not anticipo.exists():
+                valores['numero'] = cantidad
+                self.create(valores)
+            else:
+                anticipo.write(
+                    valores
+                    )
 
         return {'success': True}
 
@@ -78,8 +86,11 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         detalle = self.browse(detalle_id)
         if not detalle.exists():
             return {'success': False, 'error': 'Detalle no encontrado'}
+        pdf = detalle.pdf_anticipo_cliente
+        if isinstance(pdf, bytes):
+            pdf = pdf.decode('utf-8')
         return {
             'success': True,
-            'pdf': detalle.pdf_anticipo_cliente or False,
+            'pdf': pdf or False,
             'filename': detalle.pdf_anticipo_cliente_nombre or 'anticipo.pdf',
         }
