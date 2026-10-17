@@ -11,7 +11,7 @@
                             <span type="text" 
                                    id="numero" 
                                    class="form-control" 
-                                   t-esc="state.numeroAnticipo"/>
+                                   t-esc="state.numero"/>
                         </div>
 	
 

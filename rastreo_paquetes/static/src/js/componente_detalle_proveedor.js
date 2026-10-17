@@ -19,7 +19,7 @@ export class componente_detalle_proveedor extends Component{
             fechaAnticipo: "",
             cantidadAnticipo: 0.0,
             precioDolar: 0.0,
-            numeroAnticipo: 0,
+            numero: 0,
             PDFAnticipo: "",
             PDFAnticipoNombre: "",
             crearEditar: "Editar"
@@ -113,7 +113,7 @@ export class componente_detalle_proveedor extends Component{
             return;
         }
     }
-    onCancel() {
+    onCancelar() {
         if (this.props.cancel) {
             this.props.cancel();
         }

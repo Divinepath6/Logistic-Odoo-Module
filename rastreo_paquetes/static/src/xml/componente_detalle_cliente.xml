@@ -56,7 +56,6 @@
                                     onChange="(b64, name) => this.onPdfChange(b64, name)"
                                     previewMaxWidth="400"/>
                         </div>
-                        
                     </div>
 
                 </div>

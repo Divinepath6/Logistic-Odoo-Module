@@ -139,56 +139,7 @@
                         </div>
                     </div>
 
-                    <div class="odoo-card">
-                        <div class="odoo-card-title">
-                            <i class="fa fa-cubes"/> Detalle de Racks
-                        </div>
 
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Código</th>
-                                        <th>Descripción</th>
-                                        <th class="text-end">Costo</th>
-                                        <th class="text-end">Cant.</th>
-                                        <th class="text-end">Total</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <t t-if="state.detalleRacks and state.detalleRacks.length">
-                                        <tr t-foreach="state.detalleRacks" t-as="r" t-key="r.id">
-                                            <td><t t-esc="r.clave or ''"/></td>
-                                            <td><t t-esc="r.rack_nombre or ''"/></td>
-                                            <td class="text-end"><t t-esc="r.costo_rack or 0"/></td>
-                                            <td class="text-end"><t t-esc="r.cantidad_racks or 0"/></td>
-                                            <td class="text-end"><t t-esc="r.subtotal or 0"/></td>
-                                            <td class="text-end">
-                                                <button class="odoo-btn odoo-btn-sm odoo-btn-ghost"
-                                                        t-on-click="() => this.onEditarDetalleRacks(r)">
-                                                    <i class="fa fa-pencil"/>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </t>
-                                    <t t-else="">
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted">
-                                                Sin racks registrados
-                                            </td>
-                                        </tr>
-                                    </t>
-                                </tbody>
-                            </table>
-                        </div>
-                        <!-- creacion de detalle para detalle rack 
-                        <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
-                                t-on-click="() => this.onEditarDetalleRacks()">
-                            <i class="fa fa-plus"/> Agregar Rack
-                        </button>
-                        -->
-                    </div>
 
                     <!-- CLIENTE  -->
                     <div class="odoo-card">
@@ -201,7 +152,7 @@
                                 <thead>
                                     <tr>
                                         <th>Número</th>
-                                        <th>Fecha edición</th>
+                                        <th>Fecha de Anticipo</th>
                                         <th class="text-end">Cantidad</th>
                                         <th class="text-end">Precio dólar</th>
                                         <th class="text-center">PDF anticipo</th>
@@ -272,15 +223,18 @@
                             <span class="odoo-result-label">Contrato Proveedor</span>
                             <span>
                                 <t t-if="state.pdfContratoProveedor">
-                                    <a t-att-href="'/web/content?model=rastreo.pedido&amp;field=pdf_contrato_proveedor&amp;id=' + state.pedidoId"
-                                       target="_blank"
-                                       class="odoo-btn odoo-btn-sm odoo-btn-cyan">
-                                        Ver
-                                    </a>
+                                    <span class="text-muted">En el sistema</span> 
+                                <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
                                     <span class="text-muted">No cargado</span>
                                 </t>
+                                    <button type="button"
+                                        class="odoo-btn odoo-btn-primary"
+                                        t-on-click=" () => this.verPDF('pdf_contrato_proveedor')">
+                                        <i class="fa fa-save"/> Ver
+                                    </button>
+                               
                             </span>
                         </div>
 
@@ -289,15 +243,18 @@
                             <span class="odoo-result-label">Factura Proveedor</span>
                             <span>
                                 <t t-if="state.pdfFacturaProveedor">
-                                    <a t-att-href="'/web/content?model=rastreo.pedido&amp;field=pdf_factura_proveedor&amp;id=' + state.pedidoId"
-                                       target="_blank"
-                                       class="odoo-btn odoo-btn-sm odoo-btn-cyan">
-                                        Ver
-                                    </a>
+                                    <span class="text-muted">En el sistema</span> 
+                                <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
                                     <span class="text-muted">No cargado</span>
                                 </t>
+                                    <button type="button"
+                                        class="odoo-btn odoo-btn-primary"
+                                        t-on-click=" () => this.verPDF('pdf_factura_proveedor')">
+                                        <i class="fa fa-save"/> Ver
+                                    </button>
+                                
                             </span>
                         </div>
 
@@ -305,115 +262,97 @@
                         <div class="odoo-result-row">
                             <span class="odoo-result-label">ETD</span>
                             <span>
-                                <t t-if="state.pdfFacturaProveedor">
-                                    <a t-att-href="'/web/content?model=rastreo.pedido&amp;field=pdf_factura_proveedor&amp;id=' + state.pedidoId"
-                                       target="_blank"
-                                       class="odoo-btn odoo-btn-sm odoo-btn-cyan">
-                                        Ver
-                                    </a>
+                                <t t-if="state.pdfETD">
+                                    <span class="text-muted">En el sistema</span> 
+                                <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
                                     <span class="text-muted">No cargado</span>
                                 </t>
+                                    <button type="button"
+                                        class="odoo-btn odoo-btn-primary"
+                                        t-on-click="  () => this.verPDF('pdf_ETD')">
+                                        <i class="fa fa-save"/> Ver
+                                    </button>
+                                
                             </span>
                         </div>
                         <!-- ETA-->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label">ETA</span>
                             <span>
-                                <t t-if="state.pdfFacturaProveedor">
-                                    <a t-att-href="'/web/content?model=rastreo.pedido&amp;field=pdf_factura_proveedor&amp;id=' + state.pedidoId"
-                                       target="_blank"
-                                       class="odoo-btn odoo-btn-sm odoo-btn-cyan">
-                                        Ver
-                                    </a>
+                                <t t-if="state.pdfETA">
+                                <span class="text-muted">En el sistema</span> 
+                                <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
                                     <span class="text-muted">No cargado</span>
                                 </t>
+                                <button type="button"
+                                    class="odoo-btn odoo-btn-primary"
+                                    t-on-click=" () => this.verPDF('pdf_ETA')">
+                                    <i class="fa fa-save"/> Ver
+                                </button>
+                                
                             </span>
                         </div>
                         <!-- ETA-->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label"> BL </span>
                             <span>
-                                <t t-if="state.pdfFacturaProveedor">
-                                    <a t-att-href="'/web/content?model=rastreo.pedido&amp;field=pdf_factura_proveedor&amp;id=' + state.pedidoId"
-                                       target="_blank"
-                                       class="odoo-btn odoo-btn-sm odoo-btn-cyan">
-                                        Ver
-                                    </a>
+                                <t t-if="state.pdfBL">
+                                    <span class="text-muted">En el sistema</span> 
+                                    <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
                                     <span class="text-muted">No cargado</span>
                                 </t>
+                                <button type="button"
+                                    class="odoo-btn odoo-btn-primary"
+                                    t-on-click="  () => this.verPDF('pdf_BL')">
+                                    <i class="fa fa-save"/> Ver
+                                </button>
                             </span>
                         </div>
                         <!-- PL-->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label"> PL </span>
                             <span>
-                                <t t-if="state.pdfFacturaProveedor">
-                                    <a t-att-href="'/web/content?model=rastreo.pedido&amp;field=pdf_factura_proveedor&amp;id=' + state.pedidoId"
-                                       target="_blank"
-                                       class="odoo-btn odoo-btn-sm odoo-btn-cyan">
-                                        Ver
-                                    </a>
+                                <t t-if="state.pdfPL">
+                                    <span class="text-muted">En el sistema</span> 
+                                    <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
                                     <span class="text-muted">No cargado</span>
                                 </t>
+                                <button type="button"
+                                        class="odoo-btn odoo-btn-primary"
+                                        t-on-click="  () =>this.verPDF('pdf_PL')">
+                                        <i class="fa fa-save"/> Ver
+                                </button>
                             </span>
                         </div>
                         <!-- invoice -->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label"> invoice </span>
                             <span>
-                                <t t-if="state.pdfFacturaProveedor">
-                                    <a t-att-href="'/web/content?model=rastreo.pedido&amp;field=pdf_factura_proveedor&amp;id=' + state.pedidoId"
-                                       target="_blank"
-                                       class="odoo-btn odoo-btn-sm odoo-btn-cyan">
-                                        Ver
-                                    </a>
+                                <t t-if="state.pdfInvoice">
+                                    <span class="text-muted">En el sistema</span> 
+                                    <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
                                     <span class="text-muted">No cargado</span>
                                 </t>
+                                <button type="button"
+                                    class="odoo-btn odoo-btn-primary"
+                                    t-on-click=" () => this.verPDF('pdf_invoice')">
+                                    <i class="fa fa-save"/> Editar / Ver
+                                </button>
                             </span>
                         </div>
                         
-
-                        <!-- Forwarder -->
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Forwarder</span>
-                            <span class="odoo-result-value">
-                                <t t-esc="state.forwarder or '—'"/>
-                            </span>
-                        </div>
                     </div>
 
-                    <!-- SUBIR PDFs  -->
-                    <div class="odoo-card">
-                        <div class="odoo-card-title">
-                            <i class="fa fa-upload"/> Subir PDFs
-                        </div>
-
-                        <div class="odoo-field">
-                            <label class="odoo-label">Contrato Proveedor (PDF)</label>
-                            <input type="file"
-                                   accept="application/pdf"
-                                   class="odoo-input"
-                                   t-on-change="(ev) => this.onUploadPdf('pdf_contrato_proveedor', ev)"/>
-                        </div>
-
-                        <div class="odoo-field">
-                            <label class="odoo-label">Factura Proveedor (PDF)</label>
-                            <input type="file"
-                                   accept="application/pdf"
-                                   class="odoo-input"
-                                   t-on-change="(ev) => this.onUploadPdf('pdf_factura_proveedor', ev)"/>
-                        </div>
-                    </div>
                     <!-- PROVEEDOR  -->
                     <div class="odoo-card">
                         <div class="odoo-card-title">
@@ -425,7 +364,7 @@
                                 <thead>
                                     <tr>
                                         <th>Número</th>
-                                        <th>Fecha edición</th>
+                                         <th>Fecha de Anticipo</th>
                                         <th class="text-end">Cantidad transferida</th>
                                         <th class="text-end">Precio dólar</th>
                                         <th class="text-center">PDF anticipo</th>
@@ -464,6 +403,57 @@
                                 <i class="fa fa-plus"/> Agregar Nuevo Anticipo
                             </button>
                         </div>
+                    </div>
+
+                    <div class="odoo-card">
+                        <div class="odoo-card-title">
+                            <i class="fa fa-cubes"/> Detalle de Racks
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Descripción</th>
+                                        <th class="text-end">Costo</th>
+                                        <th class="text-end">Cant.</th>
+                                        <th class="text-end">SubTotal</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="state.detalleRacks and state.detalleRacks.length">
+                                        <tr t-foreach="state.detalleRacks" t-as="r" t-key="r.id">
+                                            <td><t t-esc="r.clave or ''"/></td>
+                                            <td><t t-esc="r.rack_nombre or ''"/></td>
+                                            <td class="text-end"><t t-esc="r.costo_rack or 0"/></td>
+                                            <td class="text-end"><t t-esc="r.cantidad_racks or 0"/></td>
+                                            <td class="text-end"><t t-esc="r.subtotal or 0"/></td>
+                                            <td class="text-end">
+                                                <button class="odoo-btn odoo-btn-sm odoo-btn-ghost"
+                                                        t-on-click="() => this.onEditarDetalleRacks(r)">
+                                                    <i class="fa fa-pencil"/>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-else="">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                Sin racks registrados
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- creacion de detalle para detalle rack 
+                        <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                t-on-click="() => this.onEditarDetalleRacks()">
+                            <i class="fa fa-plus"/> Agregar Rack
+                        </button>
+                        -->
                     </div>
                 </div>
 

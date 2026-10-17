@@ -28,16 +28,39 @@ class rastreo_paquetes(models.Model):
             string='Documento BL',
             attachment=True
         )
+    pdf_BL_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
     pdf_PL = fields.Binary(
             string='Documento PL',
             attachment=True
         )
+    pdf_PL_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
     pdf_invoice = fields.Binary(
             string='Documento invoice',
             attachment=True
         )
+    pdf_invoice_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
+    pdf_ETD= fields.Binary(
+        string='Documento PL',
+        attachment=True
+    )
+    pdf_ETA= fields.Binary(
+        string='Documento PL',
+        attachment=True
+    )
 
-  
+    pdf_ETD_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
+    pdf_ETA_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
+
     currency_id = fields.Many2one(
         'res.currency', 
         string='Moneda', 
@@ -49,6 +72,9 @@ class rastreo_paquetes(models.Model):
         string='Contrato con el proveedor',
         attachment=True
     )
+    pdf_contrato_proveedor_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
     numero_contrato = fields.Char(
         string='Número de Guia'
     )
@@ -56,11 +82,13 @@ class rastreo_paquetes(models.Model):
         string='Factura del proveedor',
         attachment=True
     )
+    pdf_factura_proveedor_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
     total_proveedor = fields.Monetary(
         string= 'Total acordado con el proveedor',
         currency_field='currency_id' 
     )
-
     ## Cliente ///////////////////////////////////////////////////////////////////////////////
     total_cliente = fields.Monetary(
         string= 'Total acordado con el cliente',
@@ -162,53 +190,101 @@ class rastreo_paquetes(models.Model):
 
     ## PDFSSSS //////////////////////////////////////////////////
     @api.model
-    def subir_pdf(self, nombre, archivo, pedido_id):
-
+    def guardar_pdf(self, tipo_documento, pdf, pedido_id,nombre_archivo):
         campos_permitidos = [
             'pdf_contrato_proveedor',
+            'pdf_ETD',
+            'pdf_ETA',
             'pdf_factura_proveedor',
             'pdf_anticipo_cliente',
             'pdf_BL',
             'pdf_PL',
             'pdf_invoice'
         ]
+        #verificacion de campos aaa
+        if not pedido_id:
+            return {'success': False, 'error': 'Pedido no indicado'}
+        if tipo_documento not in campos_permitidos:
+            return {'success': False,'error': 'Campo de PDF no permitido'}
+        if not pdf:
+            return {'success': False, 'error': 'PDF vacío'}
+        pedido = self.browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False,'error': 'Pedido no encontrado'}
+        campo_nombre = f"{tipo_documento}_nombre"
+        if campo_nombre not in self._fields:
+            return {
+                'success': False,
+                'error': f'El modelo no tiene el campo {campo_nombre}'
+            }
+        guia = pedido.numero_guia or pedido.id
 
-        if nombre not in campos_permitidos:
+        base = nombre_archivo.rsplit('.', 1)[0] if nombre_archivo else tipo_documento
+        nombre_final = f"{base}_{guia}.pdf"
+
+        pedido.write({
+            tipo_documento: pdf,
+            campo_nombre: nombre_final
+        })
+        
+        field_obj = self._fields.get(tipo_documento)
+        nombre_amigable = field_obj.string if field_obj else tipo_documento
+
+        ultima = self.env['rastreo.pedido_actualizacion'].search(
+            [('pedido_id', '=', pedido_id)],
+            order='numero_actualizacion desc',
+            limit=1
+        )
+        numero = (ultima.numero_actualizacion or 0) + 1
+
+        self.env['rastreo.pedido_actualizacion'].create({
+            'pedido_id': pedido.id,
+            'numero_actualizacion': numero,
+            'fecha_actualizacion': datetime.now(),
+            'actualizacion_texto': f'Archivo subido: {nombre_amigable} - {self.env.user.name}',
+        })
+
+        return {'success': True}
+
+    @api.model
+    def obtener_pdf(self, pedido_id, nombre_pdf):
+        campos_permitidos = [
+            'pdf_contrato_proveedor',
+            'pdf_ETD',
+            'pdf_ETA',
+            'pdf_factura_proveedor',
+            'pdf_anticipo_cliente',
+            'pdf_BL',
+            'pdf_PL',
+            'pdf_invoice'
+        ]
+        if not pedido_id:
+            return {'success': False, 'error': 'Necesita un Id de pedido'}
+        if nombre_pdf not in campos_permitidos:
             return {
                 'success': False,
                 'error': 'Campo de PDF no permitido'
             }
-
+        
         pedido = self.browse(pedido_id)
-
         if not pedido.exists():
-            return {
-                'success': False,
-                'error': 'Pedido no encontrado'
-            }
+            return {'success': False, 'error': '¨Pedido no encontrado'}
+        pdf = getattr(pedido, nombre_pdf, False)
+        if isinstance(pdf, bytes):
+            pdf = pdf.decode('utf-8')
 
-        pedido.write({
-            nombre: archivo
-        })
-        field_obj = self._fields.get(nombre)
-        nombre_amigable = field_obj.string if field_obj else nombre
+        campo_nombre_documento = f"{nombre_pdf}_nombre"
+        nombre_documento = getattr(pedido, campo_nombre_documento, False)
 
-        cantidad = self.env['rastreo.pedido_actualizacion'].search_count([
-            ('pedido_id', '=', pedido_id)
-        ])
-        numero = cantidad + 1
-        self.env['rastreo.pedido_actualizacion'].create({
-                'pedido_id': pedido.id,
-                'numero_actualizacion': numero,
-                'fecha_actualizacion': datetime.now(),
-                'actualizacion_texto': f'Archivo subido: {nombre_amigable} - {self.env.user.name}'
-            })
+        if not nombre_documento:
+            guia = pedido.numero_guia or pedido.id
+            nombre_documento = f"{nombre_pdf}_{guia}.pdf"
+
         return {
-            'success': True
+            'success': True,
+            'pdf': pdf or False,
+            'filename': nombre_documento,
         }
-
-
-
 
     @api.model
     def actualizar_pedido(self, pedido_id, detalle_pedido, datos):

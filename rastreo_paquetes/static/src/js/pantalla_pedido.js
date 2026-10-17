@@ -8,9 +8,15 @@ import { _t } from "@web/core/l10n/translation";
 import { componente_detalle_proveedor } from "./componente_detalle_proveedor"
 import { componente_detalle_racks } from "./componente_detalle_racks"
 import { componente_detalle_cliente } from "./componente_detalle_cliente"
+import { componente_subir_pdf } from "./componente_subir_pdf";
 
 export class PantallaPedido extends Component {
-    static components = { componente_detalle_proveedor , componente_detalle_racks, componente_detalle_cliente };
+    static components = { 
+        componente_detalle_proveedor, 
+        componente_detalle_racks, 
+        componente_detalle_cliente, 
+        componente_subir_pdf 
+    };
     setup() {
         this.action = useService("action");
         this.orm = useService("orm");
@@ -35,9 +41,9 @@ export class PantallaPedido extends Component {
 
             //bool de PDF
             forwarder: false,
-            pdf_BL: false,
-            pdf_PL: false,
-            pdf_invoice: false,
+            PDFBL: false,
+            PDFPL: false,
+            PDFInvoice: false,
             pdfContratoProveedor:false,
             pdfFacturaProveedor: false,
 
@@ -82,10 +88,14 @@ export class PantallaPedido extends Component {
                 this.state.totalProveedor = Number(p.total_proveedor) || 0;
                 this.state.numeroContrato = p.numero_contrato;
                 //bool
-                this.state.forwarder = p.forwarder;
-                this.state.pdfContratoProveedor = p.bool_contrato_proveedor;
-                this.state.pdfFacturaProveedor = p.bool_factura_proveedor;
-                this.state.numeroContrato = p.numero_contrato;
+                this.state.forwarder = p.forwarder || false;
+                this.state.pdfContratoProveedor = p.bool_contrato_proveedor | false;
+                this.state.pdfFacturaProveedor = p.bool_factura_proveedor || false;
+                this.state.numeroContrato = p.numero_contrato || false;
+                this.state.PDFBL = p.pdf_BL || false;
+                this.state.PDFPL = p.pdf_PL || false;
+                this.state.PDFInvoice = p.pdf_invoice || false;
+
                 //listas
                 let totalCliente = 0;
                 this.state.actualizaciones = p.actualizaciones;
@@ -144,7 +154,7 @@ export class PantallaPedido extends Component {
                 }else{
                     this.state.detalleProveedor = [];
                 }
-                this.state.totalAnticiposProveedor =   (totalAnticiposProveedor).toFixed(2); 
+                this.state.totalAnticiposProveedor =  (totalAnticiposProveedor).toFixed(2); 
             }else{
                 console.log(resultado);
             }
@@ -187,18 +197,6 @@ export class PantallaPedido extends Component {
             this.state.cargando = false;
         }
     }
-
-    onCalcular(){
-        if (this.searchTimeout) {
-            clearTimeout(this.searchTimeout);
-        }
-        this.searchTimeout = setTimeout(() => {
-            this.calcularRacks();
-        }, 500);
-    }
-
-  
-
 
   
     async autoGuardado(){
@@ -411,13 +409,27 @@ export class PantallaPedido extends Component {
             this.state.cargando = false;
         }        
     }
-    async onguardarPDF(){
-
-    }
-
-    // Descargar PDF ¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿
-    async onDescargarPDF() {
-        
+    async verPDF(documentoNombre){
+        if(!documentoNombre){
+            return;
+        }
+        const objeto = {
+            pedidoId:       this.state.pedidoId,
+            documentoNombre:documentoNombre
+        }
+        this.dialogService.add(componente_subir_pdf,  {
+            title: "Confirmación",
+            objeto: objeto,
+            confirm: async (documento) => {
+                if(documento.editado){
+                    // documento.documentoNombre <- tiene el nombre del documento
+                    this.state.pdf_invoice = false;
+                    this.state.pdf_BL = false
+                }
+            },
+            cancel: () => {
+            }
+        });
     }
     
 }

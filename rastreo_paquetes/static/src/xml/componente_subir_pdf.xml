@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="rastreo_paquetes.componente_subir_pdf_embed">
-
+        <Dialog title="'Edicion de ' + (state.PDFNombre or '')" size="'md'">
+            <div class="col-12">
+                <label class="form-label fw-bold">PDF: <t t-esc="state.PDFNombre"/>
+                </label>
+                    <PdfUploader
+                        value="state.PDF"
+                        filename="state.PDFNombre"
+                        onChange="(b64, name) => this.onPdfChange(b64, name)"
+                        previewMaxWidth="800"/>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="onConfirmar">
+                    Guardar y salir
+                </button>
+                <button class="btn btn-secondary" t-on-click="onCancelar">
+                    Cancelar
+                </button>
+            </t>
+        </Dialog>
     </t>
 </templates>

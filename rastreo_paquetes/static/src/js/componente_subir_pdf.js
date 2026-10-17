@@ -13,86 +13,84 @@ export class componente_subir_pdf extends Component {
         this.orm = useService("orm");
         this.dialogService = useService("dialog");
         this.state = useState({
-            
             pedidoId:0,
-           
-            PDF: "",   // base64
-            PDFNombre: "",
+            PDF: "",   // base64 del archivo
+            PDFNombre: "", //nombre del archivooo
             documentoNombre: "", //saber que tipo de documento es
         })
          onWillStart(async () => {
-            const r = this.props.objeto;
-            if (r) {
-                this.state.pedidoId = r.pedidoId;
-                this.state.documentoNombre = r.documentoNombre;
+            const d = this.props.objeto;
+            if (d) {
+                this.state.pedidoId = d.pedidoId;
+                this.state.documentoNombre = d.documentoNombre;
                 await this.obtenerPDF();
+            }else{
+                this.notification.add("Hubo un error desconocido",{ type: "danger" });  
+                this.props.close();  
             }
         });
     }
-onPdfChange(base64, filename) {
-        this.state.PDFAnticipo = base64;
-        this.state.PDFAnticipoNombre = filename;
+    
+    onPdfChange(base64, filename) {
+        this.state.PDF = base64;
+        this.state.PDFNombre = filename;
     }
+
     async obtenerPDF(){
-        if(!this.state.anticipoId || this.state.anticipoId === 0){
+        if(!this.state.pedidoId || this.state.pedidoId === 0){
             return;
         }
         try{
             const resultado = await this.orm.call(
-                "rastreo.detalle_cliente",
+                "rastreo.pedido",
                 "obtener_pdf",
                 [
-                    this.state.anticipoId
+                    this.state.pedidoId,
+                    this.state.documentoNombre
                 ]
             );
+            console.log(resultado)   
             if (resultado.success){
-                this.state.PDFAnticipo = resultado.pdf || "";
-                this.state.PDFAnticipoNombre = resultado.filename || "";
-            }
-            else{
-              this.notification.add("Hubo un error "  + (resultado.error || "desconocido"),{ type: "danger" });          
+                this.state.PDF = resultado.pdf || "";
+                this.state.PDFNombre = resultado.filename || "";
             }
         }catch(e){
-            this.notification.add("Hubo un error desconocido" + (e.error),{ type: "danger" });  
+            this.notification.add("Hubo un error " + (e.error),{ type: "danger" });  
         }
     }
+
+
     async onConfirmar() {
          console.log("onConfirmar state:", this.state);
         if (!this.state.pedidoId) {
-            this.notification.add("No hay pedido asociado",{ type: "danger" });
+            this.notification.add("No hay pedido asociado ",{ type: "danger" });
             return;
         }
-        if (!this.state.cantidadAnticipo) {
-            this.notification.add("Necesita indicar una cantidad recibida",{ type: "danger" });
+        if (!this.state.PDF) {
+            this.notification.add("Necesita subir documento ",{ type: "danger" });
             return;
         }
-        if (!this.state.precioDolar) {
-            this.notification.add("Necesita indicar el precio de Dolar",{ type: "danger" });
-            return;
-        }
-        if (!this.state.PDFAnticipo) {
-            this.notification.add("Necesita subir PDF",{ type: "danger" });
-            return;
-        }
+
         try{
             const resultado = await this.orm.call(
-                "rastreo.detalle_cliente",
-                "guardar_detalle",
-                [this.state.pedidoId, this.state.anticipoId, {
-                    cantidad: this.state.cantidadAnticipo,
-                    precio_dolar: this.state.precioDolar,
-                    fecha_anticipo: this.state.fechaAnticipo,
-                }, this.state.PDFAnticipo || false, this.state.PDFAnticipoNombre || false]
+                "rastreo.pedido",
+                "guardar_pdf",
+                [   
+                    this.state.documentoNombre,
+                    this.state.PDF,
+                    this.state.pedidoId, 
+                    this.state.PDFNombre,
+                ]
             );
             if (resultado.success){
-                this.notification.add("Hubo un error "  + (resultado.error || "desconocido"),{ type: "danger" });   
+                this.notification.add("Archivo guardado exitosamente ",{ type: "success" });   
                 this.props.close();
             }
             else{
               this.notification.add("Hubo un error "  + (resultado.error || "desconocido"),{ type: "danger" });          
             }
         }catch(e){
-            console.error(e);
+            this.notification.add("Hubo un error " + (e.error),{ type: "danger" });   
             return;
         }
     }
