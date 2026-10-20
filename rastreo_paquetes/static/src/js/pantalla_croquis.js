@@ -138,6 +138,9 @@ export class PantallaCroquis extends Component {
     }
   
     buscarRackPorId(id){
+        if(id === 0){
+            return;
+        }
         const racks = this.state.rackTipos;
         for(let i = 0; i<racks.length; i++){
             const rackData = racks[i];   
@@ -411,7 +414,7 @@ export class PantallaCroquis extends Component {
 
         this.state.racksOcupados  = porAncho * porLargo * altoBodega;
         this.state.costoEstimado  = `$${(costo * this.state.racksOcupados).toFixed(2)}`;
-        this.state.almacenajeTonelada = (this.state.racksOcupados * this.state.rackSeleccionadoAlmacenaje).toFixed(3);
+        this.state.almacenajeTonelada = (this.state.racksOcupados * this.state.rackSeleccionadoAlmacenaje).toFixed(2);
 
         this.state.anchoRack      = anchoRackM;   // m
         this.state.largoRack      = largoRackM;   // m

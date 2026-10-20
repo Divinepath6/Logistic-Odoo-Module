@@ -45,12 +45,12 @@
                              t-key="p.id">
 
                             <div class="card-body">
-                                <strong>Cotización: <t t-esc="p.numero_guia"/></strong>
-                                <strong>Cliente: <t t-esc="p.cliente_nombre || ''"/></strong>
-                                <div>Anticipo recibido de cliente: <t t-esc="p.anticipo_cliente || 0"/></div>
-                                <div>Anticipo dado a proveedor: <t t-esc="p.anticipo_proveedor || 0"/></div>
+                                Cotización: <strong><t t-esc="p.numero_guia "/></strong>
+                                Cliente: <strong><t t-esc="p.cliente_nombre || ' '"/></strong>
+                                <div>Anticipo de cliente: <t t-esc="p.anticipo_cliente || 0"/></div>
+                                <div>Anticipo a proveedor: <t t-esc="p.anticipo_proveedor || 0"/></div>
                                 <div>
-                                    Ultima actualizacion:
+                                    Ultima actualizacion: 
                                     <t t-esc="p.ultima_actualizacion.fecha  || ''"/>
                                     <t t-esc="p.ultima_actualizacion.texto || ''"/>
                                 </div>
@@ -61,6 +61,7 @@
                                     t-on-click="() => this.onClickEditarPedido(p)">
                                 <i class="fa fa-pencil"/> Editar
                             </button>
+                            <!--  Quitar en producción -->
                             <button type="button"
                                     class="odoo-btn odoo-btn-primary odoo-btn-sm"
                                     t-on-click="() => this.onClickEliminarPedido(p)">

@@ -10,7 +10,7 @@
     'license': 'LGPL-3',
     'category': 'Extra Tools',
     'version': '0.1',
-    'depends': ['base', 'web', 'crm' , 'stock'],
+    'depends': ['base', 'web', 'crm' , 'stock', 'sale'],
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',

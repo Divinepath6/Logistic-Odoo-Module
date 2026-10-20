@@ -38,7 +38,7 @@ export class PantallaPedido extends Component {
             detalleCliente: [],
             detalleProveedor: [],
             actualizaciones: [],
-
+            
             //bool de PDF
             forwarder: false,
             PDFBL: false,
@@ -46,7 +46,8 @@ export class PantallaPedido extends Component {
             PDFInvoice: false,
             pdfContratoProveedor:false,
             pdfFacturaProveedor: false,
-
+            PDFETA: false,
+            PDFETD: false,
             // Monedas
             totalProveedor: 0,
             totalCliente: 0,
@@ -91,10 +92,11 @@ export class PantallaPedido extends Component {
                 this.state.forwarder = p.forwarder || false;
                 this.state.pdfContratoProveedor = p.bool_contrato_proveedor | false;
                 this.state.pdfFacturaProveedor = p.bool_factura_proveedor || false;
-                this.state.numeroContrato = p.numero_contrato || false;
-                this.state.PDFBL = p.pdf_BL || false;
-                this.state.PDFPL = p.pdf_PL || false;
-                this.state.PDFInvoice = p.pdf_invoice || false;
+                this.state.pdfBL = p.pdf_BL || false;
+                this.state.pdfPL = p.pdf_PL || false;
+                this.state.pdfETA = p.pdf_ETA || false;
+                this.state.pdfETD = p.pdf_ETD || false;
+                this.state.pdfInvoice = p.pdf_invoice || false;
 
                 //listas
                 let totalCliente = 0;
@@ -155,6 +157,7 @@ export class PantallaPedido extends Component {
                     this.state.detalleProveedor = [];
                 }
                 this.state.totalAnticiposProveedor =  (totalAnticiposProveedor).toFixed(2); 
+                
             }else{
                 console.log(resultado);
             }
@@ -168,7 +171,7 @@ export class PantallaPedido extends Component {
             title: _t("¿Estás seguro?"),
             body: _t(this.state.guia),
             confirm: async () => {
-                //await this.cambiarEstado();
+                await this.cambiarEstado();
             },
             cancel: () => {
                 return;
@@ -253,13 +256,8 @@ export class PantallaPedido extends Component {
         this.dialogService.add(componente_detalle_cliente,  {
                 title: "Confirmación",
                 objeto:d,
-                confirm: async (editado) => {
-                    if(editado.numero >= this.state.detalleCliente.length){
-                        this.state.detalleCliente.push(editado);
-                    }else{
-                        this.state.detalleCliente[editado.numero - 1] = editado;
-                    }
-                    this.state.detalleCliente = [...this.state.detalleCliente];
+                confirm: async () => {
+                    await this.cargarPedido();
                 },
                 cancel: () => {
                 }
@@ -282,31 +280,27 @@ export class PantallaPedido extends Component {
         this.dialogService.add(componente_detalle_proveedor,  {
                 title: "Confirmación",
                 objeto:d,
-                confirm: async (editado) => {
-                    if(editado.numero >= this.state.detalleCliente.length){
-                        this.state.detalleProveedor.push(editado);
-                    }else{
-                        this.state.detalleProveedor[editado.numero - 1] = d;
-                    }
-                    this.state.detalleProveedor = [...this.state.detalleProveedor];
+                confirm: async () => {
+                    await this.cargarPedido();
                 },
                 cancel: () => {
                 }
         });
     }   
 
-    async onVerificarForwarder(p){
-         this.dialogService.add(ConfirmationDialog, {
-            title: ("¿Estás seguro?"),
-            body: ("¿Ya consiguio el forwarder?"),
+    async onVerificarForwarder(ev) {
+        const nuevoValor = ev.target.checked; 
+        this.dialogService.add(ConfirmationDialog, {
+            title: _t("¿Estás seguro?"),
+            body: _t("¿Ya consiguió el forwarder?"),
             confirm: async () => {
-                forwarder = true;
+                this.state.forwarder = true;
             },
             cancel: () => {
-                forwarder = false;
-                return;
+                this.state.forwarder = false;
             },
         });
+        ev.target.checked = this.state.forwarder;
     }
     
     async onCambiarCotizacion (){

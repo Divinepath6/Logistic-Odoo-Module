@@ -33,13 +33,15 @@ class rastreo_bodega_cliente(models.Model):
         pedido = self.env['rastreo.pedido'].browse(pedido_id)
         if not pedido.exists():
             raise UserError("El pedido indicado no existe.")
+
+        if not pedido.sale_order_id:
+            raise UserError("El pedido no tiene una cotización de Odoo vinculada.")
+
         bodega_cliente = self.search([('pedido_id', '=', pedido_id)], limit=1)
 
         with self.env.cr.savepoint():
             if bodega_cliente:
-                bodega_cliente.write({
-                    'ubicacion': ubicacion or ''
-                })
+                bodega_cliente.write({'ubicacion': ubicacion or ''})
                 bodega_cliente.bodegas_ids.unlink()
             else:
                 bodega_cliente = self.create({
@@ -48,7 +50,18 @@ class rastreo_bodega_cliente(models.Model):
                 })
 
             Bodega = self.env['rastreo.bodega']
+            racks_info = []
             for b in bodegas:
+                rack_id = int(b.get('rack_id')) if b.get('rack_id') else False
+                if not rack_id:
+                    raise UserError("Cada bodega debe tener un rack asociado.")
+
+                rack = self.env['rastreo.rack_detalle'].browse(rack_id)
+                if not rack.exists() or not rack.producto_id:
+                    raise UserError(
+                        f"El rack {rack_id} no existe o no tiene producto de inventario."
+                    )
+
                 Bodega.create({
                     'bodega_cliente_id': bodega_cliente.id,
                     'descripcion': b.get('descripcion') or '',
@@ -57,20 +70,64 @@ class rastreo_bodega_cliente(models.Model):
                     'largo': float(b.get('largo') or 0.0),
                     'niveles': int(b.get('niveles') or 0),
                     'costoRack': float(b.get('costoRack') or 0.0),
-                    'rack_id': int(b.get('rack_id')) if b.get('rack_id') else False,
-                    'separacion_arriba' : int(b.get('separacion_arriba') or 30),
-                    'separacion_abajo' : int(b.get('separacion_abajo') or 30),
-                    'separacion_izquierda' : int(b.get('separacion_izquierda') or 30),
-                    'separacion_derecha' : int(b.get('separacion_derecha') or 30),
-                    'racks_ocupados': int(b.get('racks_ocupados') or 0)
+                    'rack_id': rack.id,
+                    'separacion_arriba': int(b.get('separacion_arriba') or 30),
+                    'separacion_abajo': int(b.get('separacion_abajo') or 30),
+                    'separacion_izquierda': int(b.get('separacion_izquierda') or 30),
+                    'separacion_derecha': int(b.get('separacion_derecha') or 30),
+                    'racks_ocupados': int(b.get('racks_ocupados') or 0),
+                })
+
+                racks_info.append({
+                    'rack': rack,
+                    'costo': float(b.get('costoRack') or 0.0),
+                    'cantidad': int(b.get('racks_ocupados') or 0),
+                    'numero': b.get('numero_bodega') or '',
+                })
+
+            sale = pedido.sale_order_id
+            lineas_vals = []
+            for info in racks_info:
+                lineas_vals.append((0, 0, {
+                    'product_id': info['rack'].producto_id.id,
+                    'product_uom_qty': info['cantidad'] or 1,
+                    'price_unit': info['costo'],
+                    'name': info['rack'].nombre or info['rack'].producto_id.name,
+                }))
+
+            sale.write({
+                'order_line': [(5, 0, 0)] + lineas_vals, 
+                'partner_id': pedido.cliente_id.id,
+            })
+
+            detalle = self.env['rastreo.cotizacion_detalle']
+            detalle.search([('pedido_id', '=', pedido_id)]).unlink()
+
+            currency_id = sale.currency_id.id or self.env.company.currency_id.id
+            for linea in sale.order_line:
+                if linea.display_type:
+                    continue
+                rack = self.env['rastreo.rack_detalle'].search(
+                    [('producto_id', '=', linea.product_id.id)],
+                    order='id desc', limit=1,
+                )
+                detalle.create({
+                    'numero': len(pedido.detalle_cotizacion_ids) + 1,
+                    'costo_rack': linea.price_unit,
+                    'rack_id': rack.id if rack else False,
+                    'currency_id': currency_id,
+                    'cantidad_racks': int(linea.product_uom_qty),
+                    'pedido_id': pedido_id,
+                    'sale_order_line_id': linea.id,
                 })
 
         return {
-            'id':                pedido.id,
-            'numero_guia':       pedido.numero_guia,
+            'id': pedido.id,
+            'numero_guia': pedido.numero_guia,
             'bodega_cliente_id': bodega_cliente.id,
+            'sale_order_id': pedido.sale_order_id.id,
+            'sale_order_name': pedido.sale_order_id.name,
         }
-
 
 
     @api.model

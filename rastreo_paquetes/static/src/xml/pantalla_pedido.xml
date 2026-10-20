@@ -81,10 +81,10 @@
                                 <div class="odoo-field">
                                     <label class="odoo-label" for="forwarder">Forwarder</label>
                                     <input type="checkbox"
-                                           id="forwarder"
-                                           class="odoo-input"
-                                           t-att-value="state.forwarder or ''"
-                                           t-on-change="(ev) => this.onVerificarForwarder()"/>
+                                        id="forwarder"
+                                        class="odoo-input"
+                                        t-att-checked="state.forwarder"
+                                        t-on-change="(ev) => this.onVerificarForwarder(ev)"/>
                                 </div>
                             </div>
 
@@ -223,11 +223,11 @@
                             <span class="odoo-result-label">Contrato Proveedor</span>
                             <span>
                                 <t t-if="state.pdfContratoProveedor">
-                                    <span class="text-muted">En el sistema</span> 
+                                    <span> <strong>En el sistema</strong> </span> 
                                 <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
-                                    <span class="text-muted">No cargado</span>
+                                    <span class="text-muted">No cargado </span>
                                 </t>
                                     <button type="button"
                                         class="odoo-btn odoo-btn-primary"
@@ -240,14 +240,14 @@
 
                         <!-- Factura Proveedor -->
                         <div class="odoo-result-row">
-                            <span class="odoo-result-label">Factura Proveedor</span>
+                            <span class="odoo-result-label">Factura Proveedor </span>
                             <span>
                                 <t t-if="state.pdfFacturaProveedor">
-                                    <span class="text-muted">En el sistema</span> 
+                                    <span> <strong>En el sistema</strong> </span> 
                                 <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
-                                    <span class="text-muted">No cargado</span>
+                                    <span class="text-muted">No cargado </span>
                                 </t>
                                     <button type="button"
                                         class="odoo-btn odoo-btn-primary"
@@ -263,11 +263,11 @@
                             <span class="odoo-result-label">ETD</span>
                             <span>
                                 <t t-if="state.pdfETD">
-                                    <span class="text-muted">En el sistema</span> 
+                                    <span> <strong>En el sistema</strong> </span> 
                                 <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
-                                    <span class="text-muted">No cargado</span>
+                                    <span class="text-muted">No cargado </span>
                                 </t>
                                     <button type="button"
                                         class="odoo-btn odoo-btn-primary"
@@ -282,11 +282,11 @@
                             <span class="odoo-result-label">ETA</span>
                             <span>
                                 <t t-if="state.pdfETA">
-                                <span class="text-muted">En el sistema</span> 
+                                <span> <strong>En el sistema</strong> </span> 
                                 <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
-                                    <span class="text-muted">No cargado</span>
+                                    <span class="text-muted">No cargado </span>
                                 </t>
                                 <button type="button"
                                     class="odoo-btn odoo-btn-primary"
@@ -301,11 +301,11 @@
                             <span class="odoo-result-label"> BL </span>
                             <span>
                                 <t t-if="state.pdfBL">
-                                    <span class="text-muted">En el sistema</span> 
+                                    <span> <strong>En el sistema</strong> </span> 
                                     <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
-                                    <span class="text-muted">No cargado</span>
+                                    <span class="text-muted">No cargado </span>
                                 </t>
                                 <button type="button"
                                     class="odoo-btn odoo-btn-primary"
@@ -319,11 +319,11 @@
                             <span class="odoo-result-label"> PL </span>
                             <span>
                                 <t t-if="state.pdfPL">
-                                    <span class="text-muted">En el sistema</span> 
+                                    <span> <strong>En el sistema</strong> </span> 
                                     <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
-                                    <span class="text-muted">No cargado</span>
+                                    <span class="text-muted">No cargado </span>
                                 </t>
                                 <button type="button"
                                         class="odoo-btn odoo-btn-primary"
@@ -337,11 +337,11 @@
                             <span class="odoo-result-label"> invoice </span>
                             <span>
                                 <t t-if="state.pdfInvoice">
-                                    <span class="text-muted">En el sistema</span> 
+                                    <span> <strong>En el sistema</strong> </span> 
                                     <i class="oi" data-icon="check"/>
                                 </t>
                                 <t t-else="">
-                                    <span class="text-muted">No cargado</span>
+                                    <span class="text-muted">No cargado </span>
                                 </t>
                                 <button type="button"
                                     class="odoo-btn odoo-btn-primary"
@@ -480,8 +480,8 @@
                             <t t-if="state.actualizaciones and state.actualizaciones.length">
                                 <tr t-foreach="state.actualizaciones" t-as="act" t-key="act.id">
                                     <td><t t-esc="act.numero_actualizacion"/></td>
-                                    <td><t t-esc="act.fecha_actualizacion"/></td>
-                                    <td><t t-esc="act.actualizacion_texto"/></td>
+                                    <td><t t-esc="act.fecha"/></td>
+                                    <td><t t-esc="act.texto"/></td>
                                 </tr>
                             </t>
                             <t t-else="">

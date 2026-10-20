@@ -8,6 +8,16 @@ class rastreo_paquetes(models.Model):
     _description = 'Clase principal del modulo'
     #_inherit = ['mail.thread', 'mail.activity.mixin']
     numero_guia = fields.Char(string='Número de guía o cotización')
+    
+    sale_order_id = fields.Many2one(
+        'sale.order',
+        string='Cotización de Odoo',
+        ondelete='set null',
+    )
+    origen_cotizacion = fields.Selection([
+        ('manual', 'Manual (bodegas del módulo)'),
+        ('sale_order', 'Desde cotización de Odoo'),
+    ], string='Origen de la cotización', default='manual')
 
     estado = fields.Selection([
         ('fase_inicial', 'Fase inicial'),
@@ -139,16 +149,27 @@ class rastreo_paquetes(models.Model):
     # MÉTODOS CRUD
     # =============================================================================================================
     @api.model
-    def crear_pedido(self, cliente_id):#cliente_id
+    def crear_pedido(self, cliente_id):
         if not cliente_id:
             raise UserError("El cliente es obligatorio")
         cliente = self.env['res.partner'].browse(cliente_id)
         if not cliente.exists():
             raise UserError("El cliente indicado no existe")
-        
+
         pedido = self.create({
             'cliente_id': cliente_id,
             'estado': 'fase_inicial',
+        })
+
+        cotizacion = self.env['sale.order'].create({
+            'partner_id': cliente_id,
+            'origin': f'Rastreo pedido #{pedido.id}',
+        })
+
+        pedido.write({
+            'sale_order_id': cotizacion.id,
+            'numero_guia': cotizacion.name
+        
         })
 
         self.env['rastreo.pedido_actualizacion'].create({
@@ -157,10 +178,9 @@ class rastreo_paquetes(models.Model):
             'fecha_actualizacion': datetime.now(),
             'actualizacion_texto': 'Fase inicial comenzada',
         })
-        
-        return {'id': pedido.id}
 
-    
+        return {'id': pedido.id, 'sale_order_id': cotizacion.id}
+        
 
     @api.model
     def cambiar_estado(self, pedido_id, estado=None):
@@ -176,6 +196,7 @@ class rastreo_paquetes(models.Model):
             case "produccion":
                 if not pedido.pdf_contrato_proveedor:
                     return {'success': False, 'error': 'Falta el contrato del proveedor para continuar'}
+                
                 siguiente_estado = 'puerto_origen'
             case _:
                 if not siguiente_estado:
@@ -398,6 +419,10 @@ class rastreo_paquetes(models.Model):
                 'rack_nombre': a.rack_id.nombre or 0,
                 'cantidad_racks': a.cantidad_racks or 0,
             })
+
+        aviso = "" #self.crear_aviso(pedido)
+
+
         return {
             'success': True,
             'data': {
@@ -409,11 +434,17 @@ class rastreo_paquetes(models.Model):
                 'total_cliente': pedido.total_cliente or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
                 'numero_contrato': pedido.numero_contrato or 0,
-                
+                'aviso': aviso,
                 # booleanos
                 'forwarder': bool(pedido.forwarder),
                 'bool_contrato_proveedor': bool(pedido.pdf_contrato_proveedor),
                 'bool_factura_proveedor': bool(pedido.pdf_factura_proveedor),
+                'pdf_BL' : bool(pedido.pdf_BL),
+                'pdf_PL': bool(pedido.pdf_PL) ,
+                'pdf_invoice': bool(pedido.pdf_invoice),
+                'pdf_ETD': bool(pedido.pdf_ETD),
+                'pdf_ETA': bool(pedido.pdf_ETA),
+
                 #listas
                 'lista_anticipos_cliente': lista_anticipos_cliente,
                 'lista_anticipos_proveedor': lista_anticipos_proveedor,
@@ -421,7 +452,57 @@ class rastreo_paquetes(models.Model):
                 'detalle_racks': lista_cotizacion_detalle
             }
         }
+    
+    def crear_aviso(self, id):
+        aviso = ""
+        pedido = self.browse(id)
+        count_cliente = self.env['rastreo.detalle_cliente'].search_count(
+            [('pedido_id', '=', id)],
+        )
+        count_proveedor = self.env['rastreo.detalle_proveedor'].search_count(
+            [('pedido_id', '=', id)],
+        )
+        
+        if pedido.estado == 'produccion':
+            if count_cliente < 1:
+                aviso += "Anticipo de cliente "
+            if count_proveedor < 1:
+                aviso += "Anticipo a proveedor "
+            if not pedido.numero_contrato:
+                aviso += "Indicar número de contrato "
+            if not pedido.pdf_contrato_proveedor:
+                aviso += "Contrato del proveedor "
 
+        elif pedido.estado == 'puerto_origen':
+            if count_cliente < 2:
+                aviso += "Anticipo de cliente "
+            if count_proveedor< 2:
+                aviso += "Anticipo a proveedor "
+            if not pedido.forwarder:
+                aviso += "Conseguir Forwarder "
+            if not pedido.pdf_ETD:
+                aviso += "Conseguir ETD "
+            if not pedido.pdf_ETA:
+                aviso += "Conseguir ETA "
+
+        elif pedido.estado == 'Embarcado':
+            if not pedido.pdf_BL:
+                aviso += "Subir BL "
+            if not pedido.pdf_PL:
+                aviso += "Subir PL"
+            if not pedido.pdf_invoice:
+                aviso += "Subir Invoice "
+
+        elif pedido.estado == 'Descargado':
+            if pedido.numero_contrato:
+                aviso += "Numero de contrato / Contrato"
+
+        elif pedido.estado == 'Aduana':  
+            if pedido.numero_contrato:
+                aviso += "Numero de contrato / Contrato"  
+
+        return aviso
+    
     @api.model
     def listar_pedidos(self, termino_busqueda=None):
         domain = []
@@ -446,7 +527,8 @@ class rastreo_paquetes(models.Model):
                 pid = a['pedido_id'][0]
                 if pid not in ultimas_por_pedido:
                     ultimas_por_pedido[pid] = a
-
+        
+        aviso = ""
         lista = []
         for p in pedidos:
             ultima = ultimas_por_pedido.get(p.id)
@@ -460,6 +542,7 @@ class rastreo_paquetes(models.Model):
                     'fecha': ultima['fecha_actualizacion'] if ultima else '',
                     'texto': ultima['actualizacion_texto'] if ultima else '',
                 },
+                'aviso': aviso,
             })
         return lista    
 
@@ -523,8 +606,6 @@ class rastreo_paquetes(models.Model):
 
 
 
-
-
     @api.model
     def guardar_detalle_cotizacion(self, pedido_id):
         pedido = self.browse(pedido_id)
@@ -582,17 +663,28 @@ class rastreo_paquetes(models.Model):
         lista_productos = []
 
         for linea in cotizacion.order_line:
-            #d = [('producto_id.id', '=', linea.product_id.id, )]
-            #rack = self.env['ratreo.rack_detalle'].search(d, order='id desc',limit=1)
-            lista_productos.append({
-                'id': linea.product_id.id,
-                'nombre': linea.product_id.name,
-                'codigo': linea.product_id.default_code or '',
-                'precio': linea.price_unit,
-                'unidad': linea.product_uom_id.name, 
-                'cantidad': linea.product_uom_qty,
-                'subtotal': linea.price_subtotal
-            })
+            d = [('producto_id.id', '=', linea.product_id.id, )]
+            rack = self.env['ratreo.rack_detalle'].search(d, order='id desc',limit=1)
+            if rack.exists():
+                lista_productos.append({
+                    'id': linea.product_id.id,
+                    'nombre': linea.product_id.name,
+                    'codigo': rack.codigo or '',
+                    'precio': linea.price_unit,
+                    'unidad': linea.product_uom_id.name, 
+                    'cantidad': linea.product_uom_qty,
+                    'subtotal': linea.price_subtotal
+                })   
+            else:             
+                lista_productos.append({
+                    'id': linea.product_id.id,
+                    'nombre': linea.product_id.name,
+                    'codigo': linea.product_id.default_code or '',
+                    'precio': linea.price_unit,
+                    'unidad': linea.product_uom_id.name, 
+                    'cantidad': linea.product_uom_qty,
+                    'subtotal': linea.price_subtotal
+                })
 
         return {
             'success': True,

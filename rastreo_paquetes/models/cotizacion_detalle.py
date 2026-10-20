@@ -17,6 +17,11 @@ class rastreo_cotizacion_detalle(models.Model):
         required=True,
         ondelete='cascade',
     )
+    sale_order_line_id = fields.Many2one(
+        'sale.order.line',
+        string='Línea de cotización de Odoo',
+        ondelete='set null',
+    )
     currency_id = fields.Many2one(
         'res.currency', 
         string='Moneda', 
