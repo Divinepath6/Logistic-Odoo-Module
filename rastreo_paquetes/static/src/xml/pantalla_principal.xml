@@ -17,12 +17,12 @@
                 <button type="button"
                         class="odoo-btn odoo-btn-primary"
                         t-on-click="onClickCrearPedido">
-                    <i class="PLUS_IN_BOX"/> Crear Pedido
+                    <i class="fa fa-plus-circle"/> Crear Cotización
                 </button>
                 <button type="button"
                         class="odoo-btn odoo-btn-primary"
                         t-on-click="onclickEditarRacks">
-                    <i class="COG"/> Editar Racks
+                    <i class="fa fa-list"/> Editar Racks
                 </button>
             </div>
 

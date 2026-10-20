@@ -86,6 +86,7 @@
     box-shadow: var(--odoo-shadow-sm);
 }
 
+
 .odoo-screen-header h2 {
     margin: 0;
     font-size: 20px;
@@ -307,6 +308,19 @@
     flex-direction: column;
     gap: 4px;
     margin-bottom: 10px;
+}
+.odoo-field-croquis {
+    display: grid;
+    grid-template-columns: 1fr 1fr; 
+    align-items: center; 
+    gap: 15px; 
+    margin-bottom: 8px; /* Un poco menos de margen para que sea más compacto */
+}
+.odoo-label-croquis {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--odoo-text-muted);
+    margin-bottom: 0; /* Quitamos el margen inferior para que quede alineado */
 }
 
 .odoo-label {

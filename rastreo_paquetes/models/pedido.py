@@ -664,12 +664,12 @@ class rastreo_paquetes(models.Model):
 
         for linea in cotizacion.order_line:
             d = [('producto_id.id', '=', linea.product_id.id, )]
-            rack = self.env['ratreo.rack_detalle'].search(d, order='id desc',limit=1)
+            rack = self.env['rastreo.rack_detalle'].search(d, order='id desc',limit=1)
             if rack.exists():
                 lista_productos.append({
                     'id': linea.product_id.id,
                     'nombre': linea.product_id.name,
-                    'codigo': rack.codigo or '',
+                    'codigo': rack.clave or '',
                     'precio': linea.price_unit,
                     'unidad': linea.product_uom_id.name, 
                     'cantidad': linea.product_uom_qty,

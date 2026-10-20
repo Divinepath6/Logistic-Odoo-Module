@@ -132,8 +132,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: 14px;
+    margin-bottom: 20px;
 }
 .o_creacion_croquis .cc-title {
     flex: 1;
@@ -148,7 +148,7 @@
 .o_creacion_croquis .cc-body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-    gap: 20px;
+    gap: 16px;
     align-items: start;
     height: calc(100vh - 160px);
     min-height: 520px;
@@ -355,4 +355,30 @@
 .odoo-card.mt-3 {
     margin-top: 20px !important;
     width: 100%;
+}
+
+
+.cc-card-title.cc-title-actions {
+    display: flex;
+    align-items: center;
+    width: 100%; /* Asegura que ocupe todo el ancho */
+    justify-content: space-between; /* Empuja los botones a la derecha */
+    gap: 0px; /* Espacio mínimo entre el texto y los botones */
+}
+
+/* El texto toma el espacio disponible a la izquierda */
+.cc-card-title.cc-title-actions .cc-title-text {
+    flex: 1; 
+    display: flex;
+    align-items: center;
+    gap: 0px; /* Mantiene la separación del punto y el texto */
+}
+
+/* Agrupamos los botones y los separamos entre sí */
+.cc-card-title.cc-title-actions .cc-title-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px; /* <--- AQUÍ CONTROLAS LA SEPARACIÓN ENTRE LOS BOTONES */
+    justify-content: flex-end; /* Se pegan hacia su propio lado izquierdo (que visualmente es la mitad derecha de la tarjeta) */
+    flex-shrink: 0; /* Evita que los botones se aplasten si el texto es muy largo */
 }

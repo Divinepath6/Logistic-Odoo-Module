@@ -38,7 +38,7 @@
                    
                     <div class="odoo-card odoo-card-accent">
                         <div class="odoo-card-title">
-                            <i class="fa fa-info-circle"/> Detalle de el pedido:
+                            <i class="fa fa-info-circle"/> Detalle general de el pedido:
                         </div>
 
                         <div class="row g-3">
@@ -53,8 +53,8 @@
                                 </div>
                             </div>
 
-                            <button class="btn btn-primary" t-on-click="() => this.onCambiarCotizacion()">
-                                Buscar Cotización
+                            <button  class="odoo-btn odoo-btn-ghost" t-on-click="() => this.onCambiarCotizacion()">
+                                 <i class="fa fa-exchange"/>  Buscar Cotización
                             </button>
                             <div class="col-md-6">
                                 <div class="odoo-field">
@@ -162,10 +162,10 @@
                                     <t t-if="state.detalleCliente and state.detalleCliente.length">
                                         <tr t-foreach="state.detalleCliente" t-as="d" t-key="d.id">
                                             <td><t t-esc="d.numero or ''"/></td>
-                                            <td><t t-esc="d.fechaEdicion or ''"/></td>
+                                            <td><t t-esc="d.fechaAnticipo or ''"/></td>
                                             <td class="text-end"><t t-esc="d.cantidadAnticipo or 0"/></td>
                                             <td class="text-end"><t t-esc="d.precioDolar or 0"/></td>
-                                             <td class="text-end"><t t-esc="d.PDFAnticipo or 'false'"/></td>
+                                             <td class="text-end"><t t-esc="d.PDFAnticipo or 'No cargado'"/></td>
                                             <td class="text-center">
                                                 <button class="odoo-btn odoo-btn-sm odoo-btn-cyan"
                                                         t-on-click="() => this.onEditarDetalleCliente(d)">
@@ -377,7 +377,7 @@
                                             <td><t t-esc="d.fechaAnticipo or ''"/></td>
                                             <td class="text-end"><t t-esc="d.cantidadAnticipo or 0"/></td>
                                             <td class="text-end"><t t-esc="d.precioDolar or 0"/></td>
-                                             <td class="text-end"><t t-esc="d.PDFAnticipo or 'false'"/></td>
+                                             <td class="text-end"><t t-esc="d.PDFAnticipo or 'No cargado'"/></td>
                                             <td class="text-center">
                                                 <button class="odoo-btn odoo-btn-sm odoo-btn-cyan"
                                                         t-on-click="() => this.onEditarDetalleProveedor(d)">

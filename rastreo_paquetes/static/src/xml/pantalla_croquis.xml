@@ -38,22 +38,25 @@
                 <div class="cc-col-left">
 
                     <div class="cc-card">
-                        <h3 class="cc-card-title">
+                        <h3 class="cc-card-title cc-title-actions">
                             <span class="cc-badge-dot"></span>
-                            Cotización: <span class="odoo-highlight"><t t-esc="state.clienteNombre"/></span>
-                            — Bodega <t t-esc="state.bodegaIndex + 1"/>
-                            <button class="odoo-btn odoo-btn-primary odoo-btn-sm"
-                                    t-on-click="onCalcular">
-                                <i class="fa fa-refresh"/> Recalcular
-                            </button>
-                            <button class="odoo-btn odoo-btn-primary odoo-btn-sm"
-                                    t-on-click="onClickGuardar">
-                                <i class="fa fa-save"/> Guardar
-                            </button>
+                            <div class="cc-title-text">
+                                Cotización: <span class="odoo-highlight"><t t-esc=" state.clienteNombre "/></span>
+                                — Bodega <t t-esc="state.bodegaIndex + 1"/>
+                            </div>
+                            
+                            <div class="cc-title-buttons">
+                                <button class="odoo-btn odoo-btn-primary odoo-btn-sm" t-on-click="onCalcular">
+                                    <i class="fa fa-refresh"/> Recalcular
+                                </button>
+                                <button class="odoo-btn odoo-btn-primary odoo-btn-sm" t-on-click="onClickGuardar">
+                                    <i class="fa fa-save"/> Guardar
+                                </button>
+                            </div>
                         </h3>
 
-                        <div class="odoo-field">
-                            <label class="odoo-label">Elegir rack:</label>
+                        <div class="odoo-field-croquis">
+                            <label class="odoo-label-croquis">Elegir rack:</label>
                             <select class="odoo-select"
                                 t-on-change="onRackChange">
                             <option value="">— Selecciona un rack —</option>
@@ -65,14 +68,14 @@
                         </select>
                         </div>
 
-                        <div class="odoo-field">
-                            <label class="odoo-label">Elegir costo del rack:</label>
+                        <div class="odoo-field-croquis">
+                            <label class="odoo-label-croquis">Elegir costo del rack:</label>
                             <input type="number" class="odoo-input"
                                    placeholder="$0.00"
                                    t-model="state.rackSeleccionadoCosto"
                                    t-on-change="onCalcular"/>
                         </div>
-                        <div class="odoo-field">
+                        <div class="odoo-field-croquis">
                             <label for="almacenaje" class="form-label fw-bold"> Almacenaje: </label>
                             <span type="number"
                                     placeholder="0.00"
@@ -86,58 +89,64 @@
                             Bodega
                         </h3>
 
-                        <div class="odoo-field">
-                            <label class="odoo-label">Altura (Niveles):</label>
+                        <div class="odoo-field-croquis">
+                            <label class="odoo-label-croquis">Altura (Niveles):</label>
                             <input type="number" class="odoo-input"
                                    placeholder="Niveles"
                                    t-model="state.alturaBodega"
                                    t-on-change="onCalcular"/>
                         </div>
 
-                        <div class="odoo-field">
-                            <label class="odoo-label">Ancho (M):</label>
+                        <div class="odoo-field-croquis">
+                            <label class="odoo-label-croquis">Ancho (M):</label>
                             <input type="number" class="odoo-input"
                                    placeholder="m"
                                    t-model="state.anchoBodega"
                                    t-on-change="onCalcular"/>
                         </div>
 
-                        <div class="odoo-field">
-                            <label class="odoo-label">Largo (M):</label>
+                        <div class="odoo-field-croquis">
+                            <label class="odoo-label-croquis">Largo (M):</label>
                             <input type="number" class="odoo-input"
                                    placeholder="m"
                                    t-model="state.largoBodega"
                                    t-on-change="onCalcular"/>
                         </div>
-
-                        <div class="odoo-field">
-                            <label class="odoo-label">Separación Arriba (CM):</label>
-                            <input type="number" class="odoo-input"
-                                   t-model="state.sepParedArr"
-                                   t-on-change="onCalcular"/>
-                        </div>
-
-                        <div class="odoo-field">
-                            <label class="odoo-label">Separación Abajo (CM):</label>
-                            <input type="number" class="odoo-input"
-                                   t-model="state.sepParedAba"
-                                   t-on-change="onCalcular"/>
-                        </div>
-
-                        <div class="odoo-field">
-                            <label class="odoo-label">Separación Izquierda (CM):</label>
-                            <input type="number" class="odoo-input"
-                                   t-model="state.sepParedIzq"
-                                   t-on-change="onCalcular"/>
-                        </div>
-
-                         <div class="odoo-field">
-                            <label class="odoo-label">Separación Derecha (CM):</label>
-                            <input type="number" class="odoo-input"
-                                   t-model="state.sepParedDer"
-                                   t-on-change="onCalcular"/>
-                        </div>
                     
+                        <div class="cc-card">
+                            <h3 class="cc-card-title">
+                                <span class="cc-badge-dot"></span>
+                                Separaciones:
+                            </h3>
+
+                            <div class="odoo-field-croquis">
+                                <label class="odoo-label-croquis">Separación Arriba (CM):</label>
+                                <input type="number" class="odoo-input"
+                                    t-model="state.sepParedArr"
+                                    t-on-change="onCalcular"/>
+                            </div>
+
+                            <div class="odoo-field-croquis">
+                                <label class="odoo-label-croquis">Separación Abajo (CM):</label>
+                                <input type="number" class="odoo-input"
+                                    t-model="state.sepParedAba"
+                                    t-on-change="onCalcular"/>
+                            </div>
+
+                            <div class="odoo-field-croquis">
+                                <label class="odoo-label-croquis">Separación Izquierda (CM):</label>
+                                <input type="number" class="odoo-input"
+                                    t-model="state.sepParedIzq"
+                                    t-on-change="onCalcular"/>
+                            </div>
+
+                            <div class="odoo-field-croquis">
+                                <label class="odoo-label-croquis">Separación Derecha (CM):</label>
+                                <input type="number" class="odoo-input"
+                                    t-model="state.sepParedDer"
+                                    t-on-change="onCalcular"/>
+                            </div>
+                        </div>
 
 
                         <div class="odoo-field">
@@ -195,18 +204,12 @@
                             <span class="odoo-result-value" t-esc="state.almacenajeTonelada or '0.00'"/>
                         </div>
                     </div>
-
-                    <!-- Botón guardar -->
-                    <button class="odoo-btn odoo-btn-primary odoo-btn-block"
-                            t-on-click="onClickGuardar"
-                            t-att-disabled="state.cargando">
-                        <t t-if="state.cargando">
-                            <i class="fa fa-spinner fa-spin"/> Guardando...
-                        </t>
-                        <t t-else="">
-                            <i class="fa fa-save"/> Guardar
-                        </t>
-                    </button>
+                    <div class="cc-card">
+                        <h3 class="cc-card-title">
+                            <span class="cc-badge-dot"></span>
+                            __
+                        </h3>
+                    </div>
                 </div>
 
                 <div class="cc-col-right">
