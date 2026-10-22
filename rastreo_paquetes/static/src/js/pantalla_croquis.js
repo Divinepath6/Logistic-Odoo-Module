@@ -56,12 +56,12 @@ export class PantallaCroquis extends Component {
 
             anchoRack: 0,     // mm
             largoRack: 0,  // mm
-            costoEstimado: "$0.00",
+            costoEstimado: 0.0,
             almacenajeTonelada: 0.0,
             porAncho: 0,      
             porLargo: 0, 
             
-            costoEstimadoTotal: "$0.00",
+            costoEstimadoTotal: 0.0,
 
             espacioSobranteVer: 0,
             espacioSobranteHor: 0, 
@@ -447,16 +447,16 @@ export class PantallaCroquis extends Component {
 
         this.state.racksOcupados  = porAncho * porLargo * altoBodega;
         this.state.costoEstimado  = (costo * this.state.racksOcupados);
-        this.state.almacenajeTonelada = (this.state.racksOcupados * this.state.rackSeleccionadoAlmacenaje).toFixed(3);
+        this.state.almacenajeTonelada = (this.state.racksOcupados * Number(this.state.rackSeleccionadoAlmacenaje));
 
         for(let i = 0;i<this.state.detalleRacks.length; i++){
             const r = this.state.detalleRacks[i]
-            this.state.racksOcupados = this.state.racksOcupados + r.cantidadRacks;
-            this.state.costoEstimado = this.state.costoEstimado + r.costoTotal;
-            this.state.almacenajeTonelada = this.state.almacenajeTonelada + r.almacenajeTotal
+            this.state.racksOcupados = Number(this.state.racksOcupados) + r.cantidadRacks;
+            this.state.costoEstimado = Number(this.state.costoEstimado) + r.costoTotal;
+            this.state.almacenajeTonelada = Number(this.state.almacenajeTonelada) + r.almacenajeTotal
         }
         this.state.costoEstimado  = `$${(this.state.costoEstimado).toFixed(2)}`;
-        //this.state.almacenajeTonelada = (this.state.almacenajeTonelada).toFixed(3);
+        this.state.almacenajeTonelada = (this.state.almacenajeTonelada).toFixed(3);
         
         this.state.anchoRack      = anchoRackM;   // m
         this.state.largoRack      = largoRackM;   // m

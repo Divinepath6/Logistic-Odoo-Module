@@ -160,14 +160,10 @@
                     <div class="cc-card">
                             <h3 class="cc-card-title">
                                 <span class="cc-badge-dot"></span>
-                                Detalle Adicional:
+                                <i class="fa fa-cubes"/> Detalle Adicional:
                             </h3>
 
                         <div class="odoo-card">
-                            <div class="odoo-card-title">
-                                <i class="fa fa-cubes"/> Detalle de Racks
-                            </div>
-
                             <div class="table-responsive">
                                 <table class="table table-sm align-middle">
                                     <thead>

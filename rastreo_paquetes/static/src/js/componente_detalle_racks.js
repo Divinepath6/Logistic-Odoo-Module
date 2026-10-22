@@ -106,7 +106,7 @@ export class componente_detalle_racks extends Component{
                 precioUnitario: this.state.precioUnitario,
                 cantidadRacks: this.state.cantidadRacks,
                 costoTotal: parseFloat(this.state.costoTotal),
-                almacenajeTotal: this.state.almacenajeTotal,
+                almacenajeTotal: parseFloat(this.state.almacenajeTotal),
             };
         }else{
             rack = {
@@ -115,10 +115,10 @@ export class componente_detalle_racks extends Component{
                 rackNombre: this.state.productoNombre,
                 rackId: 0,
                 productoId: this.state.productoId,
-                precioUnitario: this.state.precioUnitario,
+                precioUnitario: parseFloat(this.state.precioUnitario),
                 cantidadRacks: this.state.cantidadRacks,
                 costoTotal: parseFloat(this.state.costoTotal),
-                almacenajeTotal: this.state.almacenajeTotal,
+                almacenajeTotal: parseFloat(this.state.almacenajeTotal),
             };
         }
   
