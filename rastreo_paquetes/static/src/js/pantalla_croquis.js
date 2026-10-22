@@ -6,9 +6,10 @@ import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_d
 import { _t } from "@web/core/l10n/translation";
 import { CreacionCroquis } from "./creacion_croquis";
 import { calcularLayoutCroquis } from "./funcion_calcular_layout";
+import { componente_detalle_racks } from "./componente_detalle_racks"
 
 export class PantallaCroquis extends Component {
-    static components = { CreacionCroquis };
+    static components = { CreacionCroquis, componente_detalle_racks };
     static template = "rastreo_paquetes.pantalla_croquis";
     setup() {
         this.action = useService("action");
@@ -27,6 +28,7 @@ export class PantallaCroquis extends Component {
             bodegas: [],
             clienteNombre: "",
             ubicacion: "",
+            detalleRacks: [],
             // Valores "de la bodega"
                   
             
@@ -55,7 +57,7 @@ export class PantallaCroquis extends Component {
             anchoRack: 0,     // mm
             largoRack: 0,  // mm
             costoEstimado: "$0.00",
-            almacenajeTonelada: "$0.00",
+            almacenajeTonelada: 0.0,
             porAncho: 0,      
             porLargo: 0, 
             
@@ -352,6 +354,37 @@ export class PantallaCroquis extends Component {
         }, 500);
     }
 
+    async onEditarDetalleRacks(r) {     
+        const fila = r || {
+            numero: this.state.detalleRacks.length + 1,
+            clave: '',
+            rack_nombre: '',
+            rack_id: false,
+            costo_rack: 0,
+            cantidad_racks: 1,
+            total:0,
+            almacenajeTotal: 0,
+        };
+        fila.pedidoId = this.state.pedidoId;
+        this.dialogService.add(componente_detalle_racks,  {
+                title: fila.numero === 0 ? _t("Nuevo Rack") : _t("Editar Rack"),
+                objeto: fila,
+                confirm: async (rEditado) => {
+                    this.state.cambioRacks = true;
+                    if(rEditado.numero == 0){
+                        rEditado.numero = this.state.detalleRacks.length;
+                        this.state.detalleRacks.push(rEditado);
+                    }else{
+                        this.state.detalleRacks[rEditado.numero - 1] = rEditado;
+                    }
+                    this.state.detalleRacks = [...this.state.detalleRacks];
+                    console.log("racks: ", this.state.detalleRacks)
+                },
+                cancel: () => {
+                }
+        });
+    }
+
     calcularRacks() {
         this.guardarBodegaActual()
         const idx = parseInt(this.state.rackSeleccionadoIndex, 10);
@@ -413,9 +446,18 @@ export class PantallaCroquis extends Component {
 
 
         this.state.racksOcupados  = porAncho * porLargo * altoBodega;
-        this.state.costoEstimado  = `$${(costo * this.state.racksOcupados).toFixed(2)}`;
-        this.state.almacenajeTonelada = (this.state.racksOcupados * this.state.rackSeleccionadoAlmacenaje).toFixed(2);
+        this.state.costoEstimado  = (costo * this.state.racksOcupados);
+        this.state.almacenajeTonelada = (this.state.racksOcupados * this.state.rackSeleccionadoAlmacenaje).toFixed(3);
 
+        for(let i = 0;i<this.state.detalleRacks.length; i++){
+            const r = this.state.detalleRacks[i]
+            this.state.racksOcupados = this.state.racksOcupados + r.cantidadRacks;
+            this.state.costoEstimado = this.state.costoEstimado + r.costoTotal;
+            this.state.almacenajeTonelada = this.state.almacenajeTonelada + r.almacenajeTotal
+        }
+        this.state.costoEstimado  = `$${(this.state.costoEstimado).toFixed(2)}`;
+        //this.state.almacenajeTonelada = (this.state.almacenajeTonelada).toFixed(3);
+        
         this.state.anchoRack      = anchoRackM;   // m
         this.state.largoRack      = largoRackM;   // m
         this.state.porAncho       = porAncho;

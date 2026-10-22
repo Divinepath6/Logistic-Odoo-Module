@@ -346,7 +346,7 @@
                                 <button type="button"
                                     class="odoo-btn odoo-btn-primary"
                                     t-on-click=" () => this.verPDF('pdf_invoice')">
-                                    <i class="fa fa-save"/> Editar / Ver
+                                    <i class="fa fa-save"/> Ver
                                 </button>
                             </span>
                         </div>

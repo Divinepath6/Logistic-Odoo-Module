@@ -135,15 +135,31 @@ class rastreo_rack_detalle(models.Model):
             ('name', 'ilike', termino_busqueda),
             ('active', '=', True),
         ]
-        productos = self.env['product.product'].search(domain, limit=100)
-
+        productos = self.env['product.product'].search(domain, limit=30)
         lista = []
         for p in productos:
-            lista.append({
-                'id': p.id,
-                'nombre': p.name,
-                'codigo': p.default_code or '',
-                'precio': p.lst_price,
-                'unidad': p.uom_id.name,
-            })
+            d = [('producto_id.id', '=', p.id, )]
+            rack = self.env['rastreo.rack_detalle'].search(d, order='id desc',limit=1)
+            if rack.exists():
+                lista.append({
+                    'id': p.id,
+                    'nombre': p.name,
+                    'codigo': p.default_code or '',
+                    'precio': p.lst_price,
+                    'unidad': p.uom_id.name,
+                    'rack_nombre': rack.nombre or "",
+                    'rack_existe': True,
+                    'rack_id': rack.id or 0,
+                    'rack_clave': rack.clave or '',
+                    'rack_precio': rack.precio_unitario or 0,
+                    'rack_almacenaje': rack.almacenaje or 0,
+                })
+            else:
+                lista.append({
+                    'id': p.id,
+                    'nombre': p.name,
+                    'codigo': p.default_code or '',
+                    'precio': p.lst_price,
+                    'unidad': p.uom_id.name,
+                })
         return {'data': lista, 'success': True}

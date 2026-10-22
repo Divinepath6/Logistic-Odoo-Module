@@ -214,11 +214,12 @@ export class PantallaPedido extends Component {
     async onEditarDetalleRacks(r) {     
         const fila = r || {
             numero: this.state.detalleRacks.length + 1,
-            clave: '',
-            rack_nombre: '',
-            rack_id: false,
-            costo_rack: 0,
-            cantidad_racks: 1,
+            rackClave: '',
+            rackNombre: '',
+            rackId: false,
+            precioUnitario: 0,
+            cantidadRacks: 1,
+            costoTotal: 0,
         };
         fila.pedidoId = this.state.pedidoId;
         this.dialogService.add(componente_detalle_racks,  {
@@ -333,14 +334,16 @@ export class PantallaPedido extends Component {
                         this.state.detalleRacks = l.map((d,i)=> {
                             return{
                                 clave: d.codigo,
-                                numero: d.codigo,
+                                numero: i + 1,
                                 costo_rack: d.precio, 
-                                rack_id: d.id,
+                                rack_id: d.rack_id,
                                 rack_nombre: d.nombre,
                                 cantidad_racks: d.cantidad,
                                 total: d.subtotal
                             }
                         })
+                        console.log("lista: ", l);
+                        console.log("detalle ",this.state.detalleRacks)
                         this.state.cambioRacks = true; 
                         this.notification.add("Cotización cambiada Exitosamente",{ type: "success" });               
                     }

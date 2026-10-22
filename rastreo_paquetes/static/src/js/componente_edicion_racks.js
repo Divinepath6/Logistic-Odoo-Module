@@ -62,6 +62,7 @@ export class componente_edicion_racks extends Component{
                 this.state.productoNombre = productoNombre;
                 this.state.precioUnitario = productoPrecio;
                 this.state.productoPrecio = productoPrecio;
+
             },
             cancel: () => {
                 console.log("Cancelado");

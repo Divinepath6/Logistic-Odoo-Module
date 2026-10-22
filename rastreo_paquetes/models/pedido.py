@@ -324,18 +324,27 @@ class rastreo_paquetes(models.Model):
                 'forwarder': datos.get('forwarder') or False,
                 'total_cliente': datos.get('total_cliente'),
             })
-            pedido.detalle_cotizacion_ids.unlink()
-            dp = self.env['rastreo.cotizacion_detalle']
             cambio = datos.get('cambio_racks') or False
             if cambio == False:
                 return {
                     'success': True,
                 }
+            dp = self.env['rastreo.cotizacion_detalle']
+
+            pedido.detalle_cotizacion_ids.unlink()
             for d in detalle_pedido:
+                try:
+                    numero_val = int(d.get('numero') or 0)
+                except (ValueError, TypeError):
+                    raise UserError("El número de línea del rack debe ser un entero.")
+                try:
+                    rack_id_val = int(d.get('rack_id') or 0)
+                except (ValueError, TypeError):
+                    rack_id_val = 0
                 dp.create({
-                    'numero': d.get('numero') or '',
+                    'numero': numero_val,
                     'costo_rack': d.get('costo_rack') or '',
-                    'rack_id': int(d.get('rack_id')) or '',
+                    'rack_id': rack_id_val or 0,
                     'cantidad_racks': d.get('cantidad_racks') or '',
                     'pedido_id' : pedido_id        
                 })
@@ -670,6 +679,7 @@ class rastreo_paquetes(models.Model):
                     'id': linea.product_id.id,
                     'nombre': linea.product_id.name,
                     'codigo': rack.clave or '',
+                    'rack_id': rack.id or 0,
                     'precio': linea.price_unit,
                     'unidad': linea.product_uom_id.name, 
                     'cantidad': linea.product_uom_qty,
@@ -680,6 +690,7 @@ class rastreo_paquetes(models.Model):
                     'id': linea.product_id.id,
                     'nombre': linea.product_id.name,
                     'codigo': linea.product_id.default_code or '',
+                    'rack_id': 0,
                     'precio': linea.price_unit,
                     'unidad': linea.product_uom_id.name, 
                     'cantidad': linea.product_uom_qty,

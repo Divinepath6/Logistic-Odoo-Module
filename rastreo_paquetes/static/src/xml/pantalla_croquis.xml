@@ -157,8 +157,62 @@
                                       t-model="state.comentarios"></textarea>
                         </div>
                     </div>
+                    <div class="cc-card">
+                            <h3 class="cc-card-title">
+                                <span class="cc-badge-dot"></span>
+                                Detalle Adicional:
+                            </h3>
 
-                    
+                        <div class="odoo-card">
+                            <div class="odoo-card-title">
+                                <i class="fa fa-cubes"/> Detalle de Racks
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Código</th>
+                                            <th class="text-end">Almacenaje Total</th>
+                                            <th class="text-end">Costo</th>
+                                            <th class="text-end">Cant.</th>
+                                            <th class="text-end">SubTotal</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-if="state.detalleRacks and state.detalleRacks.length">
+                                            <tr t-foreach="state.detalleRacks" t-as="r" t-key="r.id">
+                                                <td><t t-esc="r.rackClave or r.rackNombre or ''"/></td>
+                                                <td class="text-end"><t t-esc="r.almacenajeTotal or 0"/></td>
+                                                <td class="text-end"><t t-esc="r.precioUnitario or 0"/></td>
+                                                <td class="text-end"><t t-esc="r.cantidadRacks or 0"/></td>
+                                                <td class="text-end"><t t-esc="r.costoTotal or 0"/></td>
+                                                <td class="text-end">
+                                                    <button class="odoo-btn odoo-btn-sm odoo-btn-ghost"
+                                                            t-on-click="() => this.onEditarDetalleRacks(r)">
+                                                        <i class="fa fa-pencil"/>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <t t-else="">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">
+                                                    Sin racks registrados
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                    t-on-click="() => this.onEditarDetalleRacks()">
+                                <i class="fa fa-plus"/> Agregar
+                            </button>
+                        </div>
+
+                    </div>
                     <div class="cc-card">
                         <h3 class="cc-card-title">
                             <span class="cc-badge-dot"></span>

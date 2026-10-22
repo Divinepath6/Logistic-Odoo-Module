@@ -14,7 +14,7 @@
                             <span type="text" 
                                    id="clave" 
                                    class="form-control" 
-                                   t-esc="state.productoId"/>
+                                   t-esc="state.rackClave"/>
                         </div>
                         <div class="col-md-6">
                             <label for="nombre" class="form-label fw-bold">Nombre del Rack:</label>
@@ -46,20 +46,35 @@
                                    t-on-change="onCambiarCantidad"
                                    />
                         </div>
-
-                         <div class="col-md-6">
-                            <label for="total" class="form-label fw-bold">Total:</label>
+                        <div class="col-md-6">
+                            <label for="almacenaje" class="form-label fw-bold"> Almacenaje por Rack:</label>
+                            <input type="number" 
+                                   step="1" 
+                                   id="almacenaje" 
+                                   class="form-control" 
+                                   t-model.number="state.almacenaje"
+                                   t-on-change="onCambiarCantidad"
+                                   />
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="total" class="form-label fw-bold">Subtotal:</label>
                             <span type="text" 
                                    id="total" 
                                    class="form-control" 
                                    t-esc="state.costoTotal"/>
                         </div>
-                        
+
+                        <div class="col-md-6">
+                            <label for="almacenajeTotal" class="form-label fw-bold">Almacenaje Total:</label>
+                            <span type="text" 
+                                   id="almacenajeTotal" 
+                                   class="form-control" 
+                                   t-esc="state.almacenajeTotal"/>
+                        </div>            
                     </div>
 
                 </div>
-   
-
 
             <t t-set-slot="footer">
                 <button class="btn btn-secondary" t-on-click="onConfirmar">

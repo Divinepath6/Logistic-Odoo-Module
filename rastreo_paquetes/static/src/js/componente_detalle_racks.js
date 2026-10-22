@@ -22,7 +22,7 @@ export class componente_detalle_racks extends Component{
         this.dialogService = useService("dialog")
         this.state = useState({
             numero: 0,
-            rackClave: "",
+            rackClave: "Sin Rack existente",
             rackNombre: "",
             rackId: 0,
             precioUnitario: 0.0,
@@ -32,7 +32,10 @@ export class componente_detalle_racks extends Component{
             productoId: 0,
             productoNombre: "",
             productoPrecio: 0,
-
+            rackExiste: false,
+            rackPrecio: 0,
+            almacenaje: 0,
+            almacenajeTotal: 0,
         })
         
         onWillStart(async () => {
@@ -40,11 +43,11 @@ export class componente_detalle_racks extends Component{
             console.log("componente: ",r)
             if (r) {
                 this.state.numero = r.numero;
-                this.state.rackClave = r.clave || '';
-                this.state.rackNombre = r.rack_nombre || '';
-                this.state.rackId = r.rack_id || false;
-                this.state.precioUnitario = r.costo_rack || 0;
-                this.state.cantidadRacks = r.cantidad_racks || 1;
+                this.state.rackClave = r.rackClave || '';
+                this.state.rackNombre = r.rackNombre || '';
+                this.state.rackId = r.rackId || false;
+                this.state.precioUnitario = r.precioUnitario || 0;
+                this.state.cantidadRacks = r.cantidadRacks || 1;
                 this.state.costoTotal = (
                     (r.cantidad_racks || 1) * (r.costo_rack || 0)
                 ).toFixed(2);
@@ -55,10 +58,21 @@ export class componente_detalle_racks extends Component{
     async onBuscarProducto(ev) {
         this.dialogService.add(componente_busqueda_producto, {
             title: "Buscar producto",
-            confirm: (id, nombre, precio) => {
-                this.state.productoId = id;
-                this.state.productoNombre = nombre;
-                this.state.productoPrecio = precio;
+            confirm: (id, nombre, precio, rackExiste, rackId, rackClave, rackPrecio,rackNombre,rackAlmacenaje) => {
+                if(rackExiste){
+                    this.state.productoId = id;
+                    this.state.productoNombre = nombre;
+                    this.state.precioUnitario = precio;
+                    this.state.rackExiste = rackExiste;
+                    this.state.rackId =  rackId;
+                    this.state.rackNombre = rackNombre;
+                    
+                    this.state.rackClave = rackClave;
+                    this.state.precioUnitario =  rackPrecio;
+                    this.state.almacenaje = rackAlmacenaje;
+                }else{
+                    this.notification.add("Este rack no esta registrado en el sistema", { type: "warning" });
+                }
             },
             cancel: () => {
             },
@@ -66,37 +80,48 @@ export class componente_detalle_racks extends Component{
     }
        
 
-    onCambiarCantidad(ev) {
-        this.state.cantidadRacks = parseFloat(ev.target.value) || 0;
+    onCambiarCantidad() {
         this.state.costoTotal = (
             this.state.cantidadRacks * this.state.precioUnitario
         ).toFixed(2);
+        this.state.almacenajeTotal = (
+            this.state.almacenaje * this.state.cantidadRacks
+        ).toFixed(3);
     }
 
-    async cargarRack(){
-        
-    }
-    async onGuardar(){
-
-    }
-    async onCancelarEdicion(){
-
-    }
     
     async onConfirmar() {
-        if(!this.state.productoId){
+        if(!this.state.productoId || !this.state.rackExiste){
             this.notification.add("Busca un Rack para guardar", { type: "warning" });
             return;
         }
-        const rack = {
-            numero: this.state.numero,
-            clave: this.state.rackClave,
-            rack_nombre: this.state.rackNombre,
-            rack_id: this.state.rackId,
-            costo_rack: this.state.precioUnitario,
-            cantidad_racks: this.state.cantidadRacks,
-            costo_total: parseFloat(this.state.costoTotal),
-        };
+        let rack;
+        if(this.state.rackExiste){
+            rack = {
+                numero: this.state.numero,
+                rackClave: this.state.rackClave,
+                rackNombre: this.state.rackNombre,
+                rackId: this.state.rackId,
+                productoId: this.state.productoId,
+                precioUnitario: this.state.precioUnitario,
+                cantidadRacks: this.state.cantidadRacks,
+                costoTotal: parseFloat(this.state.costoTotal),
+                almacenajeTotal: this.state.almacenajeTotal,
+            };
+        }else{
+            rack = {
+                numero: this.state.numero,
+                rackClave: "",
+                rackNombre: this.state.productoNombre,
+                rackId: 0,
+                productoId: this.state.productoId,
+                precioUnitario: this.state.precioUnitario,
+                cantidadRacks: this.state.cantidadRacks,
+                costoTotal: parseFloat(this.state.costoTotal),
+                almacenajeTotal: this.state.almacenajeTotal,
+            };
+        }
+  
         this.props.confirm(rack);
         this.props.close();
     }

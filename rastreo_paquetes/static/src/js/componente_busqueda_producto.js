@@ -20,6 +20,12 @@ export class componente_busqueda_producto extends Component {
             productoSeleccionadoNombre: "",
             productoSeleccionadoPrecio: "$0.00",
             
+            rackExiste: false,
+            rackId:  0,
+            rackClave: "",
+            rackPrecio: 0,
+            rackNombre: "",
+            rackAlmacenaje: 0,
             productos: [],
             cargando: false,
         })
@@ -66,10 +72,17 @@ export class componente_busqueda_producto extends Component {
     }
 
     onSeleccionarProducto(p) {
-        console.log("Producto seleccionado:", p);
         this.state.productoSeleccionadoId = p.id;
         this.state.productoSeleccionadoNombre = p.nombre;
         this.state.productoSeleccionadoPrecio = p.precio;
+        if(p.rack_existe){
+            this.state.rackExiste = p.rack_existe;
+            this.state.rackId =  p.rack_id;
+            this.state.rackClave = p.rack_clave;
+            this.state.rackPrecio = p.rack_precio;
+            this.state.rackNombre = p.rack_nombre;
+            this.state.rackAlmacenaje = (p.rack_almacenaje/1000).toFixed(3);
+        }
     }
 
     _onConfirm() {
@@ -80,7 +93,13 @@ export class componente_busqueda_producto extends Component {
             this.props.confirm(
                 this.state.productoSeleccionadoId,
                 this.state.productoSeleccionadoNombre,
-                this.state.productoSeleccionadoPrecio
+                this.state.productoSeleccionadoPrecio,
+                this.state.rackExiste,
+                this.state.rackId,
+                this.state.rackClave,
+                this.state.rackPrecio,
+                this.state.rackNombre,
+                this.state.rackAlmacenaje,
             );
         }
         this.props.close();
