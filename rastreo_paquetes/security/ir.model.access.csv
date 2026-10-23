@@ -8,3 +8,4 @@ access_rastreo_bodega_cliente,access_rastreo_bodega_cliente,model_rastreo_bodega
 access_rastreo_rack_detalle,access_rastreo_rack_detalle,model_rastreo_rack_detalle,base.group_user,1,1,1,1
 access_rastreo_cliente,access_rastreo_cliente,model_rastreo_cliente,base.group_user,1,1,1,1
 access_rastreo_cotizacion_detalle,access_rastreo_cotizacion_detalle,model_rastreo_cotizacion_detalle,base.group_user,1,1,1,1
+access_rastreo_bodega_adicional,access_rastreo_bodega_adicional,model_rastreo_bodega_adicional,base.group_user,1,1,1,1

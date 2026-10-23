@@ -10,6 +10,9 @@ class rastreo_bodega(models.Model):
         required=True,
         ondelete='cascade',
     )
+    nombre = fields.Char(
+        string = 'Nombre de la bodega'
+    )   
     descripcion = fields.Char(
         string = 'Descripción de la bodega'
     )
@@ -57,4 +60,8 @@ class rastreo_bodega(models.Model):
     )
     racks_ocupados = fields.Integer(
         string='Cantidad de racks ocupados totales'
+    )
+    bodega_adicional_ids = fields.One2many(
+        'rastreo.bodega_adicional',
+        'bodega_adicional_id',  
     )

@@ -28,6 +28,8 @@ export class PantallaCroquis extends Component {
             bodegas: [],
             clienteNombre: "",
             ubicacion: "",
+
+            // Detalle adicional
             detalleRacks: [],
             // Valores "de la bodega"
                   
@@ -65,6 +67,8 @@ export class PantallaCroquis extends Component {
 
             espacioSobranteVer: 0,
             espacioSobranteHor: 0, 
+            costoEstimadoDisplay: "$0.00",  
+            almacenajeToneladaDisplay: "0.000",
         });
         onWillStart(async () => {
             if (this.props.action && this.props.action.params) {
@@ -90,8 +94,9 @@ export class PantallaCroquis extends Component {
         this.state.alturaBodega = bodega.alturaBodega;
         this.state.anchoBodega = bodega.anchoBodega;
         this.state.largoBodega = bodega.largoBodega;
-        this.state.comentarios = bodega.comentarios
-
+        this.state.comentarios = bodega.comentarios;
+        this.state.detalleRacks = [];
+        this.state.detalleRacks = bodega.detalleRacks;
         this.state.sepParedArr = bodega.sepParedArr;
         this.state.sepParedAba = bodega.sepParedAba;
         this.state.sepParedIzq = bodega.sepParedIzq;
@@ -113,7 +118,9 @@ export class PantallaCroquis extends Component {
             sepParedAba: 30,
             sepParedIzq: 30,
             sepParedDer: 30,
+            detalleRacks: []
         });
+        this.state.detalleRacks = []
         this.state.bodegaIndex = this.state.bodegas.length- 1; 
     }
 
@@ -134,7 +141,8 @@ export class PantallaCroquis extends Component {
             sepParedAba: this.state.sepParedAba,
             sepParedIzq: this.state.sepParedIzq,
             sepParedDer: this.state.sepParedDer,
-            racksOcupados: this.state.racksOcupados
+            racksOcupados: this.state.racksOcupados,
+            detalleRacks: this.state.detalleRacks,
         }
         this.state.bodegas[this.state.bodegaIndex] = bodega;
     }
@@ -169,7 +177,6 @@ export class PantallaCroquis extends Component {
                         rackSeleccionadoIndex: this.buscarRackPorId(b.rack_id),
                         rackId: b.rack_id,
                         rackSeleccionadoCosto:b.costoRack,
-
                         alturaBodega:b.niveles,
                         anchoBodega:b.ancho,
                         largoBodega: b.largo,
@@ -178,7 +185,25 @@ export class PantallaCroquis extends Component {
                         sepParedAba: b.separacion_abajo, 
                         sepParedIzq: b.separacion_izquierda,
                         sepParedDer: b.separacion_derecha,
-                        racksOcupados: b.racks_ocupados
+                        racksOcupados: b.racks_ocupados,
+                        detalleRacks: b.detalle_racks.map((a,i) =>{
+                            const costoTotal =  a.racks_ocupados * a.costo_rack;
+                            const almacenajeTotal = ((a.almacenaje / 1000) * a.racks_ocupados); 
+                            return{
+                                numero: i+1,
+                                rackClave: a.rack_clave,
+                                rackNombre: a.rack_nombre,
+                                rackId: a.rack_id,
+                                almacenaje: (a.almacenaje / 1000),
+                                productoId: 0,
+                                precioUnitario: a.costo_rack,
+                                cantidadRacks: a.racks_ocupados,
+                                costoTotal: costoTotal,
+                                almacenajeTotal: almacenajeTotal,
+                                almacenajeTotalDisplay: almacenajeTotal.toFixed(3),
+                                costoTotalDisplay: costoTotal.toFixed(2),
+                            }
+                            }) 
                     }
                 });
                 if (this.state.bodegas.length === 0) {
@@ -193,7 +218,8 @@ export class PantallaCroquis extends Component {
                             sepParedAba: 30,
                             sepParedIzq: 30,
                             sepParedDer: 30,
-                            racksOcupados: 0
+                            racksOcupados: 0,
+                            detalleRacks: [],
                         });
                         this.state.bodegaIndex = 0; 
                     }
@@ -211,7 +237,8 @@ export class PantallaCroquis extends Component {
                             sepParedAba: 30,
                             sepParedIzq: 30,
                             sepParedDer: 30,
-                            racksOcupados: 0
+                            racksOcupados: 0,
+                            detalleRacks: [],
                         });
                         this.state.bodegaIndex = 0; 
                     }
@@ -363,6 +390,7 @@ export class PantallaCroquis extends Component {
             costo_rack: 0,
             cantidad_racks: 1,
             total:0,
+            almacenaje:0,
             almacenajeTotal: 0,
         };
         fila.pedidoId = this.state.pedidoId;
@@ -371,14 +399,8 @@ export class PantallaCroquis extends Component {
                 objeto: fila,
                 confirm: async (rEditado) => {
                     this.state.cambioRacks = true;
-                    if(rEditado.numero == 0){
-                        rEditado.numero = this.state.detalleRacks.length;
-                        this.state.detalleRacks.push(rEditado);
-                    }else{
-                        this.state.detalleRacks[rEditado.numero - 1] = rEditado;
-                    }
+                    this.state.detalleRacks[rEditado.numero - 1] = rEditado;
                     this.state.detalleRacks = [...this.state.detalleRacks];
-                    console.log("racks: ", this.state.detalleRacks)
                 },
                 cancel: () => {
                 }
@@ -444,19 +466,24 @@ export class PantallaCroquis extends Component {
         this.state.anchoPasilloX = espacioSobranteVer;
         this.state.espacioSobranteVer = (espacioSobranteVer).toFixed(2);
 
+        
 
-        this.state.racksOcupados  = porAncho * porLargo * altoBodega;
-        this.state.costoEstimado  = (costo * this.state.racksOcupados);
-        this.state.almacenajeTonelada = (this.state.racksOcupados * Number(this.state.rackSeleccionadoAlmacenaje));
+        let racksOcupadosTotal = porAncho * porLargo * altoBodega;
+        let costoEstimadoTotal = costo * racksOcupadosTotal;
+        let almacenajeTotal = racksOcupadosTotal * Number(this.state.rackSeleccionadoAlmacenaje);
 
-        for(let i = 0;i<this.state.detalleRacks.length; i++){
-            const r = this.state.detalleRacks[i]
-            this.state.racksOcupados = Number(this.state.racksOcupados) + r.cantidadRacks;
-            this.state.costoEstimado = Number(this.state.costoEstimado) + r.costoTotal;
-            this.state.almacenajeTonelada = Number(this.state.almacenajeTonelada) + r.almacenajeTotal
-        }
-        this.state.costoEstimado  = `$${(this.state.costoEstimado).toFixed(2)}`;
-        this.state.almacenajeTonelada = (this.state.almacenajeTonelada).toFixed(3);
+    for (let i = 0; i < this.state.detalleRacks.length; i++) {
+        const r = this.state.detalleRacks[i];
+        racksOcupadosTotal += Number(r.cantidadRacks) || 0;
+        costoEstimadoTotal += Number(r.costoTotal) || 0;
+        almacenajeTotal    += Number(r.almacenajeTotal) || 0;
+    }
+    
+        this.state.racksOcupados = racksOcupadosTotal;
+        this.state.costoEstimado = costoEstimadoTotal;
+        this.state.almacenajeTonelada = almacenajeTotal;
+        this.state.costoEstimadoDisplay = `$${costoEstimadoTotal.toFixed(2)}`;
+        this.state.almacenajeToneladaDisplay = almacenajeTotal.toFixed(3);
         
         this.state.anchoRack      = anchoRackM;   // m
         this.state.largoRack      = largoRackM;   // m
@@ -511,6 +538,15 @@ export class PantallaCroquis extends Component {
                 racks_ocupados:         Number(b.racksOcupados)
             }
             }); 
+        const detalle_adicional = this.state.detalleRacks.map((b, i) => { 
+            return{
+                numero: i+1,
+                costo_rack: b.precioUnitario,
+                almacenaje_rack: b.almacenaje * 1000, 
+                racks_ocupados: b.cantidadRacks,
+                rack_id: b.rackId,
+            }}
+        ); 
 
         const r = await this.orm.call(
             "rastreo.bodega_cliente", 
@@ -518,7 +554,8 @@ export class PantallaCroquis extends Component {
             [
                 this.state.pedidoId, 
                 this.state.ubicacion, 
-                bodegas
+                bodegas,
+                detalle_adicional
             ]
         );
         if(r.id != 0){

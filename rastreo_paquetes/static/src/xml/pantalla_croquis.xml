@@ -180,10 +180,10 @@
                                         <t t-if="state.detalleRacks and state.detalleRacks.length">
                                             <tr t-foreach="state.detalleRacks" t-as="r" t-key="r.id">
                                                 <td><t t-esc="r.rackClave or r.rackNombre or ''"/></td>
-                                                <td class="text-end"><t t-esc="r.almacenajeTotal or 0"/></td>
+                                                <td class="text-end"><t t-esc="r.almacenajeTotalDisplay or 0"/></td>
                                                 <td class="text-end"><t t-esc="r.precioUnitario or 0"/></td>
                                                 <td class="text-end"><t t-esc="r.cantidadRacks or 0"/></td>
-                                                <td class="text-end"><t t-esc="r.costoTotal or 0"/></td>
+                                                <td class="text-end"><t t-esc="r.costoTotalDisplay or 0"/></td>
                                                 <td class="text-end">
                                                     <button class="odoo-btn odoo-btn-sm odoo-btn-ghost"
                                                             t-on-click="() => this.onEditarDetalleRacks(r)">
@@ -236,7 +236,7 @@
 
                         <div class="odoo-result-row">
                             <span class="odoo-result-label">Costo estimado:</span>
-                            <span class="odoo-result-value" t-esc="state.costoEstimado or '$0.00'"/>
+                            <span class="odoo-result-value" t-esc="state.costoEstimadoDisplay or '$0.00'"/>
                         </div>
 
                         <div class="odoo-result-row">
@@ -251,7 +251,7 @@
 
                         <div class="odoo-result-row">
                             <span class="odoo-result-label">Almacenaje con rack por tonelada:</span>
-                            <span class="odoo-result-value" t-esc="state.almacenajeTonelada or '0.00'"/>
+                            <span class="odoo-result-value" t-esc="state.almacenajeToneladaDisplay or '0.00'"/>
                         </div>
                     </div>
                     <div class="cc-card">

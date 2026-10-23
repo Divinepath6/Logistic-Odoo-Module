@@ -342,8 +342,6 @@ export class PantallaPedido extends Component {
                                 total: d.subtotal
                             }
                         })
-                        console.log("lista: ", l);
-                        console.log("detalle ",this.state.detalleRacks)
                         this.state.cambioRacks = true; 
                         this.notification.add("Cotización cambiada Exitosamente",{ type: "success" });               
                     }

@@ -40,17 +40,18 @@ export class componente_detalle_racks extends Component{
         
         onWillStart(async () => {
             const r = this.props.objeto;
-            console.log("componente: ",r)
             if (r) {
+                if(r.id != 0){
+                    this.state.rackExiste = true
+                }
                 this.state.numero = r.numero;
                 this.state.rackClave = r.rackClave || '';
                 this.state.rackNombre = r.rackNombre || '';
                 this.state.rackId = r.rackId || false;
+                this.state.almacenaje = r.almacenaje || 0;
                 this.state.precioUnitario = r.precioUnitario || 0;
                 this.state.cantidadRacks = r.cantidadRacks || 1;
-                this.state.costoTotal = (
-                    (r.cantidad_racks || 1) * (r.costo_rack || 0)
-                ).toFixed(2);
+                this.onCambiarCantidad();
             }
         });
     }
@@ -70,6 +71,7 @@ export class componente_detalle_racks extends Component{
                     this.state.rackClave = rackClave;
                     this.state.precioUnitario =  rackPrecio;
                     this.state.almacenaje = rackAlmacenaje;
+                    this.onCambiarCantidad();
                 }else{
                     this.notification.add("Este rack no esta registrado en el sistema", { type: "warning" });
                 }
@@ -82,11 +84,13 @@ export class componente_detalle_racks extends Component{
 
     onCambiarCantidad() {
         this.state.costoTotal = (
-            this.state.cantidadRacks * this.state.precioUnitario
-        ).toFixed(2);
+            this.state.cantidadRacks * this.state.precioUnitario 
+        )
+        this.state.costoTotalDisplay = this.state.costoTotal.toFixed(2);
         this.state.almacenajeTotal = (
             this.state.almacenaje * this.state.cantidadRacks
-        ).toFixed(3);
+        )
+        this.state.almacenajeTotalDisplay = this.state.almacenajeTotal.toFixed(3);
     }
 
     
@@ -95,32 +99,25 @@ export class componente_detalle_racks extends Component{
             this.notification.add("Busca un Rack para guardar", { type: "warning" });
             return;
         }
-        let rack;
-        if(this.state.rackExiste){
-            rack = {
-                numero: this.state.numero,
-                rackClave: this.state.rackClave,
-                rackNombre: this.state.rackNombre,
-                rackId: this.state.rackId,
-                productoId: this.state.productoId,
-                precioUnitario: this.state.precioUnitario,
-                cantidadRacks: this.state.cantidadRacks,
-                costoTotal: parseFloat(this.state.costoTotal),
-                almacenajeTotal: parseFloat(this.state.almacenajeTotal),
-            };
-        }else{
-            rack = {
-                numero: this.state.numero,
-                rackClave: "",
-                rackNombre: this.state.productoNombre,
-                rackId: 0,
-                productoId: this.state.productoId,
-                precioUnitario: parseFloat(this.state.precioUnitario),
-                cantidadRacks: this.state.cantidadRacks,
-                costoTotal: parseFloat(this.state.costoTotal),
-                almacenajeTotal: parseFloat(this.state.almacenajeTotal),
-            };
-        }
+        if(this.state.cantidadRacks <0 || this.state.precioUnitario <0){
+            this.notification.add("Las cantidades no deben ser negativas", { type: "warning" });
+            return;
+        }  
+        const rack = {
+            numero: this.state.numero,
+            rackClave: this.state.rackClave,
+            rackNombre: this.state.rackNombre,
+            rackId: this.state.rackId,
+            productoId: this.state.productoId,
+            precioUnitario: this.state.precioUnitario,
+            cantidadRacks: this.state.cantidadRacks,
+            costoTotal: this.state.costoTotal,
+            almacenaje: this.state.almacenaje,
+            almacenajeTotal: this.state.almacenajeTotal,
+            almacenajeTotalDisplay: this.state.almacenajeTotalDisplay,
+            costoTotalDisplay : this.state.costoTotalDisplay,
+        };
+
   
         this.props.confirm(rack);
         this.props.close();

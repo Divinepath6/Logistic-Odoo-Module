@@ -7,3 +7,4 @@ from . import cliente
 from . import rack_detalle
 from . import cotizacion_detalle
 from . import anticipo_detalle_cliente
+from . import bodega_adicional

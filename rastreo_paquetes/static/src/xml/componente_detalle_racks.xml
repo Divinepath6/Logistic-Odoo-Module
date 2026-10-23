@@ -62,7 +62,7 @@
                             <span type="text" 
                                    id="total" 
                                    class="form-control" 
-                                   t-esc="state.costoTotal"/>
+                                   t-esc="state.costoTotalDisplay"/>
                         </div>
 
                         <div class="col-md-6">
@@ -70,7 +70,7 @@
                             <span type="text" 
                                    id="almacenajeTotal" 
                                    class="form-control" 
-                                   t-esc="state.almacenajeTotal"/>
+                                   t-esc="state.almacenajeTotalDisplay"/>
                         </div>            
                     </div>
 
