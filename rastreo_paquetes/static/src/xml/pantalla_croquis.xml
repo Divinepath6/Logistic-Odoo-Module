@@ -7,9 +7,12 @@
                     <i class="fa fa-arrow-left"/> Regresar
                 </button>
 
-                <h2 class="cc-title">
-                    <i class="fa fa-cubes"/> Creación de Croquis
-                </h2>
+                <div class="cc-title-text">
+                     Cliente: <span class="odoo-highlight"><t t-esc=" state.clienteNombre "/></span>
+                </div>
+                <div class="cc-title-text">
+                    Cotizacion: <span class="odoo-highlight"><t t-esc=" state.guia"/></span>
+                </div>
 
                 <button class="odoo-btn odoo-btn-warning" t-on-click="onClickCambiarEstado">
                     <i class="fa fa-exchange"/> Confirmar propuesta
@@ -21,7 +24,7 @@
                             t-att-class="{ 'active': bodega_index === state.bodegaIndex }"
                             t-on-click="() => this.onclickCambiarBodega(bodega_index)">
                         <i class="fa fa-cubes"/>
-                        Bodega <t t-esc="bodega_index + 1"/>
+                        <t t-esc="bodega.bodegaNombre"/>
                         <span t-if="state.bodegas.length > 1"
                               class="odoo-tab-close"
                               t-on-click="(ev) => this.eliminarBodega(bodega_index, ev)">
@@ -39,12 +42,7 @@
 
                     <div class="cc-card">
                         <h3 class="cc-card-title cc-title-actions">
-                            <span class="cc-badge-dot"></span>
-                            <div class="cc-title-text">
-                                Cotización: <span class="odoo-highlight"><t t-esc=" state.clienteNombre "/></span>
-                                — Bodega <t t-esc="state.bodegaIndex + 1"/>
-                            </div>
-                            
+
                             <div class="cc-title-buttons">
                                 <button class="odoo-btn odoo-btn-primary odoo-btn-sm" t-on-click="onCalcular">
                                     <i class="fa fa-refresh"/> Recalcular
@@ -56,16 +54,23 @@
                         </h3>
 
                         <div class="odoo-field-croquis">
+                              <label class="odoo-label-croquis"> Nombre:</label>
+                             <input type="text" class="odoo-input"
+                                   placeholder="Nombre de la bodega"
+                                   t-model="state.bodegaNombre"/>
+                        </div>
+
+                        <div class="odoo-field-croquis">
                             <label class="odoo-label-croquis">Elegir rack:</label>
                             <select class="odoo-select"
                                 t-on-change="onRackChange">
-                            <option value="">— Selecciona un rack —</option>
-                            <t t-foreach="state.rackTipos" t-as="rack" t-key="rack_index">
-                                <option t-att-value="rack_index"
-                                        t-att-selected="state.rackSeleccionadoIndex == rack_index"
-                                        t-esc="rack[0]"/>
-                            </t>
-                        </select>
+                                <option value="">— Selecciona un rack —</option>
+                                    <t t-foreach="state.rackTipos" t-as="rack" t-key="rack_index">
+                                        <option t-att-value="rack_index"
+                                                t-att-selected="state.rackSeleccionadoIndex == rack_index"
+                                                t-esc="rack[0]"/>
+                                </t>
+                            </select>
                         </div>
 
                         <div class="odoo-field-croquis">
@@ -86,7 +91,7 @@
                     <div class="cc-card">
                         <h3 class="cc-card-title">
                             <span class="cc-badge-dot"></span>
-                            Bodega
+                            Medidas de la bodega
                         </h3>
 
                         <div class="odoo-field-croquis">
@@ -146,6 +151,21 @@
                                     t-model="state.sepParedDer"
                                     t-on-change="onCalcular"/>
                             </div>
+                            
+                            <div class="odoo-field-croquis">
+                                <label class="odoo-label-croquis">Minimo Pasillo Vertical (CM):</label>
+                                <input type="number" class="odoo-input"
+                                    t-model="state.minimoPasilloX"
+                                    t-on-change="onCalcular"/>
+                            </div>
+                            
+                            <div class="odoo-field-croquis">
+                                <label class="odoo-label-croquis">Minimo Pasillo Horizontal (CM):</label>
+                                <input type="number" class="odoo-input"
+                                    t-model="state.minimoPasilloY"
+                                    t-on-change="onCalcular"/>
+                            </div>
+                            
                         </div>
 
 

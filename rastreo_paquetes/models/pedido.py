@@ -99,12 +99,21 @@ class rastreo_paquetes(models.Model):
         string= 'Total acordado con el proveedor',
         currency_field='currency_id' 
     )
+
+
     ## Cliente ///////////////////////////////////////////////////////////////////////////////
     total_cliente = fields.Monetary(
         string= 'Total acordado con el cliente',
         currency_field='currency_id' 
     )
     racks_acordados = fields.Integer(
+        string = 'Total de rack acordados con el cliente'
+    )
+    fecha_compromiso_1 = fields.Integer(
+        string = 'Total de rack acordados con el cliente'
+    )
+
+    fecha_compromiso_1 = fields.Integer(
         string = 'Total de rack acordados con el cliente'
     )
 
@@ -180,8 +189,51 @@ class rastreo_paquetes(models.Model):
         })
 
         return {'id': pedido.id, 'sale_order_id': cotizacion.id}
-        
+    
+    @api.model
+    def crear_pedido_cotizacion(self, numero, fase):
+        if not numero:
+            raise UserError("El numero de cotización es obligatorio")
 
+        domain = [
+            ('state', 'in', ['draft', 'sent','sale','done']),
+            ('name', '=', numero)
+        ]
+                    
+        cotizacion = self.env['sale.order'].search(domain, order='id desc',limit=1)
+
+        if not cotizacion.exists():
+            return  {'error': 'Cotización no encontrada', 'success': False}
+        texto = ''
+        if fase == 'fase_inicial':
+            pedido = self.create({
+                'sale_order_id': cotizacion.id,
+                'cliente_id': cotizacion.partner_id.id,
+                'numero_guia': cotizacion.name,
+                'estado': 'fase_inicial',
+            })    
+            texto = 'Fase inicial comenzada'
+        if fase == 'produccion':
+            pedido = self.create({
+                'sale_order_id': cotizacion.id,
+                'cliente_id': cotizacion.partner_id.id,
+                'numero_guia': cotizacion.name,
+                'estado': 'produccion',
+            })
+            texto = 'Comienzo de producción'            
+        else:
+            return {'success': False, 'error' : 'Fase no existente en el sistema'}
+
+
+        self.env['rastreo.pedido_actualizacion'].create({
+            'pedido_id': pedido.id,
+            'numero_actualizacion': 1,
+            'fecha_actualizacion': datetime.now(),
+            'actualizacion_texto': texto,
+        })
+        
+        return {'success': True}
+    
     @api.model
     def cambiar_estado(self, pedido_id, estado=None):
         pedido = self.browse(pedido_id)
@@ -461,7 +513,7 @@ class rastreo_paquetes(models.Model):
                 'detalle_racks': lista_cotizacion_detalle
             }
         }
-    
+
     def crear_aviso(self, id):
         aviso = ""
         pedido = self.browse(id)
@@ -556,60 +608,7 @@ class rastreo_paquetes(models.Model):
         return lista    
 
 
-# =============================================================================================================
-# MÉTODOS CRUD detalles
-# =============================================================================================================
- 
 
-
-    
-    @api.model
-    def guardar_detalle_proveedor(self, pedido_id,numero, datos, pdf_anticipo_proveedor=None):
-        pedido = self.browse(pedido_id)
-        if not pedido.exists():
-            return {'success': False, 'error': 'Pedido no encontrado'}
-
-        currency_id = pedido.currency_id.id or self.env.company.currency_id.id
-
-        valores = {
-            'pedido_id': pedido.id,
-            'currency_id': currency_id,
-            'fecha_editado': datetime.now(),
-            'cantidad': datos.get('cantidad') if datos else 0,
-            'precio_dolar': datos.get('precio_dolar') if datos else 0,
-        }
-
-        if pdf_anticipo_proveedor:
-            valores['pdf_anticipo_proveedor'] = pdf_anticipo_proveedor
-
-        Detalle = self.env['rastreo.detalle_proveedor']
-
-   
-        if not numero:  
-            cantidad = Detalle.search_count([('pedido_id', '=', pedido_id)])
-            valores['numero'] = cantidad + 1
-            detalle = Detalle.create(valores)
-        else:
-            detalle = Detalle.search([
-                ('pedido_id', '=', pedido_id),
-                ('numero', '=', numero),
-            ], limit=1)
-            if not detalle:
-                return {'success': False, 'error': 'Detalle no encontrado'}
-            valores['numero'] = numero
-            detalle.write(valores)
-
-        return {'success': True, 'id': detalle.id}
-
-
-    @api.model
-    def eliminar_detalle_proveedor(self, pedido_id):
-        pedido = self.browse(pedido_id)
-        if not pedido.exists():
-            return {'success': False, 'error': 'Pedido no encontrado'}
-        
-        pedido.unlink()
-        return {'success': True}    
 
 
 

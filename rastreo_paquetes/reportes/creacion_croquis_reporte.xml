@@ -141,7 +141,7 @@
     <template id="croquis_svg_bodega">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px;">
             <h2 class="texto">
-                Bodega #<t t-esc="bodega['numero_bodega']"/>
+                <t t-esc="bodega['bodegaNombre']"/>
             </h2>
             <div class="texto"  >
                 Ancho: <b><t t-esc="bodega['anchoBodega']"/> m</b> 

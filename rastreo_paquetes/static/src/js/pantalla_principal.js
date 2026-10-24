@@ -4,10 +4,11 @@ import { Component, onWillStart, useState   } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks"; 
 import { componente_creacion_pedido } from "./componente_creacion_pedido";
 import {componente_edicion_racks} from "./componente_edicion_racks";
+import { componente_cargar_cotizacion } from "./componente_cargar_cotizacion";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 
 export class PantallaPrincipal extends Component { 
-    static components = { componente_creacion_pedido , componente_edicion_racks };
+    static components = { componente_creacion_pedido , componente_edicion_racks, componente_cargar_cotizacion };
     setup() {
         this.notification = useService("notification");
         this.action = useService("action");
@@ -53,7 +54,7 @@ export class PantallaPrincipal extends Component {
             await this.action.doAction({
                 type: "ir.actions.client",
                 tag: "rastreo_paquetes.pantalla_croquis",
-                params: { pedido_id: p.id , cliente_nombre : p.cliente_nombre },  
+                params: { pedido_id: p.id , cliente_nombre : p.cliente_nombre, guia: p.numero_guia },  
                 target: "current",
             });
         }else{
@@ -97,6 +98,34 @@ export class PantallaPrincipal extends Component {
         await this.cargarPedidos();
         return resultado.id;
     }
+
+    async onCargarCotizacion(){
+        this.dialogService.add(componente_cargar_cotizacion, {
+            title: ("¿Estás seguro?"),
+            body: ("Introduzca la cotizacion"),
+            confirm: async (numero,estado) => {
+                const resultado = await this.orm.call(
+                    "rastreo.pedido", 
+                    "crear_pedido_cotizacion",
+                    [
+                        numero,
+                        estado
+                    ]
+                );
+                if(resultado.success){
+                    this.notification.add(`Exitoso `,{ type: "success" });
+                }
+                else{
+                    this.notification.add("Error al guardar detalle",{ type: "danger" });
+                }
+                await this.cargarPedidos();
+            },
+            cancel: () => {
+                return;
+            },
+        });
+    }
+
     async onClickEliminarPedido(p){
          this.dialogService.add(ConfirmationDialog, {
             title: ("¿Estás seguro?"),

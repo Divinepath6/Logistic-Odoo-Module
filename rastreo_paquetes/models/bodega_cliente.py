@@ -66,6 +66,7 @@ class rastreo_bodega_cliente(models.Model):
 
                 bodega_creada = Bodega.create({
                     'bodega_cliente_id': bodega_cliente.id,
+                    'nombre': b.get('nombre') or '',
                     'descripcion': b.get('descripcion') or '',
                     'numero_bodega': b.get('numero_bodega') or '',
                     'ancho': float(b.get('ancho') or 0.0),
@@ -197,6 +198,7 @@ class rastreo_bodega_cliente(models.Model):
                     'rack_nombre':  d.rack_id.nombre or '',              
                 })
             bodegas_lista.append({
+                'nombre': b.nombre or '',
                 'bodega_cliente_id': bodega.id,
                 'descripcion': b.descripcion or '',
                 'numero_bodega': b.numero_bodega or '',

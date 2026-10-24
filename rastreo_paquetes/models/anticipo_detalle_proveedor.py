@@ -38,6 +38,7 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
     fecha_anticipo = fields.Date(
         string='Fecha del anticipo'
     )
+
     @api.model
     def guardar_detalle(self, pedido_id, anticipoId, datos, pdf=None, pdf_name=None):
         if not pedido_id:

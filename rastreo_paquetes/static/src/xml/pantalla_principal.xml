@@ -13,6 +13,11 @@
                            placeholder="Buscar por nombre de cliente o cotización..."
                            t-on-input="onBusqueda"/>
                 </div>
+                <button type="button"
+                        class="odoo-btn odoo-btn-primary"
+                        t-on-click="onCargarCotizacion">
+                    <i class="fa fa-external-link-square"/> Cargar Cotización
+                </button>
 
                 <button type="button"
                         class="odoo-btn odoo-btn-primary"

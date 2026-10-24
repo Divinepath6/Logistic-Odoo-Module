@@ -21,6 +21,7 @@ export class PantallaCroquis extends Component {
             pedido: null,
             pedidoId: 0,
             nombre: "",
+            guia: "",
             cargando: false,
             separacion:15,
             rackTipos: [],
@@ -28,7 +29,7 @@ export class PantallaCroquis extends Component {
             bodegas: [],
             clienteNombre: "",
             ubicacion: "",
-
+            bodegaNombre: "",
             // Detalle adicional
             detalleRacks: [],
             // Valores "de la bodega"
@@ -56,12 +57,16 @@ export class PantallaCroquis extends Component {
             anchoPasilloY: 0,         
             pasillosY: 0,  
 
+            minimoPasilloX: 50,
+            minimoPasilloY: 50,         
+
             anchoRack: 0,     // mm
             largoRack: 0,  // mm
             costoEstimado: 0.0,
             almacenajeTonelada: 0.0,
             porAncho: 0,      
             porLargo: 0, 
+            
             
             costoEstimadoTotal: 0.0,
 
@@ -74,8 +79,10 @@ export class PantallaCroquis extends Component {
             if (this.props.action && this.props.action.params) {
                 const pedidoId = this.props.action.params.pedido_id || null;
                 const clienteNombre = this.props.action.params.cliente_nombre || null;
+                const guia = this.props.action.params.guia || null;
                 this.state.pedidoId = pedidoId;
                 this.state.clienteNombre = clienteNombre;
+                this.state.guia = guia;
                 await this.cargarRacks();
                 await this.cargarBodegaDB();
             }
@@ -86,6 +93,7 @@ export class PantallaCroquis extends Component {
     cargarBodega(index){
         const bodega = this.state.bodegas[index];
         if (!bodega) return; 
+        this.state.bodegaNombre = bodega.bodegaNombre;
         this.state.bodegaIndex = index;    
         this.state.rackSeleccionadoIndex = this.buscarRackPorId(bodega.rackId)
         const rack = this.state.rackTipos[this.state.rackSeleccionadoIndex];
@@ -106,7 +114,9 @@ export class PantallaCroquis extends Component {
     }
     crearBodegaLista(){
         this.guardarBodegaActual();
+        const numero = (this.state.bodegas.length + 1)
         this.state.bodegas.push({
+            bodegaNombre: "bodega " + numero,
             rackSeleccionadoIndex: 0,
             rackSeleccionadoCosto: 0,
             racksOcupados: 0,
@@ -130,6 +140,7 @@ export class PantallaCroquis extends Component {
         const idx = parseInt(this.state.rackSeleccionadoIndex, 10);
         const rackData = this.state.rackTipos[idx];
         const bodega ={ 
+            bodegaNombre: this.state.bodegaNombre,
             rackSeleccionadoIndex: this.state.rackSeleccionadoIndex,
             rackId: rackData ? rackData[4] : false, 
             rackSeleccionadoCosto: this.state.rackSeleccionadoCosto,
@@ -174,6 +185,7 @@ export class PantallaCroquis extends Component {
                 const bodegas = resultado.data.bodegas
                 this.state.bodegas = bodegas.map( b => {
                     return {
+                        bodegaNombre: b.nombre,
                         rackSeleccionadoIndex: this.buscarRackPorId(b.rack_id),
                         rackId: b.rack_id,
                         rackSeleccionadoCosto:b.costoRack,
@@ -208,6 +220,7 @@ export class PantallaCroquis extends Component {
                 });
                 if (this.state.bodegas.length === 0) {
                         this.state.bodegas.push({
+                            bodegaNombre: "Bodega 1",
                             rackSeleccionadoIndex: 0,
                             rackSeleccionadoCosto: 0,
                             alturaBodega: 1, 
@@ -227,6 +240,7 @@ export class PantallaCroquis extends Component {
             }else{
                 if (this.state.bodegas.length === 0) {
                         this.state.bodegas.push({
+                            bodegaNombre: "Bodega 1",
                             rackSeleccionadoIndex: 0,
                             rackSeleccionadoCosto: 0,
                             alturaBodega: 1, 
@@ -420,7 +434,9 @@ export class PantallaCroquis extends Component {
         const separacionParedIzq = this.state.sepParedIzq / 100;
         const separacionParedDer = this.state.sepParedDer / 100;
     
-        const separacionRack  = .15;  
+        const separacionRack  = .15; 
+        const minimoPasilloX = Number(this.state.minimoPasilloX) / 100 || 0; 
+        const minimoPasilloY = Number(this.state.minimoPasilloY) / 100 || 0; 
         const anchoBodega  = Number(this.state.anchoBodega) || 0;
         const largoBodega  = Number(this.state.largoBodega) || 0;
         const altoBodega   = Number(this.state.alturaBodega) || 1;
@@ -436,13 +452,15 @@ export class PantallaCroquis extends Component {
             this.notification.add("Ingresa un costo", { type: "warning" });
             return;
         }
+
+
         // convercion de mm a m  convercion de mm a m
         const anchoRackM = anchoRackmm / 1000; 
         const largoRackM  = largoRackmm / 1000; 
 
-        const racksMathHor = ((anchoBodega - (separacionParedIzq + separacionParedDer)) / (anchoRackM + separacionRack))+ .16 ;
+        const racksMathHor = ((anchoBodega - (separacionParedIzq + separacionParedDer + minimoPasilloY)) / (anchoRackM + separacionRack))+ .16 ;
+        const racksMathVer = ((largoBodega - (separacionParedArr + separacionParedAba + minimoPasilloX)) / (largoRackM + separacionRack)) + .16  ;
 
-        const racksMathVer = ((largoBodega - (separacionParedArr + separacionParedAba)) / (largoRackM + separacionRack)) + .16  ;
         const porAncho = Math.max(0, Math.floor( racksMathHor ));
         const porLargo = Math.max(0, Math.floor( racksMathVer ));
         
@@ -478,7 +496,7 @@ export class PantallaCroquis extends Component {
         costoEstimadoTotal += Number(r.costoTotal) || 0;
         almacenajeTotal    += Number(r.almacenajeTotal) || 0;
     }
-    
+
         this.state.racksOcupados = racksOcupadosTotal;
         this.state.costoEstimado = costoEstimadoTotal;
         this.state.almacenajeTonelada = almacenajeTotal;
@@ -525,6 +543,7 @@ export class PantallaCroquis extends Component {
             const rackId = rackData ? rackData[4] : false;
             return{
                 descripcion:  b.comentarios,
+                nombre: b.bodegaNombre,
                 numero_bodega: i + 1,
                 ancho:        Number(b.anchoBodega) || 0,
                 largo:        Number(b.largoBodega) || 0,
@@ -537,7 +556,7 @@ export class PantallaCroquis extends Component {
                 separacion_derecha :    Number(b.sepParedDer),
                 racks_ocupados:         Number(b.racksOcupados)
             }
-            }); 
+        }); 
         const detalle_adicional = this.state.detalleRacks.map((b, i) => { 
             return{
                 numero: i+1,
@@ -573,7 +592,7 @@ export class PantallaCroquis extends Component {
         for (let i = 0; i < this.state.bodegas.length; i++) {
             const b = this.state.bodegas[i];
             if (!Number(b.anchoBodega) || !Number(b.largoBodega) || !Number(b.rackSeleccionadoCosto)) {
-                this.notification.add(`Bodega ${i + 1}: faltan datos`, { type: "warning" });
+                this.notification.add(`${b.bodegaNombre}: faltan datos`, { type: "warning" });
                 return;
             }else{
                 this.guardarBodegaActual()
@@ -627,11 +646,13 @@ export class PantallaCroquis extends Component {
             if (isNaN(idx) || !this.state.rackTipos[idx]) {
                 return null; 
             }
-
+            const nombre = b.bodegaNombre || '';
             const separacionRack  = 0.15;
             const anchoBodega     =     Number(b.anchoBodega)  || 0;
             const largoBodega     =     Number(b.largoBodega)  || 0;
             const altoBodega      =     Number(b.alturaBodega) || 1;
+            const minimoPasilloX =      Number(this.state.minimoPasilloX) / 100 || .15; 
+            const minimoPasilloY =      Number(this.state.minimoPasilloY) / 100 || .15; 
             const separacionParedArr =  (Number(b.sepParedArr) || 30)/ 100;
             const separacionParedAba =  (Number(b.sepParedAba) || 30)/ 100;
             const separacionParedIzq =  (Number(b.sepParedIzq) || 30)/ 100;
@@ -644,8 +665,8 @@ export class PantallaCroquis extends Component {
             const anchoRackM = anchoRackmm / 1000;
             const largoRackM = largoRackmm / 1000;
 
-            const racksMathHor = ((anchoBodega - (separacionParedIzq + separacionParedDer)) / (anchoRackM + separacionRack)) + 0.16;
-            const racksMathVer = ((largoBodega - (separacionParedArr + separacionParedAba)) / (largoRackM + separacionRack)) + 0.16;
+            const racksMathHor = ((anchoBodega - (separacionParedIzq + separacionParedDer + minimoPasilloY)) / (anchoRackM + separacionRack)) + 0.16;
+            const racksMathVer = ((largoBodega - (separacionParedArr + separacionParedAba + minimoPasilloX)) / (largoRackM + separacionRack)) + 0.16;
 
             
             const porAncho       = Math.max(0, Math.floor(racksMathHor));
@@ -682,6 +703,7 @@ export class PantallaCroquis extends Component {
             });
 
             return {
+                bodegaNombre : nombre,
                 anchoBodega:   anchoBodega,
                 largoBodega:   largoBodega,
                 alturaBodega:  altoBodega,

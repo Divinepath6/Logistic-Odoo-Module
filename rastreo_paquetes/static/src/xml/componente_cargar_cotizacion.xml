@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="rastreo_paquetes.componente_cargar_cotizacion_embed">
+        <Dialog title="'Cargar Pedido'" size="'md'">
+            <div class="odoo-search-row">
+                <input type="text"
+                       class="odoo-input"
+                       placeholder="Buscar por nombre..."
+                       t-model="state.termino_busqueda"
+                       t-on-keydown="onKeyDown"/>
+                <button class="odoo-btn odoo-btn-primary" t-on-click="onCargarCotizacion">
+                    Buscar
+                </button>
+            </div>
+            <div class="odoo-field-croquis">
+                    <label class="odoo-label-croquis">Escoge el estado:</label>
+                            <select class="odoo-select" t-model.number="state.index">
+                                    <t t-foreach="state.estados" t-as="estado" t-key="estado_index">
+                                        <option t-att-value="estado_index"
+                                                t-att-selected="state.index == estado_index"
+                                                t-esc="estado[0]"/>
+                        </t>
+                    </select>
+                </div>
+            <div class="o_form_view p-2 border rounded bg-light">
+                    <div class="row g-3">
+                        
+                        <div class="col-md-6">
+                            <label for="name" class="form-label fw-bold">Número: </label>
+                            <span type="text" 
+                                   id="name" 
+                                   class="form-control" 
+                                   t-esc="state.nombre"/>
+                        </div>
+	
+
+                        <div class="col-md-6">
+                            <label for="cliente" class="form-label fw-bold">Cliente:</label>
+                            <span type="text" 
+                                   id="cliente" 
+                                   class="form-control" 
+                                   t-esc="state.cliente"/>
+                        </div>
+                         
+                        <div class="col-md-6">
+                            <label for="fecha" class="form-label fw-bold">Fecha de creación:</label>
+                            <span type="text" 
+                                   id="fecha" 
+                                   class="form-control" 
+                                   t-esc="state.fecha"/>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="total" class="form-label fw-bold">Total:</label>
+                            <span type="text" 
+                                   id="total" 
+                                   class="form-control" 
+                                   t-esc="state.total"/>
+                        </div>
+                      
+                    </div>
+
+                </div>
+
+            <div class="odoo-list">
+                <t t-if="state.cargando">
+                    <p class="odoo-list-empty">Cargando...</p>
+                </t>
+                <t t-elif="state.detalle.length === 0">
+                    <p class="odoo-list-empty">No se encontro detalle detalle.</p>
+                </t>
+                <t t-else="">
+                    <t t-foreach="state.detalle" t-as="detalle" t-key="detalle.id">
+                        <div class="odoo-list-item">
+                            <span class="odoo-list-item-name">
+                                 <t t-esc="detalle.nombre || ''"/>
+                                <t t-esc="detalle.cantidad || 0.0"/>
+                                <t t-esc="detalle.subtotal || ''"/>
+                            </span>
+
+                        </div>
+                    </t>
+                </t>
+            </div>
+
+            <t t-set-slot="footer">
+                <button class="odoo-btn odoo-btn-secondary" t-on-click="_onCancel">
+                    Cancelar
+                </button>
+                <button class="odoo-btn odoo-btn-primary"
+                        t-on-click="_onConfirm"
+                        t-att-disabled="state.cotizacionId === 0">
+                    Cargar
+                </button>
+            </t>
+
+        </Dialog>
+    </t>
+</templates>
