@@ -14,6 +14,10 @@
                     Cotizacion: <span class="odoo-highlight"><t t-esc=" state.guia"/></span>
                 </div>
 
+                <button class="odoo-btn odoo-btn-primary" t-on-click="onGuardarCotizacion">
+                    <i class="fa fa-save"/> Guardar en Cotización
+                 </button>
+
                 <button class="odoo-btn odoo-btn-warning" t-on-click="onClickCambiarEstado">
                     <i class="fa fa-exchange"/> Confirmar propuesta
                 </button>

@@ -27,6 +27,7 @@
                              t-on-click="() => this.onSeleccionarProducto(producto)">
                             <span class="odoo-list-item-name">
                                 <t t-esc="producto.nombre"/>
+                                "  "
                                 <t t-esc="producto.precio"/>
                             </span>
                         </div>

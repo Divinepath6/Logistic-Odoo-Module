@@ -53,11 +53,26 @@ export class PantallaPedido extends Component {
             totalCliente: 0,
             totalAnticiposCliente: 0,
             totalAnticiposProveedor: 0,
-        
+
+            balanceCliente : "",
+            balancePorcentajeProveedor: "",
+            balanceProveedor: "",
+            balancePorcentajeCliente: "",
+
             numeroContrato: "",
          
             cargando: false,
-
+            // fechas
+            fecha_compromiso_proveedor_1 : "",
+            fecha_compromiso_proveedor_3 : "",
+            fecha_compromiso_proveedor_2 : "",
+            fecha_compromiso_proveedor_4 : "",
+            
+            fecha_compromiso_cliente_1 : "",
+            fecha_compromiso_cliente_2 : "",
+            fecha_compromiso_cliente_3 : "",
+            fecha_compromiso_cliente_4 : "",
+            
         });
         onWillStart(async () => {
             if (this.props.action && this.props.action.params) {
@@ -157,6 +172,32 @@ export class PantallaPedido extends Component {
                     this.state.detalleProveedor = [];
                 }
                 this.state.totalAnticiposProveedor =  (totalAnticiposProveedor).toFixed(2); 
+                
+                // balances
+                const balanceP = (this.state.totalProveedor - this.state.totalAnticiposProveedor);
+                const balanceC = (this.state.totalCliente - this.state.totalAnticiposCliente);
+
+                const porP =  ((this.state.totalProveedor * 100) / this.state.totalAnticiposProveedor) ;
+
+                const porC =  ((this.state.totalCliente * 100) / this.state.totalAnticiposCliente);
+                this.state.balanceCliente = "$ " + balanceC.toFixed(2);
+                this.state.balancePorcentajeCliente ="% " + porC.toFixed(2); 
+
+                this.state.balanceProveedor =  "$ " + balanceP.toFixed(2);
+                this.state.balancePorcentajeProveedor = "% " + porP.toFixed(2);
+                 
+                // fechas: 
+                this.state.fecha_compromiso_proveedor_1 = p.fecha_compromiso_proveedor_1;
+                this.state.fecha_compromiso_proveedor_3 = p.fecha_compromiso_proveedor_2;
+                this.state.fecha_compromiso_proveedor_2 = p.fecha_compromiso_proveedor_3;
+                this.state.fecha_compromiso_proveedor_4 = p.fecha_compromiso_proveedor_4;
+                
+                this.state.fecha_compromiso_cliente_1 = p.fecha_compromiso_cliente_1;
+                this.state.fecha_compromiso_cliente_2 = p.fecha_compromiso_cliente_2;
+                this.state.fecha_compromiso_cliente_3 = p.fecha_compromiso_cliente_3;
+                this.state.fecha_compromiso_cliente_4 = p.fecha_compromiso_cliente_4;
+                
+                this.state.aviso = p.aviso;
                 
             }else{
                 console.log(resultado);
@@ -385,6 +426,17 @@ export class PantallaPedido extends Component {
             total_cliente: this.state.totalCliente,
             numero_contrato: this.state.numeroContrato,
             racks_acordados: 0,
+
+
+            fecha_compromiso_proveedor_1:this.state.fecha_compromiso_proveedor_1,
+            fecha_compromiso_proveedor_2:this.state.fecha_compromiso_proveedor_2,
+            fecha_compromiso_proveedor_3:this.state.fecha_compromiso_proveedor_3,
+            fecha_compromiso_proveedor_4:this.state.fecha_compromiso_proveedor_4, 
+            fecha_compromiso_cliente_1:this.state.fecha_compromiso_cliente_1,
+            fecha_compromiso_cliente_2:this.state.fecha_compromiso_cliente_2,
+            fecha_compromiso_cliente_3:this.state.fecha_compromiso_cliente_3,
+            fecha_compromiso_cliente_4:this.state.fecha_compromiso_cliente_4,
+
         }
         const pedido_id = this.state.pedidoId;
         const detalle_pedido = this.state.detalleRacks;

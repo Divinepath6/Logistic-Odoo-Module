@@ -23,7 +23,7 @@ class rastreo_bodega_cliente(models.Model):
     )
 
     @api.model
-    def guardar_bodega(self, pedido_id, ubicacion, bodegas, detalle_adicional):
+    def guardar_bodega(self, pedido_id, ubicacion, bodegas, guardar_cotizacion):
         if not pedido_id:
             raise UserError("Bodega: Debes indicar un pedido")
 
@@ -89,6 +89,7 @@ class rastreo_bodega_cliente(models.Model):
                 })
 
                 bodega_adicional = self.env['rastreo.bodega_adicional']
+                detalle_adicional = list(b.get('detalle_adicional') or [])
                 for d in detalle_adicional:
                     rack_id_ad = int(d.get('rack_id')) if d.get('rack_id') else False
                     if not rack_id_ad:
@@ -114,6 +115,8 @@ class rastreo_bodega_cliente(models.Model):
                         'cantidad': int(d.get('racks_ocupados') or 0),
                         'numero': d.get('numero') or '',
                     })
+            if not guardar_cotizacion:
+                return {'success': True,'id': pedido.id}
             
             sale = pedido.sale_order_id
             if not sale.exists():

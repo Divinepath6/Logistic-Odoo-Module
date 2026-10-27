@@ -135,8 +135,105 @@
                                           />
                                 </div>
                             </div>
-
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="balanceCliente">Balance Cliente:</label>
+                                    <input type="text"
+                                            id="balanceCliente"
+                                            class="odoo-input"
+                                            t-att-value="state.balanceCliente || 0"
+                                            readonly="readonly"
+                                          />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="balancePorcentajeCliente">Porcentaje Cliente:</label>
+                                    <input type="text"
+                                            id="balancePorcentajeCliente"
+                                            class="odoo-input"
+                                            t-att-value="state.balancePorcentajeCliente || 0"
+                                            readonly="readonly"
+                                          />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="balanceProveedor">Balance Proveedor:</label>
+                                    <input type="text"
+                                            id="balanceProveedor"
+                                            class="odoo-input"
+                                            t-att-value="state.balanceProveedor || 0"
+                                            readonly="readonly"
+                                          />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="balancePorcentajeProveedor">Porcentaje Proveedor:</label>
+                                    <input type="text"
+                                            id="balancePorcentajeProveedor"
+                                            class="odoo-input"
+                                            t-att-value="state.balancePorcentajeProveedor || 0"
+                                            readonly="readonly"
+                                          />
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="cc-card">
+                            <h3 class="cc-card-title">
+                                <span class="cc-badge-dot"></span>
+                                Compromiso de Pago cliente    
+                            </h3>
+                                <label class="odoo-label" for="fecha_compromiso_cliente_1">Fecha 1 (30%): </label>
+                                    <input type="date" 
+                                        id="fechaAnticipo1" 
+                                        class="form-control" 
+                                        t-model="state.fecha_compromiso_cliente_1"/>
+                                <label class="odoo-label" for="fecha_compromiso_cliente_2">Fecha 2 (30%): </label>
+                                    <input type="date" 
+                                        id="fechaAnticipo2" 
+                                        class="form-control" 
+                                        t-model="state.fecha_compromiso_cliente_2"/>                                
+                                <label class="odoo-label" for="fecha_compromiso_cliente_3">Fecha 3 (20%): </label>
+                                    <input type="date" 
+                                        id="fechaAnticipo3" 
+                                        class="form-control" 
+                                        t-model="state.fecha_compromiso_cliente_3"/>     
+                                <label class="odoo-label" for="fecha_compromiso_cliente_4">Fecha 4 (20%): </label>
+                                    <input type="date" 
+                                        id="fechaAnticipo4" 
+                                        class="form-control" 
+                                        t-model="state.fecha_compromiso_cliente_4"/>     
+                        
+                            <h3 class="cc-card-title">
+                                <span class="cc-badge-dot"></span>
+                                Compromiso de Pago Proveedor
+                            </h3>
+                                <label class="odoo-label" for="fecha_compromiso_proveedor_1">Fecha 1 (30%): </label>
+                                    <input type="date" 
+                                        id="fechaAnticipoP1" 
+                                        class="form-control" 
+                                        t-model="state.fecha_compromiso_proveedor_1"/>     
+                                <label class="odoo-label" for="fecha_compromiso_proveedor_2">Fecha 2 (30%): </label>
+                                    <input type="date" 
+                                        id="fechaAnticipoP2" 
+                                        class="form-control" 
+                                        t-model="state.fecha_compromiso_proveedor_2"/>   
+                                <label class="odoo-label" for="fecha_compromiso_proveedor_3">Fecha 3 (20%): </label>
+                                    <input type="date" 
+                                        id="fechaAnticipoP3" 
+                                        class="form-control" 
+                                        t-model="state.fecha_compromiso_proveedor_3"/>   
+                                <label class="odoo-label" for="fecha_compromiso_proveedor_4">Fecha 4 (20%): </label>
+                                    <input type="date" 
+                                        id="fechaAnticipoP4" 
+                                        class="form-control" 
+                                        t-model="state.fecha_compromiso_proveedor_4"/>   
+                        </div>
+                       
+
                     </div>
 
 
@@ -201,6 +298,13 @@
 
                     <!-- ESTADO DEL PEDIDO  -->
                     <div class="odoo-card">
+                        <div class="odoo-card-title">
+                            <i class="fa fa-flag"/> Aviso:
+                        </div>
+                        <span class="odoo-result-value">
+                                <t t-esc="state.aviso or 'Sin Aviso'"/>
+                            </span>
+
                         <div class="odoo-card-title">
                             <i class="fa fa-flag"/> Estado del pedido
                         </div>
@@ -430,12 +534,16 @@
                                             <td class="text-end"><t t-esc="r.costo_rack or 0"/></td>
                                             <td class="text-end"><t t-esc="r.cantidad_racks or 0"/></td>
                                             <td class="text-end"><t t-esc="r.subtotal or 0"/></td>
+                                            
+                                            <!-- 
                                             <td class="text-end">
                                                 <button class="odoo-btn odoo-btn-sm odoo-btn-ghost"
                                                         t-on-click="() => this.onEditarDetalleRacks(r)">
                                                     <i class="fa fa-pencil"/>
                                                 </button>
-                                            </td>
+                                            </td
+                                            >-->
+
                                         </tr>
                                     </t>
                                     <t t-else="">
