@@ -515,3 +515,171 @@
     border-radius: 8px;
 }
 .odoo-scroll::-webkit-scrollbar-thumb:hover { background: #b8c2d6; }
+
+/* ============================================================
+   11. VISTA TABLERO (TABLA ESTILO EXCEL)
+   ============================================================ */
+
+.odoo-table-container {
+    width: 100%;
+    overflow: auto;
+    background: var(--odoo-card-bg);
+    border-radius: var(--odoo-radius-md);
+    box-shadow: var(--odoo-shadow-sm);
+    border: 1px solid var(--odoo-border);
+    height: calc(100vh - 150px);
+}
+
+.odoo-table {
+    display: flex;
+    flex-direction: column;
+    min-width: max-content;
+    width: 100%;
+}
+
+/* EL HEADER Y LAS FILAS USAN GRID */
+.odoo-table-header, 
+.odoo-table-row {
+    display: grid;
+    align-items: center;
+    width: max-content; 
+    min-width: 100%;
+    border-bottom: 1px solid var(--odoo-border-soft);
+}
+
+.odoo-table-header {
+    background-color: #f8fafc;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid var(--odoo-border);
+    font-weight: 600;
+    font-size: 0.75rem; /* Letra un poco más pequeña para que quepa todo */
+    color: var(--odoo-text-strong);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.odoo-table-row {
+    transition: background-color 0.15s ease;
+    font-size: 0.85rem;
+}
+
+.odoo-table-row:hover {
+    background-color: #f8f9fc;
+}
+
+/* CELDAS */
+.odoo-th, 
+.odoo-td {
+    padding: 8px 12px;
+    border-right: 1px solid var(--odoo-border-soft);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden; 
+}
+
+.odoo-th:last-child, 
+.odoo-td:last-child {
+    border-right: none;
+}
+
+/* TRUNCATE (Cortar texto largo) */
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+}
+
+/* ALINEACIONES */
+.odoo-text-right { justify-content: flex-end; text-align: right; }
+.odoo-text-center { justify-content: center; text-align: center; }
+.odoo-text-muted { color: var(--odoo-text-muted); }
+.odoo-text-danger { color: #d32f2f; }
+
+/* ACCIONES */
+.odoo-td-actions {
+    justify-content: center;
+    gap: 4px;
+    padding: 4px;
+}
+
+.odoo-btn-icon {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--odoo-radius-sm);
+    color: var(--odoo-text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+}
+
+.odoo-btn-icon:hover {
+    background: #f1f5f9;
+    color: var(--odoo-primary);
+    border-color: var(--odoo-border);
+}
+
+.odoo-btn-icon.odoo-text-danger:hover {
+    background: #fee2e2;
+    color: #d32f2f;
+    border-color: #fca5a5;
+}
+
+/* BADGES */
+.odoo-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.odoo-badge-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+/* RESIZER (Agarrador de columnas) */
+.odoo-th.resizable {
+    position: relative;
+    padding-right: 18px;
+}
+
+.resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 5;
+}
+
+.resizer:hover, .resizer.is-resizing {
+    background-color: var(--odoo-primary-soft);
+    border-right: 2px solid var(--odoo-primary);
+}
+
+/* Ajustes de responsividad */
+@media (max-width: 1200px) {
+    .odoo-table-header, 
+    .odoo-table-row {
+        grid-template-columns: 70px repeat(10, minmax(100px, var(--col-width, 1fr)));
+    }
+    .odoo-th, .odoo-td {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+}

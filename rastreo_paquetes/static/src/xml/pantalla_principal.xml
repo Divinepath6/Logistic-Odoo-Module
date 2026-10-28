@@ -3,50 +3,125 @@
     <t t-name="rastreo_paquetes.pantalla_principal">
         <div class="odoo-screen odoo-dashboard">
 
+            <!-- HEADER -->
             <div class="odoo-screen-header">
                 <h2>LOGÍSTICA</h2>
                 <div class="odoo-search-box">
-                    <i class="fa fa-search odoo-search-icon"/>
-                    <input type="text" class="odoo-search-input" placeholder="Buscar por nombre de cliente o cotización..." t-on-input="onBusqueda"/>
+                    <i class="fa fa-search odoo-search-icon" />
+                    <input type="text" class="odoo-search-input"
+                        placeholder="Buscar por nombre de cliente o cotización..."
+                        t-on-input="onBusqueda" />
                 </div>
-                <button type="button" class="odoo-btn odoo-btn-primary" t-on-click="onCargarCotizacion">
-                    <i class="fa fa-external-link-square"/> Cargar Cotización
-                </button>
-                <button type="button" class="odoo-btn odoo-btn-primary" t-on-click="onClickCrearPedido">
-                    <i class="fa fa-plus-circle"/> Crear Cotización
-                </button>
-                <button type="button" class="odoo-btn odoo-btn-primary" t-on-click="onclickEditarRacks">
-                    <i class="fa fa-list"/> Editar Racks
-                </button>
+                <div class="odoo-header-actions">
+                    <button type="button" class="odoo-btn odoo-btn-primary"
+                        t-on-click="onCargarCotizacion">
+                        <i class="fa fa-external-link-square" /> Cargar Cotización </button>
+                    <button type="button" class="odoo-btn odoo-btn-primary"
+                        t-on-click="onClickCrearPedido">
+                        <i class="fa fa-plus-circle" /> Crear Cotización </button>
+                    <button type="button" class="odoo-btn odoo-btn-primary"
+                        t-on-click="onclickEditarRacks">
+                        <i class="fa fa-list" /> Editar Racks </button>
+                </div>
             </div>
 
             <div class="odoo-dashboard-list">
-                <div class="odoo-row-card" t-foreach="state.pedidos" t-as="p" t-key="p.id">
-                    <div class="row-card-actions">
-                        <button type="button" class="odoo-btn odoo-btn-primary odoo-btn-sm" t-on-click="() => this.onClickEditarPedido(p)">
-                            <i class="fa fa-pencil"/> Editar
-                        </button>
-                        <button type="button" class="odoo-btn odoo-btn-primary odoo-btn-sm" t-on-click="() => this.onClickEliminarPedido(p)">
-                            <i class="fa fa-close"/> Eliminar
-                        </button>
-                    </div>
-                    <div class="row-card-divider"></div>
-                    <div class="row-card-data">
-                        <span class="badge-dato">Estado: <strong><t t-esc="p.estado"/></strong></span>
-                        <span class="badge-dato">Cotización: <strong><t t-esc="p.numero_guia"/></strong></span>
-                        <span class="badge-dato">Cliente: <strong><t t-esc="p.cliente_nombre || ' '"/></strong></span>
-                        <t t-if="p.estado != 'fase_inicial'">
-                            <span class="badge-dato">Saldo cliente: <t t-esc="p.anticipos_cliente.saldo_cliente || 0"/></span>
-                            <span class="badge-dato">Total cliente: <t t-esc="p.cotizacion.total || 0"/></span>
-                            <span class="badge-dato">Saldo proveedor: <t t-esc="p.anticipos_proveedor.saldo_proveedor || 0"/></span>
-                            <span class="badge-dato">Total proveedor: <t t-esc="p.anticipos_proveedor.total_acordado || 0"/></span>
-                        </t>
+                <t t-if="state.modoTablero">
+                    <div class="odoo-table-container odoo-scroll">
+                        <!-- Quitamos el t-att-style de aquí -->
+                        <div class="odoo-table">
 
-                        <span class="badge-dato">Racks: <t t-esc="p.detalle_cotizacion.total_racks || 0"/></span>
-                        <span class="badge-dato">Última act: <t t-esc="p.ultima_actualizacion.fecha || ''"/></span>
-                    </div>
-                </div>
+                            <!-- EL HEADER LLEVA EL GRID -->
+                            <div class="odoo-table-header"
+                                t-att-style="'grid-template-columns: 80px ' + state.colWidths.map(w => w + 'px').join(' ')">
+                                <div class="odoo-th">Acciones</div>
+                                <t t-foreach="state.headers" t-as="header" t-key="header_index">
+                                    <div class="odoo-th resizable" t-att-data-col="header_index">
+                                        <span class="truncate" t-esc="header.label" />
+                                        <div class="resizer"></div>
+                                    </div>
+                                </t>
+                            </div>
 
+                            <div class="odoo-table-body">
+                                <!-- CADA FILA LLEVA EL MISMO GRID -->
+                                <div class="odoo-table-row" t-foreach="state.pedidos" t-as="p"
+                                    t-key="p.id"
+                                    t-att-style="'grid-template-columns: 80px ' + state.colWidths.map(w => w + 'px').join(' ')">
+
+                                    <div class="odoo-td odoo-td-actions">
+                                        <button type="button" class="odoo-btn-icon" title="Editar"
+                                            t-on-click="() => this.onClickEditarPedido(p)">
+                                            <i class="fa fa-pencil" />
+                                        </button>
+                                        <button type="button" class="odoo-btn-icon odoo-text-danger"
+                                            title="Eliminar"
+                                            t-on-click="() => this.onClickEliminarPedido(p)">
+                                            <i class="fa fa-close" />
+                                        </button>
+                                    </div>
+
+                                    <div class="odoo-td truncate" t-att-title="p.estado">
+                                        <strong>
+                                            <t t-esc="p.estado" />
+                                        </strong>
+                                    </div>
+                                    <div class="odoo-td truncate" t-att-title="p.numero_guia">
+                                        <strong>
+                                            <t t-esc="p.numero_guia" />
+                                        </strong>
+                                    </div>
+                                    <div class="odoo-td truncate" t-att-title="p.cliente_nombre">
+                                        <t t-esc="p.cliente_nombre || ''" />
+                                    </div>
+                                    <div class="odoo-td truncate"
+                                        t-att-title="p.aviso || 'Sin Pendiente'">
+                                        <t t-if="p.aviso">
+                                            <span class="odoo-badge odoo-badge-warning">
+                                                <t t-esc="p.aviso" />
+                                            </span>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="odoo-text-muted">Sin Pendiente</span>
+                                        </t>
+                                    </div>
+
+                                    <t t-if="p.estado != 'fase_inicial'">
+                                        <div class="odoo-td odoo-text-right">
+                                            <t t-esc="p.anticipos_cliente.saldo_cliente || 0" />
+                                        </div>
+                                        <div class="odoo-td odoo-text-right">
+                                            <t t-esc="p.cotizacion.total || 0" />
+                                        </div>
+                                        <div class="odoo-td odoo-text-right">
+                                            <t t-esc="p.anticipos_proveedor.saldo_proveedor || 0" />
+                                        </div>
+                                        <div class="odoo-td odoo-text-right">
+                                            <t t-esc="p.anticipos_proveedor.total_acordado || 0" />
+                                        </div>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="odoo-td"></div>
+                                        <div class="odoo-td"></div>
+                                        <div class="odoo-td"></div>
+                                        <div class="odoo-td"></div>
+                                    </t>
+
+                                    <div class="odoo-td odoo-text-center">
+                                        <t t-esc="p.detalle_cotizacion.total_racks || 0" />
+                                    </div>
+                                    <div class="odoo-td truncate odoo-text-muted"
+                                        t-att-title="p.ultima_actualizacion.fecha">
+                                        <t t-esc="p.ultima_actualizacion.fecha || ''" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+                <t t-else="">
+                    <!-- AQUI IRÁ TU VISTA DE TARJETAS (Dejar como estaba antes) -->
+                </t>
             </div>
         </div>
     </t>

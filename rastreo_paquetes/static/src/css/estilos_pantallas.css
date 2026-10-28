@@ -517,3 +517,166 @@
     font-size: 0.75rem;
     border-radius: 4px;
 }
+
+
+
+/* ============================================================
+   NUEVO DISEÑO RESPONSIVO: Nuevo:
+   ============================================================ */
+
+/* 1. Contenedor Principal (Layout del Dashboard) */
+.odoo-dashboard {
+    display: flex;
+    flex-direction: column;
+    /* Esto es clave para pantallas de poca altura (como 1536x703). 
+       Resta el alto del encabezado para que la lista haga scroll interno. */
+    height: calc(100vh - 80px); 
+    overflow: hidden;
+}
+
+/* 2. El Encabezado no se encoge */
+.odoo-screen-header {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+}
+
+/* 3. Lista con scroll interno */
+.odoo-dashboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px; /* Un poco de espacio para que la sombra no se corte */
+    width: 100%;
+    flex: 1; /* Ocupa todo el alto disponible restante */
+    overflow-y: auto; /* Scroll vertical interno */
+    overflow-x: hidden; /* Evita scroll horizontal en toda la página */
+}
+
+/* Scrollbar estética para la lista de pedidos */
+.odoo-dashboard-list::-webkit-scrollbar { width: 8px; }
+.odoo-dashboard-list::-webkit-scrollbar-track { background: transparent; }
+.odoo-dashboard-list::-webkit-scrollbar-thumb {
+    background: #d6dce8;
+    border-radius: 4px;
+}
+.odoo-dashboard-list::-webkit-scrollbar-thumb:hover { background: #b8c2d6; }
+
+/* 4. Tarjeta de fila horizontal */
+.odoo-row-card {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--odoo-border);
+    border-radius: var(--odoo-radius-md);
+    padding: 8px 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+    /* Importante: ancho al 100% en lugar de max-content para que ocupe el ancho de su contenedor */
+    width: 100%; 
+    min-width: 0; 
+}
+
+.odoo-row-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: var(--odoo-accent);
+}
+
+/* Zona de botones */
+.row-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0; 
+}
+
+/* Separador vertical */
+.row-card-divider {
+    width: 1px;
+    height: 24px;
+    background-color: var(--odoo-border);
+    margin: 0 12px;
+    flex-shrink: 0;
+}
+
+/* 5. Zona de datos con scroll horizontal interno en pantallas medianas */
+.row-card-data {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* Mantenemos nowrap para que estén en una línea */
+    flex-wrap: nowrap; 
+    /* Permite que el scroll horizontal SOLO afecte a los datos, no a los botones */
+    overflow-x: auto; 
+    padding-bottom: 2px; /* Espacio para la barra de scroll */
+    flex-grow: 1;
+}
+
+/* Scrollbar estética para los datos en pantallas chicas */
+.row-card-data::-webkit-scrollbar { height: 4px; }
+.row-card-data::-webkit-scrollbar-track { background: transparent; }
+.row-card-data::-webkit-scrollbar-thumb { background: #d6dce8; border-radius: 4px; }
+
+/* 6. Etiquetas de datos (Badges) */
+.badge-dato {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f4f6f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: var(--odoo-text-muted);
+    border: 1px solid var(--odoo-border);
+    white-space: nowrap; 
+    flex-shrink: 0; /* Evita que las etiquetas se aplasten y pierdan su forma */
+}
+
+.badge-dato strong {
+    color: var(--odoo-text-strong);
+    margin-left: .3rem;
+    font-weight: 600;
+}
+
+/* 7. Botones compactos */
+.odoo-row-card .odoo-btn-sm {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+/* ============================================================
+   8. MEDIA QUERIES (Adaptación a diferentes pantallas)
+   ============================================================ */
+
+/* Pantallas Medianas (Laptops pequeñas, Tablets horizontales) */
+@media (max-width: 1200px) {
+    .badge-dato {
+        font-size: 0.75rem; /* Letra un poco más pequeña para que quepan más datos */
+        padding: 3px 8px;
+    }
+}
+
+/* Tablets verticales y Móviles (Menos de 768px) */
+@media (max-width: 768px) {
+    .odoo-row-card {
+        flex-direction: column; /* Los botones van arriba, los datos abajo */
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .row-card-divider {
+        width: 100%; /* Separador horizontal */
+        height: 1px;
+        margin: 4px 0;
+    }
+
+    .row-card-data {
+        width: 100%;
+        /* En móviles permitimos que los datos fluyan en múltiples líneas para evitar scroll horizontal incómodo */
+        flex-wrap: wrap; 
+        overflow-x: hidden;
+    }
+    
+    .odoo-screen-header {
+        flex-wrap: wrap; /* Permite que los botones de acción salten de línea si no caben */
+        gap: 10px;
+    }
+}

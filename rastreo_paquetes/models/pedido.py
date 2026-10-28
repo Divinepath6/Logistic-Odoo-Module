@@ -632,7 +632,9 @@ class rastreo_paquetes(models.Model):
 
         pedidos = self.search(domain, limit=50)
         lista = []
-
+        # KPIs
+        kpi_saldo_clientes = 0
+        kpi_saldo_proveedores = 0
         for p in pedidos:
             actualizacion = self.env['rastreo.pedido_actualizacion'].search_read(
                 [('pedido_id', '=', p.id)],
@@ -664,6 +666,9 @@ class rastreo_paquetes(models.Model):
 
             saldo_cliente = (total_cotizacion or 0.0) - total_anticipos_cliente
             saldo_proveedor = (p.total_proveedor or 0.0) - total_anticipos_proveedor
+
+            kpi_saldo_clientes = kpi_saldo_clientes + saldo_cliente
+            kpi_saldo_proveedores = kpi_saldo_proveedores + saldo_proveedor
 
             lista.append({
                 'id': p.id,
@@ -707,8 +712,14 @@ class rastreo_paquetes(models.Model):
                 },
             })
 
-        return lista
-
+        return {
+            'success': True, 
+            'lista': lista,
+            'kpis': {
+                'cliente' : kpi_saldo_clientes,
+                'proveedor': kpi_saldo_proveedores,
+            },
+            }
 
 
     @api.model

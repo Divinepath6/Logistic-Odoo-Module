@@ -1,29 +1,105 @@
 /** @odoo-module **/
 import { registry } from "@web/core/registry";
-import { Component, onWillStart, useState   } from "@odoo/owl";
+import { Component, onWillStart, useState, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks"; 
 import { componente_creacion_pedido } from "./componente_creacion_pedido";
-import {componente_edicion_racks} from "./componente_edicion_racks";
+import { componente_edicion_racks } from "./componente_edicion_racks";
 import { componente_cargar_cotizacion } from "./componente_cargar_cotizacion";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 
 export class PantallaPrincipal extends Component { 
-    static components = { componente_creacion_pedido , componente_edicion_racks, componente_cargar_cotizacion };
+    static components = { componente_creacion_pedido, componente_edicion_racks, componente_cargar_cotizacion };
+    
     setup() {
         this.notification = useService("notification");
         this.action = useService("action");
         this.orm = useService("orm");
         this.dialogService = useService("dialog");
+ 
+        this._isResizing = false;
+        this._colIndex = -1;
+        this._startX = 0;
+        this._startWidth = 0;
+
         this.state = useState({
             pedidos: [],
+            modoTablero: true,
             cargando: false,
-            columns: []
+            kpiClientes: 0,
+            kpiProveedor: 0,
+            columns: [],
+            headers : [
+                { label: "Estado" },
+                { label: "Cotización" },
+                { label: "Cliente" },
+                { label: "Aviso" },
+                { label: "Saldo cliente" },
+                { label: "Total cliente" },
+                { label: "Saldo proveedor" },
+                { label: "Total proveedor" },
+                { label: "Racks" },
+                { label: "Última act." }
+            ],
+            colWidths : [100, 100, 150, 200, 120, 120, 120, 130, 130, 80, 160],
         });
+
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseUp = this.onMouseUp.bind(this);
+        this.onMouseDown = this.onMouseDown.bind(this);
+
+        document.addEventListener('mousedown', this.onMouseDown);
+
+        onWillUnmount(() => {
+            document.removeEventListener('mousedown', this.onMouseDown);
+            document.removeEventListener('mousemove', this.onMouseMove);
+            document.removeEventListener('mouseup', this.onMouseUp);
+        });
+
         onWillStart(async () => {
             await this.cargarPedidos();
         });
         this.searchTimeout = null;
     }
+
+
+
+    onMouseDown(e) {
+        if (e.target && e.target.classList.contains('resizer')) {
+            this._isResizing = true;
+            this._startX = e.clientX;
+            
+            const th = e.target.parentElement;
+            this._colIndex = parseInt(th.getAttribute('data-col')); 
+            this._startWidth = this.state.colWidths[this._colIndex]; 
+            
+            e.target.classList.add('is-resizing');
+            
+            document.addEventListener('mousemove', this.onMouseMove);
+            document.addEventListener('mouseup', this.onMouseUp);
+        }
+    }
+
+    onMouseMove(e) {
+        if (!this._isResizing || this._colIndex === -1) return;
+        
+        const deltaX = e.clientX - this._startX;
+        const newWidth = Math.max(80, this._startWidth + deltaX);
+        
+        const newWidths = [...this.state.colWidths];
+        newWidths[this._colIndex] = newWidth;
+        this.state.colWidths = newWidths;
+    }
+
+    onMouseUp() {
+        this._isResizing = false;
+        this._colIndex = -1;
+        document.removeEventListener('mousemove', this.onMouseMove);
+        document.removeEventListener('mouseup', this.onMouseUp);
+        
+        document.querySelectorAll('.resizer').forEach(r => r.classList.remove('is-resizing'));
+    }
+
+
     
     async onClickCrearPedido(ev) {
         this.dialogService.add(componente_creacion_pedido,  {
@@ -57,7 +133,7 @@ export class PantallaPrincipal extends Component {
                 params: { pedido_id: p.id , cliente_nombre : p.cliente_nombre, guia: p.numero_guia },  
                 target: "current",
             });
-        }else{
+        } else {
             await this.action.doAction({
             type: "ir.actions.client",
             tag: "rastreo_paquetes.pantalla_pedido",
@@ -65,19 +141,15 @@ export class PantallaPrincipal extends Component {
             target: "current",
             });
         }
-        
     }
+
     async onclickEditarRacks(){
         this.dialogService.add(componente_edicion_racks, {
-                confirm: async () => {
-
-                },
-                cancel: () => {
-                    
-                }
+                confirm: async () => {},
+                cancel: () => {}
         });
-        
     }
+
     onBusqueda(ev){
         const valorBuscado = ev.target.value;
         if (this.searchTimeout) {
@@ -87,7 +159,6 @@ export class PantallaPrincipal extends Component {
             this.cargarPedidos(valorBuscado);
         }, 500);
     }
-
 
     async crearPedido(id) {
         const resultado = await this.orm.call(
@@ -120,9 +191,7 @@ export class PantallaPrincipal extends Component {
                 }
                 await this.cargarPedidos();
             },
-            cancel: () => {
-                return;
-            },
+            cancel: () => {},
         });
     }
 
@@ -144,22 +213,25 @@ export class PantallaPrincipal extends Component {
                 }
                 await this.cargarPedidos();
             },
-            cancel: () => {
-                return;
-            },
+            cancel: () => {},
         });
     }
     
     async cargarPedidos(filtro = null) {
         this.state.cargando = true;
         try {
-            const pedidos = await this.orm.call(
+            const resultado = await this.orm.call(
                 "rastreo.pedido",
                 "listar_pedidos",
                 [filtro]
             );
-            this.state.pedidos = pedidos;
-            this.asignarColumnas();
+            if(resultado.success){
+                this.state.pedidos = resultado.lista;
+                this.state.kpiClientes = resultado.kpi.cliente
+                this.state.kpiProveedor  = resultado.kpi.proveedor
+                this.asignarColumnas();
+            }
+           
         } finally {
             this.state.cargando = false;
         }
@@ -173,7 +245,6 @@ export class PantallaPrincipal extends Component {
             ["forwarder", "A punto de salir a mar"], 
             ["enviado", "En mar"],
             ["entregado", "Finalizado"]
-
         ];
         this.state.columns = estados.map(estado => ({
             name: estado[1],
