@@ -560,7 +560,7 @@ class rastreo_paquetes(models.Model):
         }
 
     def crear_aviso(self, id):
-        aviso = " +"
+        aviso = ""
         pedido = self.browse(id)
         count_cliente = self.env['rastreo.detalle_cliente'].search_count(
             [('pedido_id', '=', id)],
@@ -578,7 +578,6 @@ class rastreo_paquetes(models.Model):
                 aviso += "Indicar número de contrato "
             if not pedido.pdf_contrato_proveedor:
                 aviso += "Contrato del proveedor "
-
 
         elif pedido.estado == 'puerto_origen':
             if count_cliente < 2:
@@ -618,7 +617,9 @@ class rastreo_paquetes(models.Model):
             'aviso' : aviso
         })
         return 
-    
+
+        
+        
     @api.model
     def listar_pedidos(self, termino_busqueda=None):
         domain = []
@@ -630,40 +631,83 @@ class rastreo_paquetes(models.Model):
             ]
 
         pedidos = self.search(domain, limit=50)
-
-        pedido_ids = pedidos.ids
-        ultimas_por_pedido = {}
-        if pedido_ids:
-            actualizaciones = self.env['rastreo.pedido_actualizacion'].search_read(
-                [('pedido_id', 'in', pedido_ids)],
-                ['pedido_id', 'fecha_actualizacion', 'actualizacion_texto'],
-                order='fecha_actualizacion desc',
-            )
-            for a in actualizaciones:
-                pid = a['pedido_id'][0]
-                if pid not in ultimas_por_pedido:
-                    ultimas_por_pedido[pid] = a
-        
         lista = []
+
         for p in pedidos:
-            ultima = ultimas_por_pedido.get(p.id)
+            actualizacion = self.env['rastreo.pedido_actualizacion'].search_read(
+                [('pedido_id', '=', p.id)],
+                ['fecha_actualizacion', 'actualizacion_texto'],
+                order='fecha_actualizacion desc',
+                limit=1,
+            )
+
+            cotizacion = p.sale_order_id
+            total_cotizacion = cotizacion.amount_total if cotizacion else 0.0
+            moneda = cotizacion.currency_id.name if cotizacion else ''
+
+            anticipos_cliente = p.detalle_cliente_ids
+            total_anticipos_cliente = sum(a.cantidad or 0.0 for a in anticipos_cliente)
+            count_anticipos_cliente = len(anticipos_cliente)
+
+            anticipos_proveedor = p.detalle_proveedor_ids
+            total_anticipos_proveedor = sum(a.cantidad or 0.0 for a in anticipos_proveedor)
+            count_anticipos_proveedor = len(anticipos_proveedor)
+
+
+            detalle = p.detalle_cotizacion_ids
+            total_racks = sum(d.cantidad_racks or 0 for d in detalle)
+            total_detalle = sum(
+                (d.costo_rack or 0.0) * (d.cantidad_racks or 0) for d in detalle
+            )
+            count_lineas_detalle = len(detalle)
+
+
+            saldo_cliente = (total_cotizacion or 0.0) - total_anticipos_cliente
+            saldo_proveedor = (p.total_proveedor or 0.0) - total_anticipos_proveedor
+
             lista.append({
                 'id': p.id,
                 'cliente_nombre': p.cliente_id.name if p.cliente_id else '',
                 'estado': p.estado,
                 'numero_guia': p.numero_guia or '',
                 'bool_contrato_proveedor': bool(p.pdf_contrato_proveedor),
-                'ultima_actualizacion': {
-                    'fecha': ultima['fecha_actualizacion'] if ultima else '',
-                    'texto': ultima['actualizacion_texto'] if ultima else '',
-                },
                 'aviso': p.aviso or '',
+
+                'ultima_actualizacion': {
+                    'fecha': actualizacion[0]['fecha_actualizacion'] if actualizacion else '',
+                    'texto': actualizacion[0]['actualizacion_texto'] if actualizacion else '',
+                },
+
+                'cotizacion': {
+                    'id': cotizacion.id if cotizacion else False,
+                    'nombre': cotizacion.name if cotizacion else '',
+                    'total': total_cotizacion,
+                    'moneda': moneda,
+                },     
+
+                'anticipos_cliente': {
+                    
+                    'total_acordado': p.total_cliente or 0.0,
+                    'count': count_anticipos_cliente,
+                    'total': total_anticipos_cliente,
+                    'saldo_cliente': saldo_cliente,
+                },
+
+                'anticipos_proveedor': {
+                    'count': count_anticipos_proveedor,
+                    'total': total_anticipos_proveedor,
+                    'saldo_proveedor': saldo_proveedor,
+                    'total_acordado': p.total_proveedor or 0.0,
+                },
+
+                'detalle_cotizacion': {
+                    'count': count_lineas_detalle,
+                    'total_racks': total_racks,
+                    'total_costo': total_detalle,
+                },
             })
-        return lista    
 
-
-
-
+        return lista
 
 
 

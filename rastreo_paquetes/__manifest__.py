@@ -60,6 +60,8 @@
             
             'rastreo_paquetes/static/src/js/componente_cargar_cotizacion.js',
             'rastreo_paquetes/static/src/xml/componente_cargar_cotizacion.xml',
+            'rastreo_paquetes/static/src/js/componente_configuracion.js',
+            'rastreo_paquetes/static/src/xml/componente_configuracion.xml',
         ],
     },
     'installable': True,

@@ -144,8 +144,8 @@
                 <t t-esc="bodega['bodegaNombre']"/>
             </h2>
             <div class="texto"  >
-                Ancho: <b><t t-esc="bodega['anchoBodega']"/> m</b> 
-                Largo: <b><t t-esc="bodega['largoBodega']"/> m</b>
+                Ancho de la bodega: <b><t t-esc="bodega['anchoBodega']"/> m</b> 
+                Largo de la bodega: <b><t t-esc="bodega['largoBodega']"/> m</b>
             </div>
             <div class="texto"  >
                 Rack: <b><t t-esc="bodega['rackNombre']"/> </b> 
@@ -159,10 +159,10 @@
             </div>
             <div class="texto"  >
                 Separación a paredes: <b>
-                <t t-esc="bodega['sepParedArr']"/>  
-                <t t-esc="bodega['sepParedAba']"/> 
-                <t t-esc="bodega['sepParedIzq']"/> 
-                <t t-esc="bodega['sepParedDer']"/> 
+                Arriba: <t t-esc="bodega['sepParedArr']"/>  
+                Abajo: <t t-esc="bodega['sepParedAba']"/> 
+                Izquieda: <t t-esc="bodega['sepParedIzq']"/> 
+                Derecha: <t t-esc="bodega['sepParedDer']"/> 
                 </b> 
             </div>
             

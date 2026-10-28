@@ -5,75 +5,45 @@
 
             <div class="odoo-screen-header">
                 <h2>LOGÍSTICA</h2>
-
                 <div class="odoo-search-box">
                     <i class="fa fa-search odoo-search-icon"/>
-                    <input type="text"
-                           class="odoo-search-input"
-                           placeholder="Buscar por nombre de cliente o cotización..."
-                           t-on-input="onBusqueda"/>
+                    <input type="text" class="odoo-search-input" placeholder="Buscar por nombre de cliente o cotización..." t-on-input="onBusqueda"/>
                 </div>
-                <button type="button"
-                        class="odoo-btn odoo-btn-primary"
-                        t-on-click="onCargarCotizacion">
+                <button type="button" class="odoo-btn odoo-btn-primary" t-on-click="onCargarCotizacion">
                     <i class="fa fa-external-link-square"/> Cargar Cotización
                 </button>
-
-                <button type="button"
-                        class="odoo-btn odoo-btn-primary"
-                        t-on-click="onClickCrearPedido">
+                <button type="button" class="odoo-btn odoo-btn-primary" t-on-click="onClickCrearPedido">
                     <i class="fa fa-plus-circle"/> Crear Cotización
                 </button>
-                <button type="button"
-                        class="odoo-btn odoo-btn-primary"
-                        t-on-click="onclickEditarRacks">
+                <button type="button" class="odoo-btn odoo-btn-primary" t-on-click="onclickEditarRacks">
                     <i class="fa fa-list"/> Editar Racks
                 </button>
             </div>
 
-            <div class="odoo-screen-columns">
-
-                <div class="odoo-column"
-                     t-foreach="state.columns"
-                     t-as="col"
-                     t-key="col.name">
-
-                    <div class="odoo-column-header">
-                        <t t-esc="col.name"/>
+            <div class="odoo-dashboard-list">
+                <div class="odoo-row-card" t-foreach="state.pedidos" t-as="p" t-key="p.id">
+                    <div class="row-card-actions">
+                        <button type="button" class="odoo-btn odoo-btn-primary odoo-btn-sm" t-on-click="() => this.onClickEditarPedido(p)">
+                            <i class="fa fa-pencil"/> Editar
+                        </button>
+                        <button type="button" class="odoo-btn odoo-btn-primary odoo-btn-sm" t-on-click="() => this.onClickEliminarPedido(p)">
+                            <i class="fa fa-close"/> Eliminar
+                        </button>
                     </div>
+                    <div class="row-card-divider"></div>
+                    <div class="row-card-data">
+                        <span class="badge-dato">Estado: <strong><t t-esc="p.estado"/></strong></span>
+                        <span class="badge-dato">Cotización: <strong><t t-esc="p.numero_guia"/></strong></span>
+                        <span class="badge-dato">Cliente: <strong><t t-esc="p.cliente_nombre || ' '"/></strong></span>
+                        <t t-if="p.estado != 'fase_inicial'">
+                            <span class="badge-dato">Saldo cliente: <t t-esc="p.anticipos_cliente.saldo_cliente || 0"/></span>
+                            <span class="badge-dato">Total cliente: <t t-esc="p.cotizacion.total || 0"/></span>
+                            <span class="badge-dato">Saldo proveedor: <t t-esc="p.anticipos_proveedor.saldo_proveedor || 0"/></span>
+                            <span class="badge-dato">Total proveedor: <t t-esc="p.anticipos_proveedor.total_acordado || 0"/></span>
+                        </t>
 
-                    <div class="odoo-column-content">
-
-                        <div class="odoo-column-card"
-                             t-foreach="col.packages"
-                             t-as="p"
-                             t-key="p.id">
-
-                            <div class="card-body">
-                                Cotización: <strong><t t-esc="p.numero_guia "/></strong>
-                                Cliente: <strong><t t-esc="p.cliente_nombre || ' '"/></strong>
-                                <div>Anticipo de cliente: <t t-esc="p.anticipo_cliente || 0"/></div>
-                                <div>Anticipo a proveedor: <t t-esc="p.anticipo_proveedor || 0"/></div>
-                                <div>
-                                    Ultima actualizacion: 
-                                    <t t-esc="p.ultima_actualizacion.fecha  || ''"/>
-                                    <t t-esc="p.ultima_actualizacion.texto || ''"/>
-                                </div>
-                            </div>
-
-                            <button type="button"
-                                    class="odoo-btn odoo-btn-primary odoo-btn-sm"
-                                    t-on-click="() => this.onClickEditarPedido(p)">
-                                <i class="fa fa-pencil"/> Editar
-                            </button>
-                            <!--  Quitar en producción -->
-                            <button type="button"
-                                    class="odoo-btn odoo-btn-primary odoo-btn-sm"
-                                    t-on-click="() => this.onClickEliminarPedido(p)">
-                                <i class="fa fa-close"/> Eliminar
-                            </button>
-                        </div>
-
+                        <span class="badge-dato">Racks: <t t-esc="p.detalle_cotizacion.total_racks || 0"/></span>
+                        <span class="badge-dato">Última act: <t t-esc="p.ultima_actualizacion.fecha || ''"/></span>
                     </div>
                 </div>
 

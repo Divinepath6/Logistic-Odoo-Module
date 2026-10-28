@@ -62,7 +62,7 @@
                                     <input type="text"
                                            id="numero_contrato"
                                            class="odoo-input"
-                                           t-att-value="state.numeroContrato or ''"
+                                            t-model="state.numeroContrato"
                                            />
                                 </div>
                             </div>
@@ -72,7 +72,7 @@
                                     <label class="odoo-label">Cliente</label>
                                     <input type="text"
                                            class="odoo-input"
-                                           t-att-value="state.clienteNombre or ''"
+                                           t-att-value="state.clienteNombre"
                                            readonly="readonly"/>
                                 </div>
                             </div>
@@ -114,9 +114,9 @@
 
                             <div class="col-md-6">
                                 <div class="odoo-field">
-                                    <label class="odoo-label" for="total_cliente">Total Anticipos al Proveedor:</label>
+                                    <label class="odoo-label" for="totalAnticiposProveedor">Total Anticipos al Proveedor:</label>
                                     <input type="text"
-                                           id="total_cliente"
+                                           id="totalAnticiposProveedor"
                                            class="odoo-input"
                                            t-att-value="state.totalAnticiposProveedor || 0"
                                            readonly="readonly"
@@ -130,7 +130,7 @@
                                     <input type="number"
                                            id="total_proveedor"
                                            class="odoo-input"
-                                           step="0.1"
+                                           step="1"
                                            t-att-value="state.totalProveedor || 0"
                                           />
                                 </div>
@@ -232,11 +232,7 @@
                                         class="form-control" 
                                         t-model="state.fecha_compromiso_proveedor_4"/>   
                         </div>
-                       
-
                     </div>
-
-
 
                     <!-- CLIENTE  -->
                     <div class="odoo-card">

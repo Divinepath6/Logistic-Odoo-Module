@@ -14,6 +14,66 @@
 
 
 /* ============================================================
+   ESTILOS PARA TARJETAS KANBAN (UNA SOLA FILA)
+   ============================================================ */
+
+/* 1. Hacemos que las columnas del Kanban sean más anchas para que quepa la fila */
+.odoo-column {
+    flex: 0 0 650px; /* <--- Aumenta este valor si tus datos son muy largos */
+    max-width: 100%;
+}
+
+/* 2. Estilo para la tarjeta contenedora */
+.odoo-column-card {
+    padding: 10px 12px;
+    background: #fff;
+    border-radius: var(--odoo-radius-md);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 8px; /* Menos margen porque ahora son más delgadas verticalmente */
+    border: 1px solid var(--odoo-border);
+    transition: box-shadow 0.2s ease;
+}
+
+.odoo-column-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* 3. Estilo de las etiquetas (Badges) */
+.badge-dato {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f4f6f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: var(--odoo-text-muted);
+    border: 1px solid var(--odoo-border);
+    white-space: nowrap;
+}
+
+.badge-dato strong {
+    color: var(--odoo-text-strong);
+    margin-left: 4px;
+    font-weight: 600;
+}
+
+/* 4. Estilo de los botones para que se vean compactos */
+.odoo-column-card .odoo-btn-sm {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+/* 5. Scrollbar estética para la fila horizontal (opcional) */
+.odoo-column-card div[style*="overflow-x: auto"]::-webkit-scrollbar {
+    height: 6px;
+}
+.odoo-column-card div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
+    background: #d6dce8;
+    border-radius: 4px;
+}
+
+/* ============================================================
    PANTALLA 2: FORMULARIO DE PEDIDO (vista form Odoo)
    ============================================================ */
 
@@ -317,30 +377,26 @@
    REPARACIÓN DEL LAYOUT PRINCIPAL
    ============================================================ */
 
-/* Contenedor de las columnas principales (Izquierda y Derecha) */
 .odoo-screen-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); /* 50% y 50% */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); 
     gap: 20px;
     align-items: start;
-    /* Quitamos la altura fija de 100vh para que la tabla de actualizaciones baje naturalmente */
     height: auto; 
     min-height: 520px;
 }
 
-/* Columnas individuales (Izquierda y Derecha) */
 .odoo-col-left,
 .odoo-col-right {
     display: flex;
     flex-direction: column;
-    gap: 16px; /* Espacio entre tarjetas */
+    gap: 16px; 
     min-width: 0;
 }
 
-/* Sub-grid para poner Cliente y Proveedor lado a lado */
 .odoo-sub-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     margin-top: 0; 
 }
@@ -361,24 +417,103 @@
 .cc-card-title.cc-title-actions {
     display: flex;
     align-items: center;
-    width: 100%; /* Asegura que ocupe todo el ancho */
-    justify-content: space-between; /* Empuja los botones a la derecha */
-    gap: 0px; /* Espacio mínimo entre el texto y los botones */
+    width: 100%; 
+    justify-content: space-between; 
+    gap: 0px; 
 }
 
-/* El texto toma el espacio disponible a la izquierda */
 .cc-card-title.cc-title-actions .cc-title-text {
     flex: 1; 
     display: flex;
     align-items: center;
-    gap: 0px; /* Mantiene la separación del punto y el texto */
+    gap: 0px; 
 }
 
-/* Agrupamos los botones y los separamos entre sí */
 .cc-card-title.cc-title-actions .cc-title-buttons {
     display: flex;
     align-items: center;
-    gap: 6px; /* <--- AQUÍ CONTROLAS LA SEPARACIÓN ENTRE LOS BOTONES */
-    justify-content: flex-end; /* Se pegan hacia su propio lado izquierdo (que visualmente es la mitad derecha de la tarjeta) */
-    flex-shrink: 0; /* Evita que los botones se aplasten si el texto es muy largo */
+    gap: 6px; 
+    justify-content: flex-end; 
+    flex-shrink: 0; 
+}
+/* ============================================================
+   NUEVO DISEÑO: LISTA HORIZONTAL DE PEDIDOS
+   ============================================================ */
+
+/* Contenedor principal: Lista vertical */
+.odoo-dashboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Espacio entre cada pedido */
+    padding: 10px 0;
+    width: 100%;
+    overflow-x: auto; /* Por si la pantalla es muy pequeña */
+}
+
+/* Tarjeta de fila horizontal */
+.odoo-row-card {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--odoo-border);
+    border-radius: var(--odoo-radius-md);
+    padding: 8px 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+    min-width: max-content; /* Evita que se aplasten los elementos en pantallas pequeñas */
+}
+
+.odoo-row-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: var(--odoo-accent);
+}
+
+/* Zona de botones */
+.row-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0; /* No se encogen */
+}
+
+/* Separador vertical */
+.row-card-divider {
+    width: 1px;
+    height: 24px;
+    background-color: var(--odoo-border);
+    margin: 0 12px;
+    flex-shrink: 0;
+}
+
+/* Zona de datos */
+.row-card-data {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap; /* Forza a que todos los datos estén en una línea */
+}
+
+/* Etiquetas de datos (Badges) */
+.badge-dato {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f4f6f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: var(--odoo-text-muted);
+    border: 1px solid var(--odoo-border);
+    white-space: nowrap; /* No permite saltos de línea dentro del badge */
+}
+
+.badge-dato strong {
+    color: var(--odoo-text-strong);
+    margin-left: .3rem;
+    font-weight: 600;
+}
+
+/* Botones compactos */
+.odoo-row-card .odoo-btn-sm {
+    padding: .3rem .5rem;;
+    font-size: 0.75rem;
+    border-radius: 4px;
 }

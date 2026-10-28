@@ -426,7 +426,7 @@ export class PantallaPedido extends Component {
             total_cliente: this.state.totalCliente,
             numero_contrato: this.state.numeroContrato,
             racks_acordados: 0,
-
+            
 
             fecha_compromiso_proveedor_1:this.state.fecha_compromiso_proveedor_1,
             fecha_compromiso_proveedor_2:this.state.fecha_compromiso_proveedor_2,
