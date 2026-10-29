@@ -40,7 +40,7 @@ export class PantallaPrincipal extends Component {
                 { label: "Racks" },
                 { label: "Última act." }
             ],
-            colWidths : [100, 100, 150, 200, 120, 120, 120, 130, 130, 80, 160],
+            colWidths : [100, 100, 150, 200, 120, 120, 120, 130, 130, 80, 280],
         });
 
         this.onMouseMove = this.onMouseMove.bind(this);
@@ -100,7 +100,9 @@ export class PantallaPrincipal extends Component {
     }
 
 
-    
+    onCambiarModo(){
+        this.state.modoTablero = !this.state.modoTablero;
+    }
     async onClickCrearPedido(ev) {
         this.dialogService.add(componente_creacion_pedido,  {
                 title: "Confirmación",

@@ -22,16 +22,18 @@
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onclickEditarRacks">
                         <i class="fa fa-list" /> Editar Racks </button>
+
+                    <button type="button" class="odoo-btn odoo-btn-primary"
+                        t-on-click="onCambiarModo">
+                        <i class="fa fa-solid fa-code-compare"></i> Cambiar </button>
                 </div>
             </div>
 
             <div class="odoo-dashboard-list">
                 <t t-if="state.modoTablero">
                     <div class="odoo-table-container odoo-scroll">
-                        <!-- Quitamos el t-att-style de aquí -->
                         <div class="odoo-table">
 
-                            <!-- EL HEADER LLEVA EL GRID -->
                             <div class="odoo-table-header"
                                 t-att-style="'grid-template-columns: 80px ' + state.colWidths.map(w => w + 'px').join(' ')">
                                 <div class="odoo-th">Acciones</div>
@@ -44,7 +46,6 @@
                             </div>
 
                             <div class="odoo-table-body">
-                                <!-- CADA FILA LLEVA EL MISMO GRID -->
                                 <div class="odoo-table-row" t-foreach="state.pedidos" t-as="p"
                                     t-key="p.id"
                                     t-att-style="'grid-template-columns: 80px ' + state.colWidths.map(w => w + 'px').join(' ')">
@@ -120,7 +121,57 @@
                     </div>
                 </t>
                 <t t-else="">
-                    <!-- AQUI IRÁ TU VISTA DE TARJETAS (Dejar como estaba antes) -->
+                    <div class="odoo-screen-columns">
+                        <div class="odoo-column"
+                            t-foreach="state.columns"
+                            t-as="col"
+                            t-key="col.name">
+
+                            <div class="odoo-column-header">
+                                <t t-esc="col.name" />
+                            </div>
+
+                            <div class="odoo-column-content">
+                                <div class="odoo-kanban-card"
+                                    t-foreach="col.packages"
+                                    t-as="p"
+                                    t-key="p.id">
+
+                                    <div class="odoo-kanban-title">
+                                        <span>Cotización: <strong t-esc="p.numero_guia" /></span>
+                                    </div>
+
+                                    <div class="odoo-kanban-body">
+                                        <div>Cliente: <strong
+                                                t-esc="p.cliente_nombre || 'Sin cliente'" /></div>
+                                        <div>Saldo cliente: <span
+                                                t-esc="p.anticipos_cliente.saldo_cliente || 0" /></div>
+                                        <div>Total cliente: <span t-esc="p.cotizacion.total || 0" /></div>
+                                        <div>Saldo proveedor: <span
+                                                t-esc="p.anticipos_proveedor.saldo_proveedor || 0" /></div>
+                                        <div>Total proveedor: <span
+                                                t-esc="p.anticipos_proveedor.total_acordado || 0" /></div>
+                                        <div>Racks: <span
+                                                t-esc="p.detalle_cotizacion.total_racks || 0" /></div>
+                                        <div>Actualización: <span
+                                                t-esc="p.ultima_actualizacion.fecha || ''" /></div>
+                                    </div>
+
+                                    <div class="odoo-kanban-footer">
+                                        <button type="button"
+                                            class="odoo-btn odoo-btn-ghost odoo-btn-sm"
+                                            t-on-click="() => this.onClickEditarPedido(p)">
+                                            <i class="fa fa-pencil" /> Editar </button>
+                                        <button type="button"
+                                            class="odoo-btn odoo-btn-ghost odoo-btn-sm odoo-text-danger"
+                                            t-on-click="() => this.onClickEliminarPedido(p)">
+                                            <i class="fa fa-close" /> Eliminar </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </t>
             </div>
         </div>

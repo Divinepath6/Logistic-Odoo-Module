@@ -317,6 +317,26 @@
                         <div class="odoo-card-title">
                             <i class="fa fa-folder-open"/> Documentos del sistema
                         </div>
+                        
+                        <!-- invoice -->
+                        <div class="odoo-result-row">
+                            <span class="odoo-result-label"> invoice </span>
+                            <span>
+                                <t t-if="state.pdfInvoice">
+                                    <span> <strong>En el sistema</strong> </span> 
+                                    <i class="oi" data-icon="check"/>
+                                </t>
+                                <t t-else="">
+                                    <span class="text-muted">No cargado </span>
+                                </t>
+                                <button type="button"
+                                    class="odoo-btn odoo-btn-primary"
+                                    t-on-click=" () => this.verPDF('pdf_invoice')">
+                                    <i class="fa fa-save"/> Ver
+                                </button>
+                            </span>
+                        </div>
+                        
 
                         <!-- Contrato Proveedor -->
                         <div class="odoo-result-row">
@@ -358,44 +378,6 @@
                             </span>
                         </div>
 
-                        <!-- ETD  -->
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">ETD</span>
-                            <span>
-                                <t t-if="state.pdfETD">
-                                    <span> <strong>En el sistema</strong> </span> 
-                                <i class="oi" data-icon="check"/>
-                                </t>
-                                <t t-else="">
-                                    <span class="text-muted">No cargado </span>
-                                </t>
-                                    <button type="button"
-                                        class="odoo-btn odoo-btn-primary"
-                                        t-on-click="  () => this.verPDF('pdf_ETD')">
-                                        <i class="fa fa-save"/> Ver
-                                    </button>
-                                
-                            </span>
-                        </div>
-                        <!-- ETA-->
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">ETA</span>
-                            <span>
-                                <t t-if="state.pdfETA">
-                                <span> <strong>En el sistema</strong> </span> 
-                                <i class="oi" data-icon="check"/>
-                                </t>
-                                <t t-else="">
-                                    <span class="text-muted">No cargado </span>
-                                </t>
-                                <button type="button"
-                                    class="odoo-btn odoo-btn-primary"
-                                    t-on-click=" () => this.verPDF('pdf_ETA')">
-                                    <i class="fa fa-save"/> Ver
-                                </button>
-                                
-                            </span>
-                        </div>
                         <!-- ETA-->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label"> BL </span>
@@ -432,25 +414,7 @@
                                 </button>
                             </span>
                         </div>
-                        <!-- invoice -->
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label"> invoice </span>
-                            <span>
-                                <t t-if="state.pdfInvoice">
-                                    <span> <strong>En el sistema</strong> </span> 
-                                    <i class="oi" data-icon="check"/>
-                                </t>
-                                <t t-else="">
-                                    <span class="text-muted">No cargado </span>
-                                </t>
-                                <button type="button"
-                                    class="odoo-btn odoo-btn-primary"
-                                    t-on-click=" () => this.verPDF('pdf_invoice')">
-                                    <i class="fa fa-save"/> Ver
-                                </button>
-                            </span>
-                        </div>
-                        
+
                     </div>
 
                     <!-- PROVEEDOR  -->

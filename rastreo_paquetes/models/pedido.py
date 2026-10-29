@@ -715,7 +715,7 @@ class rastreo_paquetes(models.Model):
         return {
             'success': True, 
             'lista': lista,
-            'kpis': {
+            'kpi': {
                 'cliente' : kpi_saldo_clientes,
                 'proveedor': kpi_saldo_proveedores,
             },

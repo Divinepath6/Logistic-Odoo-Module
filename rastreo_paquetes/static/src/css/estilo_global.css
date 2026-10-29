@@ -1,6 +1,5 @@
 /* ============================================================
    ESTILOS GLOBALES - MÓDULO RASTREO
-   Paleta Odoo + componentes reutilizables
    ============================================================ */
 
 :root {
@@ -20,15 +19,14 @@
     --odoo-text-muted:     #7a869a;
     --odoo-text-strong:    #1e293b;
 
-    --odoo-radius-sm:      6px;
-    --odoo-radius-md:      10px;
-    --odoo-radius-lg:      14px;
+    --odoo-radius-sm:      0.375rem;
+    --odoo-radius-md:      0.625rem;
+    --odoo-radius-lg:      0.875rem;
 
     --odoo-shadow-sm:      0 1px 3px rgba(20, 30, 60, 0.06);
     --odoo-shadow-md:      0 2px 8px rgba(20, 30, 60, 0.08);
     --odoo-shadow-lg:      0 4px 18px rgba(0, 0, 0, 0.08);
 }
-
 
 /* ============================================================
    1. LAYOUT GENERAL DE PANTALLAS
@@ -36,40 +34,10 @@
 
 .odoo-screen {
     background: var(--odoo-bg);
-    min-height: 100vh;
-    padding: 16px;
+    padding: 1rem;
     font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
     color: var(--odoo-text);
-    overflow-y: auto;        
-    height: 100%;   
 }
-
-/* Contenedor con scroll horizontal para columnas (Kanban) */
-.odoo-screen-columns {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 8px 0;
-    height: calc(100vh - 160px);
-}
-
-/* Grid de dos columnas (formularios con panel lateral) */
-.odoo-screen-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-    gap: 20px;
-    align-items: start;
-    height: calc(100vh - 160px);
-    min-height: 520px;
-}
-
-@media (max-width: 992px) {
-    .odoo-screen-grid {
-        grid-template-columns: 1fr;
-        height: auto;
-    }
-}
-
 
 /* ============================================================
    2. ENCABEZADO DE PANTALLA (con buscador)
@@ -78,41 +46,42 @@
 .odoo-screen-header {
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 8px;
-    padding: 12px 15px;
+    flex-wrap: wrap; /* Permite que los botones bajen si no caben */
+    gap: .6rem;
+    margin-bottom: 0.4rem;
+    padding: 0.6rem .8rem;
     background: var(--odoo-card-bg);
     border-radius: var(--odoo-radius-md);
     box-shadow: var(--odoo-shadow-sm);
 }
 
-
 .odoo-screen-header h2 {
     margin: 0;
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 1rem;
+    font-weight: 600;
     color: var(--odoo-text-strong);
 }
 
 .odoo-search-box {
     position: relative;
     flex: 1;
-    max-width: 450px;
+    min-width: 15rem;
+    max-width: 28rem;
 }
 
 .odoo-search-box .odoo-search-icon {
     position: absolute;
-    left: 14px;
+    left: 0.875rem;
     top: 50%;
     transform: translateY(-50%);
     color: #888;
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 .odoo-search-input {
     width: 100%;
-    padding: 10px 15px 10px 40px;
-    font-size: 14px;
+    padding: 0.625rem 1rem 0.625rem 2.5rem;
+    font-size: 0.875rem;
     color: #495057;
     background-color: #f4f6f8;
     border: 1px solid #e1e4e8;
@@ -127,12 +96,6 @@
     box-shadow: 0 0 0 3px rgba(82, 230, 253, 0.2);
 }
 
-.odoo-search-input::placeholder {
-    color: #adb5bd;
-    opacity: 1;
-}
-
-
 /* ============================================================
    3. TARJETAS (Cards)
    ============================================================ */
@@ -141,199 +104,86 @@
     background: var(--odoo-card-bg);
     border: 1px solid var(--odoo-border);
     border-radius: var(--odoo-radius-lg);
-    padding: 16px 20px;
+    padding: 1rem 1.25rem;
     box-shadow: var(--odoo-shadow-md);
     transition: box-shadow 0.2s ease;
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
 }
 
-.odoo-card:hover {
-    box-shadow: var(--odoo-shadow-lg);
-}
-
-/* Tarjeta con acento lateral (formularios) */
 .odoo-card-accent {
-    border-left: 4px solid var(--odoo-accent);
+    border-left: 0.25rem solid var(--odoo-accent);
     border-radius: var(--odoo-radius-md);
-    padding: 18px 22px;
+    padding: 1.125rem 1.375rem;
 }
 
 .odoo-card-title {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 0.375rem;
     font-size: 0.95rem;
     font-weight: 700;
-    margin: 0 0 12px 0;
+    margin: 0 0 0.75rem 0;
     color: var(--odoo-text-strong);
-    padding-bottom: 8px;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--odoo-border-soft);
 }
-
-.odoo-card-title.uppercase {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-}
-
-
-/* ============================================================
-   4. COLUMNAS (Kanban)
-   ============================================================ */
-
-.odoo-column {
-    flex: 0 0 300px;
-    background: var(--odoo-card-bg);
-    border-radius: 4px;
-    padding: 4px;
-    max-height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.odoo-column-header {
-    font-weight: bold;
-    padding: 5px;
-    background: var(--odoo-primary-soft);
-    border-radius: 5px;
-    margin-bottom: 6px;
-    text-align: center;
-    flex-shrink: 0;
-}
-
-.odoo-column-content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.odoo-column-card {
-    background: #fff;
-    padding: 6px 8px;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    font-size: 14px;
-}
-
 
 /* ============================================================
    5. BOTONES
    ============================================================ */
 
-/* Botón principal Odoo (morado) */
 .odoo-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 9px 18px;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
     border: none;
     border-radius: var(--odoo-radius-sm);
-    font-size: 14px;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    white-space: nowrap;
+    flex: 0 1 auto; /* Permite que los botones se compriman si es necesario */
 }
 
-.odoo-btn:active   { transform: translateY(1px); }
-.odoo-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.odoo-btn-primary {
-    background: var(--odoo-primary);
-    color: #fff;
-}
-.odoo-btn-primary:hover:not(:disabled) {
-    background: var(--odoo-primary-hover);
-    box-shadow: 0 4px 8px rgba(135, 90, 123, 0.25);
+.odoo-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
 }
 
-.odoo-btn-accent {
-    background: var(--odoo-accent);
-    color: #fff;
-}
-.odoo-btn-accent:hover:not(:disabled) {
-    background: #664aa3;
-}
-
-.odoo-btn-cyan {
-    background-color: var(--odoo-cyan);
-    color: #fff;
-}
-.odoo-btn-cyan:hover:not(:disabled) {
-    background-color: var(--odoo-cyan-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+@media (max-width: 48rem) {
+    .odoo-btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.78rem; /* Se reducen automáticamente en pantallas pequeñas */
+    }
 }
 
-.odoo-btn-secondary {
-    background: #e0e0e0;
-    color: #333;
-}
-.odoo-btn-secondary:hover:not(:disabled) {
-    background: #cfcfcf;
-}
+.odoo-btn-primary { background: var(--odoo-primary); color: #fff; }
+.odoo-btn-primary:hover:not(:disabled) { background: var(--odoo-primary-hover); box-shadow: 0 4px 8px rgba(135, 90, 123, 0.25); }
+.odoo-btn-ghost { background: #fff; color: var(--odoo-text); border: 1px solid var(--odoo-border); }
+.odoo-btn-ghost:hover:not(:disabled) { background: #f4f6fb; border-color: var(--odoo-accent); color: var(--odoo-accent); }
+.odoo-btn-secondary { background: #e0e0e0; color: #333; }
+.odoo-btn-secondary:hover:not(:disabled) { background: #cfcfcf; }
+.odoo-btn-cyan { background-color: var(--odoo-cyan); color: #fff; }
+.odoo-btn-cyan:hover:not(:disabled) { background-color: var(--odoo-cyan-hover); }
 
-.odoo-btn-ghost {
-    background: #fff;
-    color: var(--odoo-text);
-    border: 1px solid var(--odoo-border);
-}
-.odoo-btn-ghost:hover:not(:disabled) {
-    background: #f4f6fb;
-    border-color: var(--odoo-accent);
-    color: var(--odoo-accent);
-}
-
-.odoo-btn-block {
-    width: 100%;
-    padding: 10px;
-    font-size: 0.95rem;
-}
-
-.odoo-btn-sm {
-    padding: 5px 12px;
-    font-size: 0.78rem;
-}
-
+.odoo-btn-block { width: 100%; padding: 0.625rem; font-size: 0.95rem; }
+.odoo-btn-sm { padding: 0.3125rem 0.75rem; font-size: 0.78rem; }
 
 /* ============================================================
-   6. CAMPOS DE FORMULARIO
+   6. CAMPOS DE FORMULARIO (Compatibilidad con Bootstrap)
    ============================================================ */
 
-.odoo-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: 10px;
-}
-.odoo-field-croquis {
-    display: grid;
-    grid-template-columns: 1fr 1fr; 
-    align-items: center; 
-    gap: 15px; 
-    margin-bottom: 8px; /* Un poco menos de margen para que sea más compacto */
-}
-.odoo-label-croquis {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--odoo-text-muted);
-    margin-bottom: 0; /* Quitamos el margen inferior para que quede alineado */
-}
+.odoo-field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.625rem; }
+.odoo-label { font-size: 0.85rem; font-weight: 600; color: var(--odoo-text-muted); margin-bottom: 0; }
 
-.odoo-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--odoo-text-muted);
-}
-
-.odoo-input,
-.odoo-select,
-.odoo-textarea {
+.odoo-input, .odoo-select, .odoo-textarea, .form-control {
     width: 100%;
-    padding: 7px 10px;
+    padding: 0.4375rem 0.625rem;
     border: 1px solid var(--odoo-border);
     border-radius: var(--odoo-radius-sm);
     background: #fafbff;
@@ -342,63 +192,12 @@
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.odoo-input:focus,
-.odoo-select:focus,
-.odoo-textarea:focus {
+.odoo-input:focus, .odoo-select:focus, .odoo-textarea:focus, .form-control:focus {
     outline: none;
     border-color: var(--odoo-accent);
     box-shadow: 0 0 0 3px rgba(124, 92, 191, 0.15);
     background: #fff;
 }
-
-.odoo-textarea {
-    resize: vertical;
-    min-height: 60px;
-    font-family: inherit;
-}
-
-
-/* ============================================================
-   7. LISTA DE CLIENTES / RESULTADOS (búsqueda)
-   ============================================================ */
-
-.odoo-search-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.odoo-list {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid var(--odoo-border);
-    border-radius: var(--odoo-radius-sm);
-    background: #fff;
-}
-
-.odoo-list-item {
-    padding: 10px 14px;
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-    font-size: 14px;
-}
-
-.odoo-list-item:last-child { border-bottom: none; }
-.odoo-list-item:hover      { background-color: #f5f0f4; }
-.odoo-list-item.selected   {
-    background-color: var(--odoo-primary);
-    color: #fff;
-}
-
-.odoo-list-empty {
-    text-align: center;
-    color: #888;
-    padding: 20px;
-    margin: 0;
-    font-style: italic;
-}
-
 
 /* ============================================================
    8. FILAS DE RESULTADOS (label : valor)
@@ -408,113 +207,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0;
+    padding: 0.375rem 0;
     border-bottom: 1px dashed var(--odoo-border);
 }
 .odoo-result-row:last-child { border-bottom: none; }
-
-.odoo-result-label {
-    font-size: 0.85rem;
-    color: var(--odoo-text-muted);
-}
-
-.odoo-result-value {
-    font-weight: 700;
-    color: var(--odoo-accent);
-    font-size: 0.95rem;
-}
-
-.odoo-highlight {
-    color: var(--odoo-accent);
-    font-weight: 800;
-}
-
+.odoo-result-label { font-size: 0.85rem; color: var(--odoo-text-muted); }
+.odoo-result-value { font-weight: 700; color: var(--odoo-accent); font-size: 0.95rem; }
 
 /* ============================================================
-   9. TABS
-   ============================================================ */
-
-.odoo-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 6px;
-    margin-bottom: 16px;
-    background: var(--odoo-card-bg);
-    border: 1px solid var(--odoo-border);
-    border-radius: var(--odoo-radius-lg);
-    box-shadow: var(--odoo-shadow-md);
-    align-items: center;
-}
-
-.odoo-tab {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border: 1px solid transparent;
-    border-radius: var(--odoo-radius-md);
-    background: transparent;
-    color: var(--odoo-text-muted);
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.odoo-tab:hover:not(.active):not(.add) {
-    background: #f4f6fb;
-    color: var(--odoo-text);
-}
-
-.odoo-tab.active {
-    background: var(--odoo-accent);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(124, 92, 191, 0.35);
-}
-
-.odoo-tab-close {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    margin-left: 4px;
-    border-radius: 50%;
-    color: var(--odoo-text-muted);
-    font-size: 0.7rem;
-    transition: all 0.15s ease;
-}
-.odoo-tab-close:hover { background: rgba(255,255,255,0.2); color: #fff; }
-
-.odoo-tab-add {
-    margin-left: auto;
-    background: #f4f6fb;
-    color: var(--odoo-accent);
-    border: 1px dashed var(--odoo-accent);
-}
-.odoo-tab-add:hover { background: rgba(124, 92, 191, 0.08); }
-
-
-/* ============================================================
-   10. SCROLLBAR PERSONALIZADA (para columnas largas)
+   10. SCROLLBAR PERSONALIZADA
    ============================================================ */
 
 .odoo-scroll {
     overflow-y: auto;
     overflow-x: hidden;
-    padding-right: 6px;
+    padding-right: 0.375rem;
     scrollbar-width: thin;
     scrollbar-color: #d6dce8 transparent;
 }
-.odoo-scroll::-webkit-scrollbar        { width: 8px; }
-.odoo-scroll::-webkit-scrollbar-track  { background: transparent; }
-.odoo-scroll::-webkit-scrollbar-thumb  {
-    background: #d6dce8;
-    border-radius: 8px;
-}
-.odoo-scroll::-webkit-scrollbar-thumb:hover { background: #b8c2d6; }
+.odoo-scroll::-webkit-scrollbar { width: 0.5rem; }
+.odoo-scroll::-webkit-scrollbar-thumb { background: #d6dce8; border-radius: 0.5rem; }
+
+
 
 /* ============================================================
    11. VISTA TABLERO (TABLA ESTILO EXCEL)
@@ -522,12 +236,12 @@
 
 .odoo-table-container {
     width: 100%;
+    height: calc(100vh - 8rem); /* Ajuste perfecto para 1536x703 */
     overflow: auto;
     background: var(--odoo-card-bg);
     border-radius: var(--odoo-radius-md);
     box-shadow: var(--odoo-shadow-sm);
     border: 1px solid var(--odoo-border);
-    height: calc(100vh - 150px);
 }
 
 .odoo-table {
@@ -537,7 +251,6 @@
     width: 100%;
 }
 
-/* EL HEADER Y LAS FILAS USAN GRID */
 .odoo-table-header, 
 .odoo-table-row {
     display: grid;
@@ -554,7 +267,7 @@
     z-index: 10;
     border-bottom: 2px solid var(--odoo-border);
     font-weight: 600;
-    font-size: 0.75rem; /* Letra un poco más pequeña para que quepa todo */
+    font-size: 0.75rem;
     color: var(--odoo-text-strong);
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -565,14 +278,10 @@
     font-size: 0.85rem;
 }
 
-.odoo-table-row:hover {
-    background-color: #f8f9fc;
-}
+.odoo-table-row:hover { background-color: #f8f9fc; }
 
-/* CELDAS */
-.odoo-th, 
-.odoo-td {
-    padding: 8px 12px;
+.odoo-th, .odoo-td {
+    padding: 0.375rem 0.25rem;
     border-right: 1px solid var(--odoo-border-soft);
     height: 100%;
     display: flex;
@@ -582,12 +291,8 @@
     overflow: hidden; 
 }
 
-.odoo-th:last-child, 
-.odoo-td:last-child {
-    border-right: none;
-}
+.odoo-th:last-child, .odoo-td:last-child { border-right: none; }
 
-/* TRUNCATE (Cortar texto largo) */
 .truncate {
     white-space: nowrap;
     overflow: hidden;
@@ -596,46 +301,26 @@
     width: 100%;
 }
 
-/* ALINEACIONES */
 .odoo-text-right { justify-content: flex-end; text-align: right; }
 .odoo-text-center { justify-content: center; text-align: center; }
 .odoo-text-muted { color: var(--odoo-text-muted); }
 .odoo-text-danger { color: #d32f2f; }
 
-/* ACCIONES */
-.odoo-td-actions {
-    justify-content: center;
-    gap: 4px;
-    padding: 4px;
-}
-
+.odoo-td-actions { justify-content: center; gap: 0.25rem; padding: 0.25rem; }
 .odoo-btn-icon {
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--odoo-radius-sm);
     color: var(--odoo-text-muted);
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 0.25rem 0.5rem;
     transition: all 0.2s;
     font-size: 0.85rem;
 }
 
-.odoo-btn-icon:hover {
-    background: #f1f5f9;
-    color: var(--odoo-primary);
-    border-color: var(--odoo-border);
-}
-
-.odoo-btn-icon.odoo-text-danger:hover {
-    background: #fee2e2;
-    color: #d32f2f;
-    border-color: #fca5a5;
-}
-
-/* BADGES */
 .odoo-badge {
-    padding: 2px 8px;
-    border-radius: 12px;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.75rem;
     font-size: 0.75rem;
     font-weight: 600;
     display: inline-block;
@@ -644,42 +329,115 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.odoo-badge-warning {
-    background-color: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-}
+.odoo-badge-warning { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 
-/* RESIZER (Agarrador de columnas) */
-.odoo-th.resizable {
-    position: relative;
-    padding-right: 18px;
-}
-
+.odoo-th.resizable { position: relative; padding-right: 1.125rem; }
 .resizer {
     position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 6px;
+    right: 0; top: 0; bottom: 0;
+    width: 0.375rem;
     cursor: col-resize;
     user-select: none;
     z-index: 5;
 }
-
 .resizer:hover, .resizer.is-resizing {
     background-color: var(--odoo-primary-soft);
     border-right: 2px solid var(--odoo-primary);
 }
 
-/* Ajustes de responsividad */
-@media (max-width: 1200px) {
-    .odoo-table-header, 
-    .odoo-table-row {
-        grid-template-columns: 70px repeat(10, minmax(100px, var(--col-width, 1fr)));
-    }
-    .odoo-th, .odoo-td {
-        padding: 6px 8px;
-        font-size: 0.8rem;
-    }
+.odoo-screen-columns {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+    height: 100%;
+    align-items: flex-start;
+}
+
+.odoo-column {
+    flex: 0 0 21rem; /* Ancho fluido en rem */
+    background: #e9ecef; /* Fondo gris claro característico de columnas Odoo */
+    border-radius: var(--odoo-radius-md);
+    padding: 0.5rem;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--odoo-shadow-sm);
+    border: 1px solid var(--odoo-border);
+}
+
+.odoo-column-header {
+    font-weight: 700;
+    padding: 0.625rem 0.75rem;
+    background: var(--odoo-card-bg);
+    border-radius: var(--odoo-radius-sm);
+    margin-bottom: 0.5rem;
+    text-align: left;
+    flex-shrink: 0;
+    color: var(--odoo-text-strong);
+    font-size: 0.9rem;
+    box-shadow: var(--odoo-shadow-sm);
+    border-left: 0.25rem solid var(--odoo-primary);
+}
+
+.odoo-column-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 0.125rem;
+}
+
+/* Tarjetas Kanban compactas estilo Odoo */
+.odoo-kanban-card {
+    background: var(--odoo-card-bg);
+    padding: 0.75rem;
+    border-radius: var(--odoo-radius-sm);
+    box-shadow: var(--odoo-shadow-sm);
+    border: 1px solid var(--odoo-border);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.odoo-kanban-card:hover {
+    box-shadow: var(--odoo-shadow-md);
+    border-color: var(--odoo-accent);
+}
+
+.odoo-kanban-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--odoo-text-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--odoo-border-soft);
+    padding-bottom: 0.375rem;
+    margin-bottom: 0.125rem;
+}
+
+.odoo-kanban-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--odoo-text-muted);
+}
+
+.odoo-kanban-body span, 
+.odoo-kanban-body strong {
+    color: var(--odoo-text);
+}
+
+.odoo-kanban-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.375rem;
+    margin-top: 0.375rem;
+    padding-top: 0.375rem;
+    border-top: 1px dashed var(--odoo-border-soft);
 }
