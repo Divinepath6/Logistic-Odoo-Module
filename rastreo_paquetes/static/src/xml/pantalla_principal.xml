@@ -27,19 +27,16 @@
                         t-on-click="onCambiarModo">
                         <i class="fa fa-random"></i> Cambiar </button>
            
-                     <span class="truncate" >
-                        Saldos del clientes:
-                    </span>
-                    <span type="number"
-                        placeholder="0.00"
-                        t-esc="state.kpiClientes"/>
-                    
-                        <span class="truncate" >
-                        Saldos del clientes:
-                    </span>
-                    <span type="number"
-                        placeholder="0.00"
-                        t-esc="state.kpiProveedor"/>
+                <div class="odoo-header-kpis">
+                        <div class="odoo-kpi-card">
+                            <span class="odoo-kpi-label">Saldo Clientes</span>
+                            <span class="odoo-kpi-value">$<t t-esc="state.kpiClientes || '0.00'"/></span>
+                        </div>
+                        <div class="odoo-kpi-card odoo-kpi-card-danger">
+                            <span class="odoo-kpi-label">Saldo Proveedores</span>
+                            <span class="odoo-kpi-value">$<t t-esc="state.kpiProveedor || '0.00'"/></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -76,9 +73,9 @@
                                         </button>
                                     </div>
 
-                                    <div class="odoo-td truncate" t-att-title="p.estado">
+                                    <div class="odoo-td truncate" t-att-title="p.estado_nombre">
                                         <strong>
-                                            <t t-esc="p.estado" />
+                                            <t t-esc="p.estado_nombre" />
                                         </strong>
                                     </div>
                                     <div class="odoo-td truncate" t-att-title="p.numero_guia">
@@ -158,6 +155,14 @@
                                     <div class="odoo-kanban-body">
                                         <div>Cliente: <strong
                                                 t-esc="p.cliente_nombre || 'Sin cliente'" /></div>
+                                        <t t-if="p.aviso">
+                                            <span class="odoo-badge odoo-badge-warning">
+                                                <t t-esc="p.aviso" />
+                                            </span>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="odoo-text-muted">Sin Pendiente</span>
+                                        </t>
                                         <div>Saldo cliente: <span
                                                 t-esc="p.anticipos_cliente.saldo_cliente || 0" /></div>
                                         <div>Total cliente: <span t-esc="p.cotizacion.total || 0" /></div>

@@ -1,5 +1,6 @@
 /* ============================================================
    ESTILOS GLOBALES - MÓDULO RASTREO
+   Configuración de variables raíz (colores, radios, sombras)
    ============================================================ */
 
 :root {
@@ -7,8 +8,8 @@
     --odoo-primary-hover:  #6c4762;
     --odoo-primary-soft:   #cbceff;
     --odoo-accent:         #7c5cbf;
-    --odoo-cyan:           #52e6fd;
-    --odoo-cyan-hover:     #52ffff;
+    --odoo-cyan:           #936289;
+    --odoo-cyan-hover:     #924182;
 
     --odoo-bg:             #f4f6f9;
     --odoo-card-bg:        #ffffff;
@@ -29,27 +30,33 @@
 }
 
 /* ============================================================
-   1. LAYOUT GENERAL DE PANTALLAS
+   LAYOUT GENERAL DE PANTALLAS
+   Contenedor base fluido que permite el scroll natural
    ============================================================ */
 
 .odoo-screen {
     background: var(--odoo-bg);
     padding: 1rem;
+    box-sizing: border-box;
     font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
     color: var(--odoo-text);
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 /* ============================================================
-   2. ENCABEZADO DE PANTALLA (con buscador)
+   ENCABEZADO DE PANTALLA
+   Barra superior con título, buscador y acciones flexibles
    ============================================================ */
 
 .odoo-screen-header {
     display: flex;
     align-items: center;
-    flex-wrap: wrap; /* Permite que los botones bajen si no caben */
-    gap: .6rem;
-    margin-bottom: 0.4rem;
-    padding: 0.6rem .8rem;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+    padding: 0.6rem 0.8rem;
     background: var(--odoo-card-bg);
     border-radius: var(--odoo-radius-md);
     box-shadow: var(--odoo-shadow-sm);
@@ -97,7 +104,8 @@
 }
 
 /* ============================================================
-   3. TARJETAS (Cards)
+   TARJETAS (CARDS)
+   Bloques de contenido y contenedores visuales principales
    ============================================================ */
 
 .odoo-card {
@@ -129,7 +137,8 @@
 }
 
 /* ============================================================
-   5. BOTONES
+   BOTONES
+   Definición de variantes, estados y responsividad de botones
    ============================================================ */
 
 .odoo-btn {
@@ -145,7 +154,7 @@
     cursor: pointer;
     transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
     white-space: nowrap;
-    flex: 0 1 auto; /* Permite que los botones se compriman si es necesario */
+    flex: 0 1 auto;
 }
 
 .odoo-header-actions {
@@ -158,7 +167,7 @@
 @media (max-width: 48rem) {
     .odoo-btn {
         padding: 0.375rem 0.75rem;
-        font-size: 0.78rem; /* Se reducen automáticamente en pantallas pequeñas */
+        font-size: 0.78rem;
     }
 }
 
@@ -175,7 +184,8 @@
 .odoo-btn-sm { padding: 0.3125rem 0.75rem; font-size: 0.78rem; }
 
 /* ============================================================
-   6. CAMPOS DE FORMULARIO (Compatibilidad con Bootstrap)
+   CAMPOS DE FORMULARIO
+   Estilos para inputs, selects y textareas compatibles con Bootstrap
    ============================================================ */
 
 .odoo-field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.625rem; }
@@ -200,7 +210,8 @@
 }
 
 /* ============================================================
-   8. FILAS DE RESULTADOS (label : valor)
+   FILAS DE RESULTADOS
+   Pares etiqueta-valor para resúmenes estadísticos o financieros
    ============================================================ */
 
 .odoo-result-row {
@@ -215,7 +226,8 @@
 .odoo-result-value { font-weight: 700; color: var(--odoo-accent); font-size: 0.95rem; }
 
 /* ============================================================
-   10. SCROLLBAR PERSONALIZADA
+   SCROLLBAR PERSONALIZADA
+   Estilos estéticos para barras de desplazamiento internas
    ============================================================ */
 
 .odoo-scroll {
@@ -228,15 +240,14 @@
 .odoo-scroll::-webkit-scrollbar { width: 0.5rem; }
 .odoo-scroll::-webkit-scrollbar-thumb { background: #d6dce8; border-radius: 0.5rem; }
 
-
-
 /* ============================================================
-   11. VISTA TABLERO (TABLA ESTILO EXCEL)
+   VISTA TABLERO (TABLA ESTILO EXCEL)
+   Contenedor tabular con celdas ajustables y sticky headers
    ============================================================ */
 
 .odoo-table-container {
     width: 100%;
-    height: calc(100vh - 8rem); /* Ajuste perfecto para 1536x703 */
+    max-height: 75vh;
     overflow: auto;
     background: var(--odoo-card-bg);
     border-radius: var(--odoo-radius-md);
@@ -345,99 +356,115 @@
     border-right: 2px solid var(--odoo-primary);
 }
 
-.odoo-screen-columns {
+/* ============================================================
+   HEADER AVANZADO Y KPIS
+   Tarjetas de métricas y indicadores clave en cabecera
+   ============================================================ */
+
+.odoo-header-right {
     display: flex;
-    gap: 1rem;
-    overflow-x: auto;
-    padding: 0.5rem 0;
-    height: 100%;
-    align-items: flex-start;
-}
-
-.odoo-column {
-    flex: 0 0 21rem; /* Ancho fluido en rem */
-    background: #e9ecef; /* Fondo gris claro característico de columnas Odoo */
-    border-radius: var(--odoo-radius-md);
-    padding: 0.5rem;
-    max-height: 100%;
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--odoo-shadow-sm);
-    border: 1px solid var(--odoo-border);
-}
-
-.odoo-column-header {
-    font-weight: 700;
-    padding: 0.625rem 0.75rem;
-    background: var(--odoo-card-bg);
-    border-radius: var(--odoo-radius-sm);
-    margin-bottom: 0.5rem;
-    text-align: left;
-    flex-shrink: 0;
-    color: var(--odoo-text-strong);
-    font-size: 0.9rem;
-    box-shadow: var(--odoo-shadow-sm);
-    border-left: 0.25rem solid var(--odoo-primary);
-}
-
-.odoo-column-content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-    padding: 0.125rem;
-}
-
-/* Tarjetas Kanban compactas estilo Odoo */
-.odoo-kanban-card {
-    background: var(--odoo-card-bg);
-    padding: 0.75rem;
-    border-radius: var(--odoo-radius-sm);
-    box-shadow: var(--odoo-shadow-sm);
-    border: 1px solid var(--odoo-border);
-    transition: all 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.odoo-kanban-card:hover {
-    box-shadow: var(--odoo-shadow-md);
-    border-color: var(--odoo-accent);
-}
-
-.odoo-kanban-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--odoo-text-strong);
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--odoo-border-soft);
-    padding-bottom: 0.375rem;
+    gap: 1rem;
+    margin-left: auto;
+    flex-wrap: wrap; 
+}
+
+.odoo-header-kpis {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.odoo-kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.25rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid var(--odoo-border);
+    border-left: 3px solid var(--odoo-primary);
+    border-radius: var(--odoo-radius-sm);
+    min-width: 8rem;
+    height: 38px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+}
+
+.odoo-kpi-card:hover {
+    background: #fff;
+    box-shadow: var(--odoo-shadow-sm);
+    transform: translateY(-1px);
+}
+
+.odoo-kpi-card-danger {
+    border-left-color: #ef4444;
+}
+
+.odoo-kpi-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--odoo-text-muted);
+    font-weight: 700;
+    line-height: 1;
     margin-bottom: 0.125rem;
 }
 
-.odoo-kanban-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    font-size: 0.8rem;
-    color: var(--odoo-text-muted);
+.odoo-kpi-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--odoo-text-strong);
+    line-height: 1;
 }
 
-.odoo-kanban-body span, 
-.odoo-kanban-body strong {
-    color: var(--odoo-text);
+.odoo-kpi-card-danger .odoo-kpi-value {
+    color: #b91c1c;
 }
 
-.odoo-kanban-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.375rem;
-    margin-top: 0.375rem;
-    padding-top: 0.375rem;
-    border-top: 1px dashed var(--odoo-border-soft);
+/* ============================================================
+   MEDIA QUERIES GLOBALES
+   Adaptación fluida de tipografías, botones y KPIs en pantallas menores
+   ============================================================ */
+
+@media (max-width: 1400px) {
+    .odoo-header-actions .odoo-btn {
+        padding: 0.5625rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    .odoo-kpi-card {
+        min-width: 7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .odoo-kpi-value {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 1200px) {
+    .odoo-screen-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .odoo-header-right {
+        margin-left: 0;
+        justify-content: space-between;
+        width: 100%;
+    }
+    .odoo-header-kpis {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 768px) {
+    .odoo-header-actions,
+    .odoo-header-kpis {
+        justify-content: center;
+        width: 100%;
+    }
+    .odoo-kpi-card {
+        flex: 1;
+        min-width: 45%;
+    }
 }

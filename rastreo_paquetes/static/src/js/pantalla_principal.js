@@ -30,7 +30,7 @@ export class PantallaPrincipal extends Component {
             columns: [],
             headers : [
                 { label: "Estado" },
-                { label: "Cotización" },
+                { label: "Referencia" },
                 { label: "Cliente" },
                 { label: "Aviso" },
                 { label: "Saldo cliente" },
@@ -40,7 +40,7 @@ export class PantallaPrincipal extends Component {
                 { label: "Racks" },
                 { label: "Última act." }
             ],
-            colWidths : [100, 100, 150, 200, 120, 120, 120, 130, 130, 80, 280],
+            colWidths : [100, 100, 150, 230, 110, 110, 110, 130, 90, 220, 20],
         });
 
         this.onMouseMove = this.onMouseMove.bind(this);
@@ -229,8 +229,8 @@ export class PantallaPrincipal extends Component {
             );
             if(resultado.success){
                 this.state.pedidos = resultado.lista;
-                this.state.kpiClientes = resultado.kpi.cliente
-                this.state.kpiProveedor  = resultado.kpi.proveedor
+                this.state.kpiClientes = resultado.kpi.cliente.toFixed(2);
+                this.state.kpiProveedor  = resultado.kpi.proveedor.toFixed(2);
                 this.asignarColumnas();
             }
            

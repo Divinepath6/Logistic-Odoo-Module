@@ -3,14 +3,15 @@
    ============================================================ */
 
 /* ============================================================
-   PANTALLA 1: DASHBOARD PRINCIPAL (columnas Kanban)
+   PANTALLA 1: DASHBOARD PRINCIPAL (Columnas Kanban)
    ============================================================ */
 
 .odoo-dashboard {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 5rem); /* Ajuste para que no haya scroll en el body */
-    overflow: hidden;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .odoo-dashboard-list {
@@ -19,26 +20,22 @@
     gap: 0.5rem;
     padding: 0.25rem;
     width: 100%;
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: clip;
 }
 
-/* Vista de Columnas (Kanban) */
 .odoo-screen-columns {
     display: flex;
-    gap: 0.5rem;
+    gap: 1rem;
     overflow-x: auto;
     padding: 0.5rem 0;
-    height: 100%;
+    align-items: flex-start;
 }
 
 .odoo-column {
-    flex: 0 0 25rem; /* Ancho de columna adaptativo */
-    background: var(--odoo-card-bg);
+    flex: 0 0 21rem;
+    background: #e9ecef;
     border-radius: var(--odoo-radius-md);
-    padding: 0.25rem;
-    max-height: 100%;
+    padding: 0.5rem;
     display: flex;
     flex-direction: column;
     box-shadow: var(--odoo-shadow-sm);
@@ -46,46 +43,87 @@
 }
 
 .odoo-column-header {
-    font-weight: bold;
-    padding: 0.5rem;
-    background: var(--odoo-primary-soft);
+    font-weight: 700;
+    padding: 0.625rem 0.75rem;
+    background: var(--odoo-card-bg);
     border-radius: var(--odoo-radius-sm);
-    margin-bottom: 0.375rem;
-    text-align: center;
+    margin-bottom: 0.5rem;
+    text-align: left;
     flex-shrink: 0;
-    color: var(--odoo-primary-hover);
+    color: var(--odoo-text-strong);
+    font-size: 0.9rem;
+    box-shadow: var(--odoo-shadow-sm);
+    border-left: 0.25rem solid var(--odoo-primary);
 }
 
 .odoo-column-content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 0.125rem;
+}
+
+.odoo-column-card,
+.odoo-kanban-card {
+    background: var(--odoo-card-bg);
+    padding: 0.75rem;
+    border-radius: var(--odoo-radius-sm);
+    box-shadow: var(--odoo-shadow-sm);
+    border: 1px solid var(--odoo-border);
+    transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0.25rem;
 }
 
-.odoo-column-card {
-    background: #fff;
-    padding: 0.625rem 0.75rem;
-    border-radius: var(--odoo-radius-sm);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--odoo-border);
-    font-size: 0.85rem;
+.odoo-kanban-card:hover {
+    box-shadow: var(--odoo-shadow-md);
+    border-color: var(--odoo-accent);
+}
+
+.odoo-kanban-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--odoo-text-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--odoo-border-soft);
+    padding-bottom: 0.375rem;
+    margin-bottom: 0.125rem;
+}
+
+.odoo-kanban-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--odoo-text-muted);
+}
+
+.odoo-kanban-body span, 
+.odoo-kanban-body strong {
+    color: var(--odoo-text);
+}
+
+.odoo-kanban-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.375rem;
+    margin-top: 0.375rem;
+    padding-top: 0.375rem;
+    border-top: 1px dashed var(--odoo-border-soft);
 }
 
 /* ============================================================
-   PANTALLA 2: FORMULARIO DE PEDIDO (pantalla_pedido.xml)
+   PANTALLA 2: FORMULARIO DE PEDIDO
    ============================================================ */
 
-/* Grid principal de 2 columnas */
 .odoo-screen-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); 
     gap: 1rem;
     align-items: start;
-    /* Eliminamos height: calc(100vh - ...) y min-height */
     height: auto; 
 }
 
@@ -96,7 +134,6 @@
     min-width: 0;
 }
 
-/* Arreglo para que las tablas de Bootstrap no rompan el layout */
 .table-responsive {
     width: 100%;
     overflow-x: auto;
@@ -116,46 +153,41 @@
     border-bottom-width: 1px;
 }
 
-/* Ajuste para los inputs dentro de columnas Bootstrap */
 .row.g-3 {
     margin-bottom: 0.5rem;
 }
 
 /* ============================================================
-   PANTALLA 3: CREACIÓN DE CROQUIS (pantalla_croquis.xml)
+   PANTALLA 3: CREACIÓN DE CROQUIS
    ============================================================ */
 
 .o_creacion_croquis {
     background: var(--odoo-bg);
-    /* Eliminamos min-height: 100vh y height: 100vh */
     padding: 1rem;
+    box-sizing: border-box;
     color: var(--odoo-text);
     display: flex;
     flex-direction: column;
-    /* Permitimos que el contenedor crezca */
-    min-height: 100vh; 
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .o_creacion_croquis .cc-body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
     gap: 1rem;
     align-items: start;
-    /* Eliminamos flex: 1 y min-height: 0 */
-    height: auto; 
+    height: auto;
 }
 
-/* Las columnas deben crecer con el contenido */
 .o_creacion_croquis .cc-col-left,
 .o_creacion_croquis .cc-col-right {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1rem;
     min-width: 0;
-    /* Eliminamos height: 100% y el overflow-y: auto. 
-       Dejamos que la página entera haga scroll. */
-    height: auto; 
-    padding-right: 0.375rem;
+    height: auto;
 }
 
 .o_creacion_croquis .cc-header {
@@ -168,13 +200,11 @@
     flex-shrink: 0;
 }
 
-
-
 .o_creacion_croquis .cc-card {
     background: var(--odoo-card-bg);
     border: 1px solid var(--odoo-border);
     border-radius: var(--odoo-radius-lg);
-    padding: 0.75rem 0.875rem;
+    padding: 0.875rem 1rem;
     box-shadow: var(--odoo-shadow-sm);
     flex-shrink: 0;
 }
@@ -190,14 +220,15 @@
     gap: 0.5rem;
 }
 
-/* Tarjeta del Croquis (Lienzo) */
 .cc-card-croquis {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    padding: 0;
+    background: var(--odoo-card-bg);
+    border: 1px solid var(--odoo-border);
+    border-radius: var(--odoo-radius-lg);
+    box-shadow: var(--odoo-shadow-sm);
     overflow: hidden;
+    height: auto;
 }
 
 .cc-croquis-header {
@@ -208,20 +239,72 @@
     border-bottom: 1px solid var(--odoo-border-soft);
 }
 
+.cc-croquis {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
 .cc-croquis-canvas {
-    flex: 1;
-    min-height: 25rem;
+    width: 100%;
+    min-height: 32rem; 
+    max-height: 45rem;
     position: relative;
     background: #f8fafc;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.cc-croquis-svg {
+    width: 100%;
+    height: 100%;
+    max-height: 40rem;
+    display: block;
+    object-fit: contain;
+}
+
+.cc-croquis-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    color: var(--odoo-text-muted);
+    text-align: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.cc-croquis-empty i {
+    font-size: 2.5rem;
+    color: var(--odoo-accent);
+}
+
+.cc-croquis-legend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--odoo-card-bg);
+    border-top: 1px solid var(--odoo-border-soft);
+    font-size: 0.85rem;
+    color: var(--odoo-text-muted);
+}
+
+.cc-croquis-legend b {
+    color: var(--odoo-text-strong);
 }
 
 /* Campos del Croquis */
 .odoo-field-croquis {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 50% label, 50% input */
+    grid-template-columns: 1fr 1fr;
     align-items: center; 
     gap: 0.5rem; 
     margin-bottom: 0.5rem; 
@@ -275,65 +358,16 @@
     color: #fff;
     box-shadow: 0 2px 6px rgba(124, 92, 191, 0.35);
 }
-.odoo-dashboard {
-    display: flex;
-    flex-direction: column;
-    /* Mantenemos esto para que la tabla no empuje los botones fuera de la pantalla */
-    height: calc(100vh - 4rem); 
-    overflow: hidden;
-}
 
-.odoo-dashboard-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.25rem;
-    width: 100%;
-    flex: 1;
-    /* Este es el scroll interno del dashboard */
-    overflow-y: auto; 
-    overflow-x: hidden;
-}
-
-/* La tabla también mantiene su scroll interno */
-.odoo-table-container {
-    width: 100%;
-    height: calc(100vh - 8rem); 
-    overflow: auto;
-    /* ... resto de tus estilos ... */
-}
-.cc-croquis-canvas {
-    /* En lugar de flex: 1, le damos una altura mínima para que se vea bien */
-    min-height: 35rem; /* Ajusta este valor si lo necesitas más grande */
-    width: 100%;
-    position: relative;
-    background: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--odoo-radius-md);
-    overflow: hidden;
-}
 /* ============================================================
-   MEDIA QUERIES (Para pantallas más pequeñas)
+   MEDIA QUERIES ESPECÍFICAS DE PANTALLAS
    ============================================================ */
 
 @media (max-width: 1200px) {
     .odoo-screen-grid,
     .o_creacion_croquis .cc-body {
-        grid-template-columns: 1fr; /* Una sola columna en pantallas medianas */
+        grid-template-columns: 1fr;
         height: auto;
-    }
-    
-    .o_creacion_croquis {
-        height: auto;
-        overflow-y: auto;
-    }
-
-    .o_creacion_croquis .cc-col-left,
-    .o_creacion_croquis .cc-col-right {
-        height: auto;
-        overflow-y: visible;
     }
 }
 
@@ -342,20 +376,17 @@
         flex-direction: column;
         align-items: flex-start;
     }
-
     .odoo-search-box {
         max-width: 100%;
         width: 100%;
     }
-
     .odoo-header-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
         width: 100%;
     }
-
     .odoo-field-croquis {
-        grid-template-columns: 1fr; /* Los labels van arriba de los inputs en móviles */
+        grid-template-columns: 1fr;
     }
 }

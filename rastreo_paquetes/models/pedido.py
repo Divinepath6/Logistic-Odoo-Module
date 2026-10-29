@@ -23,9 +23,9 @@ class rastreo_paquetes(models.Model):
         ('fase_inicial', 'Fase inicial'),
         ('produccion', 'En Producción'),
         ('puerto_origen', 'En el puerto de origen'),
-        ('Embarcado', 'Embarcado'),
-        ('Descargado', 'Descargado'),
-        ('Aduana', 'En Aduana'),
+        ('embarcado', 'Embarcado'),
+        ('descargado', 'Descargado'),
+        ('aduana', 'En Aduana'),
         ('sin_pendiente', 'Sin Pendientes'),
     ], string = 'Estado', default='fase_inicial')
 
@@ -669,11 +669,13 @@ class rastreo_paquetes(models.Model):
 
             kpi_saldo_clientes = kpi_saldo_clientes + saldo_cliente
             kpi_saldo_proveedores = kpi_saldo_proveedores + saldo_proveedor
+            estados_dict = dict(p._fields['estado'].selection)
 
             lista.append({
                 'id': p.id,
                 'cliente_nombre': p.cliente_id.name if p.cliente_id else '',
                 'estado': p.estado,
+                'estado_nombre': estados_dict.get(p.estado, p.estado),
                 'numero_guia': p.numero_guia or '',
                 'bool_contrato_proveedor': bool(p.pdf_contrato_proveedor),
                 'aviso': p.aviso or '',

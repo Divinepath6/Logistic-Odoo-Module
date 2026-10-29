@@ -42,7 +42,7 @@
             </div>
             <div class="cc-body">
 
-                <div class="cc-col-left">
+                <div class="cc-col-left cc-scroll-container">
 
                     <div class="cc-card">
                         <h3 class="cc-card-title cc-title-actions">
