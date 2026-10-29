@@ -21,11 +21,25 @@
                         <i class="fa fa-plus-circle" /> Crear Cotización </button>
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onclickEditarRacks">
-                        <i class="fa fa-list" /> Editar Racks </button>
+                        <i class="fa fa-list" /> Racks </button>
 
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onCambiarModo">
-                        <i class="fa fa-solid fa-code-compare"></i> Cambiar </button>
+                        <i class="fa fa-random"></i> Cambiar </button>
+           
+                     <span class="truncate" >
+                        Saldos del clientes:
+                    </span>
+                    <span type="number"
+                        placeholder="0.00"
+                        t-esc="state.kpiClientes"/>
+                    
+                        <span class="truncate" >
+                        Saldos del clientes:
+                    </span>
+                    <span type="number"
+                        placeholder="0.00"
+                        t-esc="state.kpiProveedor"/>
                 </div>
             </div>
 
