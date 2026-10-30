@@ -1,6 +1,6 @@
 /** @odoo-module **/
 import { registry } from "@web/core/registry";
-import { Component, onWillStart, useState, onWillUnmount } from "@odoo/owl";
+import { Component, onMounted, onPatched, onWillStart, useRef, useState, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks"; 
 import { componente_creacion_pedido } from "./componente_creacion_pedido";
 import { componente_edicion_racks } from "./componente_edicion_racks";
@@ -11,6 +11,7 @@ export class PantallaPrincipal extends Component {
     static components = { componente_creacion_pedido, componente_edicion_racks, componente_cargar_cotizacion };
     
     setup() {
+        this.rootRef = useRef("root");
         this.notification = useService("notification");
         this.action = useService("action");
         this.orm = useService("orm");
@@ -46,13 +47,48 @@ export class PantallaPrincipal extends Component {
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onMouseDown = this.onMouseDown.bind(this);
+        this.onTopScroll = (event) => {
+            const wrapper = event.target.closest?.(".odoo-top-scroll-wrapper");
+            if (!wrapper) {
+                return;
+            }
+
+            const tableContainer = wrapper.querySelector(".odoo-table-container");
+            if (!tableContainer) {
+                return;
+            }
+
+            if (event.target === wrapper) {
+                tableContainer.scrollLeft = wrapper.scrollLeft;
+            } else if (event.target === tableContainer) {
+                wrapper.scrollLeft = tableContainer.scrollLeft;
+            }
+        };
+        this.updateTopScrollbar = () => {
+            const root = this.rootRef.el;
+            if (!root) {
+                return;
+            }
+            const wrapper = root.querySelector(".odoo-top-scroll-wrapper");
+            const tableContainer = wrapper?.querySelector(".odoo-table-container");
+            const scrollContent = wrapper?.querySelector(".odoo-top-scroll-content");
+            if (tableContainer && scrollContent) {
+                scrollContent.style.width = `${tableContainer.scrollWidth}px`;
+            }
+        };
 
         document.addEventListener('mousedown', this.onMouseDown);
+        onMounted(() => {
+            this.rootRef.el.addEventListener("scroll", this.onTopScroll, true);
+            this.updateTopScrollbar();
+        });
+        onPatched(() => this.updateTopScrollbar());
 
         onWillUnmount(() => {
             document.removeEventListener('mousedown', this.onMouseDown);
             document.removeEventListener('mousemove', this.onMouseMove);
             document.removeEventListener('mouseup', this.onMouseUp);
+            this.rootRef.el?.removeEventListener("scroll", this.onTopScroll, true);
         });
 
         onWillStart(async () => {

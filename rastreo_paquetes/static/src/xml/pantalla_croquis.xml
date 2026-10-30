@@ -278,12 +278,7 @@
                             <span class="odoo-result-value" t-esc="state.almacenajeToneladaDisplay or '0.00'"/>
                         </div>
                     </div>
-                    <div class="cc-card">
-                        <h3 class="cc-card-title">
-                            <span class="cc-badge-dot"></span>
-                            __
-                        </h3>
-                    </div>
+
                 </div>
 
                 <div class="cc-col-right">

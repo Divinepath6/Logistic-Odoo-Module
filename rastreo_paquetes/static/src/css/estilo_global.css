@@ -7,7 +7,7 @@
     --odoo-primary:        #875a7b;
     --odoo-primary-hover:  #6c4762;
     --odoo-primary-soft:   #cbceff;
-    --odoo-accent:         #7c5cbf;
+    --odoo-accent:         #9275bb;
     --odoo-cyan:           #936289;
     --odoo-cyan-hover:     #924182;
 
@@ -248,12 +248,53 @@
 .odoo-table-container {
     width: 100%;
     max-height: 75vh;
-    overflow: auto;
+    overflow: auto; /* Scroll nativo fluido y compatible con sticky headers */
     background: var(--odoo-card-bg);
     border-radius: var(--odoo-radius-md);
     box-shadow: var(--odoo-shadow-sm);
     border: 1px solid var(--odoo-border);
+    scrollbar-width: thin;
+    scrollbar-color: #d6dce8 transparent;
 }
+
+.odoo-table-container::-webkit-scrollbar {
+    height: 0.5rem;
+    width: 0.5rem;
+}
+
+.odoo-table-container::-webkit-scrollbar-thumb {
+    background: #d6dce8;
+    border-radius: 0.5rem;
+}
+
+.odoo-top-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    transform: scaleY(-1); /* Mueve la barra de desplazamiento arriba */
+    width: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: #d6dce8 transparent;
+}
+
+.odoo-top-scroll-content {
+    height: 1px;
+}
+
+/* Invierte el contenido interno para que no se vea de cabeza */
+.odoo-top-scroll-wrapper > * {
+    transform: scaleY(-1);
+}
+
+/* Personalización de la barra superior para Webkit (Chrome, Edge, Safari) */
+.odoo-top-scroll-wrapper::-webkit-scrollbar {
+    height: 0.5rem;
+}
+.odoo-top-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #d6dce8;
+    border-radius: 0.5rem;
+}
+
+
 
 .odoo-table {
     display: flex;
@@ -315,7 +356,7 @@
 .odoo-text-right { justify-content: flex-end; text-align: right; }
 .odoo-text-center { justify-content: center; text-align: center; }
 .odoo-text-muted { color: var(--odoo-text-muted); }
-.odoo-text-danger { color: #d32f2f; }
+.odoo-text-danger { color: #a81e1e; }
 
 .odoo-td-actions { justify-content: center; gap: 0.25rem; padding: 0.25rem; }
 .odoo-btn-icon {

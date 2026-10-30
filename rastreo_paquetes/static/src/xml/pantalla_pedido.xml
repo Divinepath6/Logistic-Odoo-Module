@@ -40,8 +40,20 @@
                         <div class="odoo-card-title">
                             <i class="fa fa-info-circle"/> Detalle general de el pedido:
                         </div>
+ 
 
                         <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="numero_contrato">Número de Contrato</label>
+                                    <input type="text"
+                                           id="numero_contrato"
+                                           class="odoo-input"
+                                            t-model="state.numeroContrato"
+                                           />
+                                </div>
+                            </div>
+                            
                             <div class="col-md-6">
                                 <div class="odoo-field">
                                     <label class="odoo-label" for="numero_guia">Número de Cotización:</label>
@@ -53,19 +65,11 @@
                                 </div>
                             </div>
 
-                            <button  class="odoo-btn odoo-btn-ghost" t-on-click="() => this.onCambiarCotizacion()">
-                                 <i class="fa fa-exchange"/>  Buscar Cotización
-                            </button>
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="numero_contrato">Número de Contrato</label>
-                                    <input type="text"
-                                           id="numero_contrato"
-                                           class="odoo-input"
-                                            t-model="state.numeroContrato"
-                                           />
-                                </div>
-                            </div>
+                        <button type="button" class="odoo-btn odoo-btn-primary"
+                        t-on-click="() => this.onCambiarCotizacion()">
+                        <i class="fa fa-random"></i>  Buscar Cotización </button>
+
+ 
 
                             <div class="col-md-6">
                                 <div class="odoo-field">
@@ -94,7 +98,7 @@
                                     <input type="text"
                                            id="total_cliente"
                                            class="odoo-input"
-                                           t-att-value="state.totalCliente || 0"
+                                           t-att-value="state.totalCliente"
                                            readonly="readonly"
                                            />
                                 </div>
@@ -106,7 +110,7 @@
                                     <input type="text"
                                            id="total_cliente"
                                            class="odoo-input"
-                                           t-att-value="state.totalAnticiposCliente || 0"
+                                           t-att-value="state.totalAnticiposCliente"
                                            readonly="readonly"
                                            />
                                 </div>
@@ -118,7 +122,7 @@
                                     <input type="text"
                                            id="totalAnticiposProveedor"
                                            class="odoo-input"
-                                           t-att-value="state.totalAnticiposProveedor || 0"
+                                           t-att-value="state.totalAnticiposProveedor"
                                            readonly="readonly"
                                            />
                                 </div>
@@ -131,7 +135,7 @@
                                            id="total_proveedor"
                                            class="odoo-input"
                                            step="1"
-                                           t-att-value="state.totalProveedor || 0"
+                                           t-att-value="state.totalProveedor"
                                           />
                                 </div>
                             </div>
@@ -141,7 +145,7 @@
                                     <input type="text"
                                             id="balanceCliente"
                                             class="odoo-input"
-                                            t-att-value="state.balanceCliente || 0"
+                                            t-att-value="state.balanceCliente"
                                             readonly="readonly"
                                           />
                                 </div>
@@ -152,7 +156,7 @@
                                     <input type="text"
                                             id="balancePorcentajeCliente"
                                             class="odoo-input"
-                                            t-att-value="state.balancePorcentajeCliente || 0"
+                                            t-att-value="state.balancePorcentajeCliente"
                                             readonly="readonly"
                                           />
                                 </div>
@@ -163,7 +167,7 @@
                                     <input type="text"
                                             id="balanceProveedor"
                                             class="odoo-input"
-                                            t-att-value="state.balanceProveedor || 0"
+                                            t-att-value="state.balanceProveedor"
                                             readonly="readonly"
                                           />
                                 </div>
@@ -174,7 +178,7 @@
                                     <input type="text"
                                             id="balancePorcentajeProveedor"
                                             class="odoo-input"
-                                            t-att-value="state.balancePorcentajeProveedor || 0"
+                                            t-att-value="state.balancePorcentajeProveedor"
                                             readonly="readonly"
                                           />
                                 </div>

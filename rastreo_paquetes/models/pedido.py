@@ -675,6 +675,7 @@ class rastreo_paquetes(models.Model):
                 'id': p.id,
                 'cliente_nombre': p.cliente_id.name if p.cliente_id else '',
                 'estado': p.estado,
+                'invoice': p.numero_contrato or '',
                 'estado_nombre': estados_dict.get(p.estado, p.estado),
                 'numero_guia': p.numero_guia or '',
                 'bool_contrato_proveedor': bool(p.pdf_contrato_proveedor),
