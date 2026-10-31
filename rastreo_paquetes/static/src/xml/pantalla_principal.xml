@@ -195,7 +195,7 @@
                                             <div>Saldo cliente: <span
                                                     t-esc="p.anticipos_cliente.saldo_cliente || 0" /></div>
                                             <div>Total cliente: <span
-                                                    t-esc="p.cotizacion.total || 0" /></div>
+                                                    t-esc="p.anticipos_cliente.total_acordado || 0" /></div>
                                             <div>Saldo proveedor: <span
                                                     t-esc="p.anticipos_proveedor.saldo_proveedor || 0" /></div>
                                             <div>Total proveedor: <span

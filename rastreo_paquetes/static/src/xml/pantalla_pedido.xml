@@ -135,7 +135,7 @@
                                            id="total_proveedor"
                                            class="odoo-input"
                                            step="1"
-                                           t-att-value="state.totalProveedor"
+                                           t-model="state.totalProveedor"
                                           />
                                 </div>
                             </div>
@@ -257,18 +257,24 @@
                                 </thead>
                                 <tbody>
                                     <t t-if="state.detalleCliente and state.detalleCliente.length">
-                                        <tr t-foreach="state.detalleCliente" t-as="d" t-key="d.id">
-                                            <td><t t-esc="d.numero or ''"/></td>
+                                        <tr t-foreach="state.detalleCliente" t-as="d" t-key="d.anticipoId">
+                                            <td><t t-esc="d.referencia or ''"/></td>
                                             <td><t t-esc="d.fechaAnticipo or ''"/></td>
                                             <td class="text-end"><t t-esc="d.cantidadAnticipo or 0"/></td>
+                                            <!-- 
                                             <td class="text-end"><t t-esc="d.precioDolar or 0"/></td>
-                                             <td class="text-end"><t t-esc="d.PDFAnticipo or 'No cargado'"/></td>
-                                            <td class="text-center">
+                                            
+                                            <td class="text-end"><t t-esc="d.PDFAnticipo or 'No cargado'"/></td>
+                                            -->
+                                            <!-- 
+                                             
+                                             <td class="text-center">
                                                 <button class="odoo-btn odoo-btn-sm odoo-btn-cyan"
                                                         t-on-click="() => this.onEditarDetalleCliente(d)">
                                                     Editar
                                                 </button>
                                             </td>
+                                            -->
                                         </tr>
                                     </t>
                                     <t t-else="">
@@ -281,13 +287,14 @@
                                 </tbody>
                             </table>
                         </div>
-
+                        <!-- 
                         <div class="text-center">
                             <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
                                     t-on-click="() => this.onEditarDetalleCliente()">
                                 <i class="fa fa-plus"/> Agregar Nuevo Anticipo
                             </button>
                         </div>
+                        -->
                     </div>
 
                     

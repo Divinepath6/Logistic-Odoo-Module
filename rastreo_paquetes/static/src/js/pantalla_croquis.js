@@ -313,7 +313,7 @@ export class PantallaCroquis extends Component {
             body: _t("El cliente acepto la propuesta? ¿Desea continuar?"),
             confirm: async () => {
                 this.guardarBodegaActual();
-                const r1 = await this.onClickGuardar()
+                const r1 = await this.onClickGuardar(true)
                 if(r1.success === false){
                     this.notification.add("Ha habido un error al guardar", { type: "warning" });
                     return

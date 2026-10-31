@@ -48,6 +48,7 @@ export class PantallaPedido extends Component {
             pdfFacturaProveedor: false,
             PDFETA: false,
             PDFETD: false,
+
             // Monedas
             totalProveedor: 0,
             totalCliente: 0,
@@ -117,35 +118,33 @@ export class PantallaPedido extends Component {
                 let totalCliente = 0;
                 this.state.actualizaciones = p.actualizaciones;
                 this.state.detalleRacks = p.detalle_racks.map((d,i)=> {
-                           const costo = Number(d.costo_rack) || 0;
-                            const cantidad = Number(d.cantidad_racks) || 0;
+                           const costo = Number(d.precio) || 0;
+                            const cantidad = Number(d.cantidad) || 0;
                             const subtotal = costo * cantidad;
                             totalCliente += subtotal;
                             return {
-                                clave: d.clave,
+                                clave: d.codigo,
                                 numero: d.numero,
                                 costo_rack: costo.toFixed(2),
                                 rack_id: d.rack_id,
-                                rack_nombre: d.rack_nombre,
+                                rack_nombre: d.nombre,
                                 cantidad_racks: cantidad,
                                 subtotal: subtotal.toFixed(2),
                             };
                 })
                 this.state.totalCliente = totalCliente.toFixed(2);
                 let totalAnticiposCliente = 0;
-                if(p.lista_anticipos_cliente != null || p.lista_anticipos_cliente != undefined){
-                    this.state.detalleCliente = p.lista_anticipos_cliente.map((d,i)=> {
+                if(p.lista_pagos_cliente != null || p.lista_pagos_cliente != undefined){
+                    this.state.detalleCliente = p.lista_pagos_cliente.map((d,i)=> {
                         const cantidad = Number(d.cantidad) || 0;
-                        const precioDolar = Number(d.precio_dolar) || 0;
+                        //const precioDolar = Number(d.precio_dolar) || 0;
                         totalAnticiposCliente += cantidad; 
                         return {
                             anticipoId: d.anticipo_id,
-                            numero: d.numero,
-                            fechaEdicion: d.fecha_editado,
-                            fechaAnticipo: d.fecha_anticipo,
-                            cantidadAnticipo: cantidad.toFixed(2),
-                            precioDolar: precioDolar.toFixed(2),
-                            PDFAnticipo: d.pdf_anticipo_cliente,
+                            referencia: d.referencia,
+                            fechaAnticipo: d.fecha,
+                            cantidadAnticipo: monto.toFixed(2),
+                           // precioDolar: precioDolar.toFixed(2),
                         };
                 })
                 }else{
@@ -368,7 +367,7 @@ export class PantallaPedido extends Component {
                         const c = resultado.cotizacion_info;
                         this.state.guiaActual =  c.nombre;         
                         this.state.clienteNombre = c.cliente;
-                         this.state.clienteId = c.cliente_id;
+                        this.state.clienteId = c.cliente_id;
                         this.state.totalCliente = c.total;
                         this.state.fechaCreacion = c.fecha;
                         const l = resultado.data;

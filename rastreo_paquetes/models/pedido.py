@@ -460,7 +460,8 @@ class rastreo_paquetes(models.Model):
         pedido = self.browse(pedido_id)
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
-
+        
+        cotizacion = pedido.sale_order_id
         actualizaciones = self.env['rastreo.pedido_actualizacion'].search(
             [('pedido_id', '=', pedido_id)],
             order='fecha_actualizacion desc',
@@ -478,6 +479,23 @@ class rastreo_paquetes(models.Model):
             [('pedido_id', '=', pedido_id)],
             order='numero desc',
         )
+        lista_pagos_cliente = []
+        if cotizacion and cotizacion.exists():
+            for factura in cotizacion.invoice_ids:
+                # Solo facturas de cliente (out_invoice) y no canceladas
+                if factura.move_type == 'out_invoice' and factura.state == 'posted':
+                    for pago in factura.payment_ids:
+                        lista_pagos_cliente.append({
+                            'payment_id': pago.id,
+                            'referencia': pago.name or '',
+                            'monto': pago.amount,
+                            'moneda': pago.currency_id.name,
+                            'fecha': str(pago.date) if pago.date else '',
+                            'estado': pago.state,
+                            'diario': pago.journal_id.name or '',
+                            'factura': factura.name,
+                        })
+
         lista_anticipos_cliente = []
         for a in anticipos_cliente:
             lista_anticipos_cliente.append({
@@ -504,20 +522,40 @@ class rastreo_paquetes(models.Model):
                 'precio_dolar': a.precio_dolar or 0,
                 'pdf_anticipo_proveedor': bool(a.pdf_anticipo_proveedor),
             })
-        cotizacion_detalle = self.env['rastreo.cotizacion_detalle'].search(
-            [('pedido_id', '=', pedido_id)],
-            order='numero desc',
-        )        
+ 
         lista_cotizacion_detalle = []
-        for a in cotizacion_detalle:
-            lista_cotizacion_detalle.append({
-                'clave': a.rack_id.clave or "",
-                'numero': a.numero or 0,
-                'costo_rack': a.costo_rack or 0,
-                'rack_id': a.rack_id.id or 0,
-                'rack_nombre': a.rack_id.nombre or 0,
-                'cantidad_racks': a.cantidad_racks or 0,
-            })
+
+        if cotizacion and cotizacion.exists() and cotizacion.order_line:
+            for linea in cotizacion.order_line:
+                # Dominio correcto: nombre de campo, sin ".id"
+                rack = self.env['rastreo.rack_detalle'].search(
+                    [('producto_id', '=', linea.product_id.id)],
+                    order='id desc',
+                    limit=1,
+                )
+                if rack:
+                    lista_cotizacion_detalle.append({
+                        'id': linea.product_id.id,
+                        'nombre': linea.product_id.name,
+                        'codigo': rack.clave or '',
+                        'rack_id': rack.id,
+                        'precio': linea.price_unit,
+                        'unidad': linea.product_uom_id.name,
+                        'cantidad': linea.product_uom_qty,
+                        'subtotal': linea.price_subtotal,
+                    })
+                else:
+                    lista_cotizacion_detalle.append({
+                        'id': linea.product_id.id,
+                        'nombre': linea.product_id.name,
+                        'codigo': linea.product_id.default_code or '',
+                        'rack_id': 0,
+                        'precio': linea.price_unit,
+                        'unidad': linea.product_uom_id.name,
+                        'cantidad': linea.product_uom_qty,
+                        'subtotal': linea.price_subtotal,
+                    })
+        
         return {
             'success': True,
             'data': {
@@ -528,7 +566,7 @@ class rastreo_paquetes(models.Model):
                 'cliente_nombre': pedido.cliente_id.name if pedido.cliente_id else '',
                 'total_cliente': pedido.total_cliente or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
-                'numero_contrato': pedido.numero_contrato or 0,
+                'numero_contrato': pedido.numero_contrato or '',
                 
                 'fecha_compromiso_cliente_1': pedido.fecha_compromiso_cliente_1 or '',
                 'fecha_compromiso_cliente_2': pedido.fecha_compromiso_cliente_2 or '',
@@ -541,6 +579,7 @@ class rastreo_paquetes(models.Model):
                 'fecha_compromiso_proveedor_4' : pedido.fecha_compromiso_proveedor_4 or '',
 
                 'aviso': pedido.aviso,
+
                 # booleanos
                 'forwarder': bool(pedido.forwarder),
                 'bool_contrato_proveedor': bool(pedido.pdf_contrato_proveedor),
@@ -554,6 +593,7 @@ class rastreo_paquetes(models.Model):
                 #listas
                 'lista_anticipos_cliente': lista_anticipos_cliente,
                 'lista_anticipos_proveedor': lista_anticipos_proveedor,
+                'lista_pagos_cliente': lista_pagos_cliente,
                 'actualizaciones': lista_actualizaciones,
                 'detalle_racks': lista_cotizacion_detalle
             }
@@ -632,9 +672,11 @@ class rastreo_paquetes(models.Model):
 
         pedidos = self.search(domain, limit=50)
         lista = []
-        # KPIs
         kpi_saldo_clientes = 0
         kpi_saldo_proveedores = 0
+
+        moneda_usd = self.env.ref('base.USD', raise_if_not_found=False)
+
         for p in pedidos:
             actualizacion = self.env['rastreo.pedido_actualizacion'].search_read(
                 [('pedido_id', '=', p.id)],
@@ -647,28 +689,58 @@ class rastreo_paquetes(models.Model):
             total_cotizacion = cotizacion.amount_total if cotizacion else 0.0
             moneda = cotizacion.currency_id.name if cotizacion else ''
 
-            anticipos_cliente = p.detalle_cliente_ids
-            total_anticipos_cliente = sum(a.cantidad or 0.0 for a in anticipos_cliente)
-            count_anticipos_cliente = len(anticipos_cliente)
+            total_pagos_cliente = 0.0
+            count_pagos_cliente = 0
+            if cotizacion:
+                facturas = cotizacion.invoice_ids.filtered(
+                    lambda f: f.move_type == 'out_invoice' and f.state == 'posted'
+                )
+                
+                domain_pagos = [
+                    ('partner_id', '=', cotizacion.partner_id.id),
+                    ('state', 'in', ['paid', 'in_process']), 
+                    ('payment_type', '=', 'inbound'), 
+                ]
+                
+                if cotizacion.name:
+                    domain_pagos.append('|')
+                    domain_pagos.append(('memo', 'ilike', cotizacion.name))
+                    domain_pagos.append(('memo', 'ilike', 'INV')) 
+
+                pagos_directos = self.env['account.payment'].search(domain_pagos)
+                
+                pagos_totales = facturas.mapped('payment_ids') | pagos_directos
+                
+                for pago in pagos_totales:
+                    count_pagos_cliente += 1
+                    total_pagos_cliente += pago.currency_id._convert(
+                        pago.amount,
+                           self.env.company.currency_id,
+                            self.env.company,
+                        pago.date or fields.Date.today(),
+                    )
 
             anticipos_proveedor = p.detalle_proveedor_ids
             total_anticipos_proveedor = sum(a.cantidad or 0.0 for a in anticipos_proveedor)
             count_anticipos_proveedor = len(anticipos_proveedor)
 
+            total_racks = 0
+            total_detalle = 0.0
+            count_lineas_detalle = 0
+            if cotizacion:
+                for linea in cotizacion.order_line:
+                    count_lineas_detalle += 1
+                    total_racks += linea.product_uom_qty or 0
+                    total_detalle += linea.price_subtotal or 0.0
 
-            detalle = p.detalle_cotizacion_ids
-            total_racks = sum(d.cantidad_racks or 0 for d in detalle)
-            total_detalle = sum(
-                (d.costo_rack or 0.0) * (d.cantidad_racks or 0) for d in detalle
-            )
-            count_lineas_detalle = len(detalle)
-
-
-            saldo_cliente = (total_cotizacion or 0.0) - total_anticipos_cliente
+            # ----------------------------------------------------------
+            # Saldos
+            # ----------------------------------------------------------
+            saldo_cliente = (total_cotizacion or 0.0) - total_pagos_cliente
             saldo_proveedor = (p.total_proveedor or 0.0) - total_anticipos_proveedor
 
-            kpi_saldo_clientes = kpi_saldo_clientes + saldo_cliente
-            kpi_saldo_proveedores = kpi_saldo_proveedores + saldo_proveedor
+            kpi_saldo_clientes += saldo_cliente
+            kpi_saldo_proveedores += saldo_proveedor
             estados_dict = dict(p._fields['estado'].selection)
 
             lista.append({
@@ -691,14 +763,13 @@ class rastreo_paquetes(models.Model):
                     'nombre': cotizacion.name if cotizacion else '',
                     'total': total_cotizacion,
                     'moneda': moneda,
-                },     
+                },
 
                 'anticipos_cliente': {
-                    
-                    'total_acordado': p.total_cliente or 0.0,
-                    'count': count_anticipos_cliente,
-                    'total': total_anticipos_cliente,
+                    'count': count_pagos_cliente,
+                    'total': total_pagos_cliente,
                     'saldo_cliente': saldo_cliente,
+                    'total_acordado': p.total_cliente or 0.0,
                 },
 
                 'anticipos_proveedor': {
@@ -716,14 +787,13 @@ class rastreo_paquetes(models.Model):
             })
 
         return {
-            'success': True, 
+            'success': True,
             'lista': lista,
             'kpi': {
-                'cliente' : kpi_saldo_clientes,
+                'cliente': kpi_saldo_clientes,
                 'proveedor': kpi_saldo_proveedores,
             },
-            }
-
+        }
 
     @api.model
     def guardar_detalle_cotizacion(self, pedido_id):
@@ -765,46 +835,46 @@ class rastreo_paquetes(models.Model):
     ############### Buscar la cotización ###########################
     @api.model
     def buscar_cotizacion(self, termino_busqueda=None):
-        domain = []
         if not termino_busqueda:
             return {'error': 'Se necesita un número', 'success': False}
-    
-        domain = [
-            ('state', 'in', ['draft', 'sent','sale','done']),
-            ('name', '=', termino_busqueda)
-        ]
-                    
-        cotizacion = self.env['sale.order'].search(domain, order='id desc',limit=1)
 
+        cotizacion = self.env['sale.order'].search(
+            [('state', 'in', ['draft', 'sent', 'sale', 'done']),
+            ('name', '=', termino_busqueda)],
+            order='id desc',
+            limit=1,
+        )
         if not cotizacion.exists():
-            return  {'error': 'Cotización no encontrada', 'success': False}
-        
-        lista_productos = []
+            return {'error': 'Cotización no encontrada', 'success': False}
 
+        lista_productos = []
         for linea in cotizacion.order_line:
-            d = [('producto_id.id', '=', linea.product_id.id, )]
-            rack = self.env['rastreo.rack_detalle'].search(d, order='id desc',limit=1)
-            if rack.exists():
+            rack = self.env['rastreo.rack_detalle'].search(
+                [('producto_id', '=', linea.product_id.id)],
+                order='id desc',
+                limit=1,
+            )
+            if rack:
                 lista_productos.append({
                     'id': linea.product_id.id,
                     'nombre': linea.product_id.name,
                     'codigo': rack.clave or '',
-                    'rack_id': rack.id or 0,
+                    'rack_id': rack.id,
                     'precio': linea.price_unit,
-                    'unidad': linea.product_uom_id.name, 
+                    'unidad': linea.product_uom_id.name,
                     'cantidad': linea.product_uom_qty,
-                    'subtotal': linea.price_subtotal
-                })   
-            else:             
+                    'subtotal': linea.price_subtotal,
+                })
+            else:
                 lista_productos.append({
                     'id': linea.product_id.id,
                     'nombre': linea.product_id.name,
                     'codigo': linea.product_id.default_code or '',
-                    'rack_id': 0,
+                    'rack_id': False,
                     'precio': linea.price_unit,
-                    'unidad': linea.product_uom_id.name, 
+                    'unidad': linea.product_uom_id.name,
                     'cantidad': linea.product_uom_qty,
-                    'subtotal': linea.price_subtotal
+                    'subtotal': linea.price_subtotal,
                 })
 
         return {
@@ -818,5 +888,5 @@ class rastreo_paquetes(models.Model):
                 'moneda': cotizacion.currency_id.name,
                 'fecha': cotizacion.date_order,
             },
-            'data': lista_productos
+            'data': lista_productos,
         }
