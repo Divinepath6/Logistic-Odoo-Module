@@ -1,7 +1,7 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class rastreo_paquetes(models.Model):
     _name = 'rastreo.pedido'
@@ -58,21 +58,8 @@ class rastreo_paquetes(models.Model):
     pdf_invoice_nombre = fields.Char(
         string='Nombre de PDF'
     )
-    pdf_ETD= fields.Binary(
-        string='Documento PL',
-        attachment=True
-    )
-    pdf_ETA= fields.Binary(
-        string='Documento PL',
-        attachment=True
-    )
 
-    pdf_ETD_nombre = fields.Char(
-        string='Nombre de PDF'
-    )
-    pdf_ETA_nombre = fields.Char(
-        string='Nombre de PDF'
-    )
+
 
     currency_id = fields.Many2one(
         'res.currency', 
@@ -102,7 +89,16 @@ class rastreo_paquetes(models.Model):
         string= 'Total acordado con el proveedor',
         currency_field='currency_id' 
     )
-   
+   ## FECHAS %$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$
+
+    ETD = fields.Date(
+        string = 'Fecha de la ETD'
+    )
+    ETA = fields.Date(
+        string = 'Fecha de la ETA'
+    )
+
+
     fecha_compromiso_proveedor_1 = fields.Date(
         string = '1 Fecha acordada con el proveedor'
     )
@@ -115,18 +111,6 @@ class rastreo_paquetes(models.Model):
     fecha_compromiso_proveedor_4 = fields.Date(
         string =  '4 Fecha acordada con el proveedor'
     )
-    
-
-
-    ## Cliente ///////////////////////////////////////////////////////////////////////////////
-    total_cliente = fields.Monetary(
-        string= 'Total acordado con el cliente',
-        currency_field='currency_id' 
-    )
-    racks_acordados = fields.Integer(
-        string = 'Total de rack acordados con el cliente'
-    )
-
 
     fecha_compromiso_cliente_1 = fields.Date(
         string = '1 Fecha acordada con el cliente'
@@ -139,7 +123,22 @@ class rastreo_paquetes(models.Model):
     )
     fecha_compromiso_cliente_4 = fields.Date(
         string = '4 Fecha acordada con el cliente'
+    )    
+
+    fecha_termino_produccion = fields.Date(
+        string = 'Fecha de termino de produccion'
+    ) 
+
+    ## Cliente ///////////////////////////////////////////////////////////////////////////////
+    total_cliente = fields.Monetary(
+        string= 'Total acordado con el cliente',
+        currency_field='currency_id' 
     )
+    racks_acordados = fields.Integer(
+        string = 'Total de rack acordados con el cliente'
+    )
+
+
     
 
     ##LLave foranea para lo de clientes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -321,7 +320,7 @@ class rastreo_paquetes(models.Model):
 
         base = nombre_archivo.rsplit('.', 1)[0] if nombre_archivo else tipo_documento
         nombre_final = f"{base}_{guia}.pdf"
-
+        
         pedido.write({
             tipo_documento: pdf,
             campo_nombre: nombre_final
@@ -350,8 +349,6 @@ class rastreo_paquetes(models.Model):
     def obtener_pdf(self, pedido_id, nombre_pdf):
         campos_permitidos = [
             'pdf_contrato_proveedor',
-            'pdf_ETD',
-            'pdf_ETA',
             'pdf_factura_proveedor',
             'pdf_anticipo_cliente',
             'pdf_BL',
@@ -395,6 +392,10 @@ class rastreo_paquetes(models.Model):
             raise UserError("El pedido indicado no existe.")
         
         with self.env.cr.savepoint():
+            fecha_termino_produccion = pedido.fecha_termino_produccion
+            if not fecha_termino_produccion:
+                if not pedido.numero_contrato.exists():
+                    pedido.fecha_termino_produccion = datetime.now + "20dd"
             pedido.write({
                 'numero_guia': datos.get('numero_guia') or '',
                 'total_proveedor': datos.get('total_proveedor') or 0,
@@ -402,6 +403,10 @@ class rastreo_paquetes(models.Model):
                 'racks_acordados': datos.get('racks_acordados') or 0,
                 'forwarder': datos.get('forwarder') or False,
                 'total_cliente': datos.get('total_cliente'),
+
+                'ETA': datos.get('ETA'),
+                'ETD': datos.get('ETD'),
+
                 'fecha_compromiso_proveedor_1': datos.get('fecha_compromiso_proveedor_1') or "",
                 'fecha_compromiso_proveedor_2': datos.get('fecha_compromiso_proveedor_2') or "",
                 'fecha_compromiso_proveedor_3': datos.get('fecha_compromiso_proveedor_3') or "",
@@ -438,6 +443,11 @@ class rastreo_paquetes(models.Model):
                     'cantidad_racks': d.get('cantidad_racks') or '',
                     'pedido_id' : pedido_id        
                 })
+        
+        if not pedido.fecha_termino_produccion:
+            if pedido.numero_contrato:
+                pedido.fecha_termino_produccion = fields.Date.today() + timedelta(days=20)
+
         self.crear_aviso(pedido.id)
         return {
             'success': True,
@@ -567,7 +577,10 @@ class rastreo_paquetes(models.Model):
                 'total_cliente': pedido.total_cliente or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
                 'numero_contrato': pedido.numero_contrato or '',
-                
+
+                'ETD': pedido.ETD,
+                'ETA': pedido.ETA,
+
                 'fecha_compromiso_cliente_1': pedido.fecha_compromiso_cliente_1 or '',
                 'fecha_compromiso_cliente_2': pedido.fecha_compromiso_cliente_2 or '',
                 'fecha_compromiso_cliente_3': pedido.fecha_compromiso_cliente_3 or '',
@@ -587,8 +600,7 @@ class rastreo_paquetes(models.Model):
                 'pdf_BL' : bool(pedido.pdf_BL),
                 'pdf_PL': bool(pedido.pdf_PL) ,
                 'pdf_invoice': bool(pedido.pdf_invoice),
-                'pdf_ETD': bool(pedido.pdf_ETD),
-                'pdf_ETA': bool(pedido.pdf_ETA),
+
 
                 #listas
                 'lista_anticipos_cliente': lista_anticipos_cliente,
@@ -600,8 +612,13 @@ class rastreo_paquetes(models.Model):
         }
 
     def crear_aviso(self, id):
-        aviso = ""
+        avisoDB = ""
+        aviso = []
+        INFO = 'info'     
+        MEDIA = 'media'     
+        URGENTE = 'urgente'
         pedido = self.browse(id)
+
         count_cliente = self.env['rastreo.detalle_cliente'].search_count(
             [('pedido_id', '=', id)],
         )
@@ -611,44 +628,60 @@ class rastreo_paquetes(models.Model):
         
         if pedido.estado == 'produccion':
             if count_cliente < 1:
-                aviso += "Anticipo de cliente "
+                aviso.append({'severidad': MEDIA, 'mensaje': "Anticipo de cliente 1"})
             if count_proveedor < 1:
-                aviso += "Anticipo a proveedor "
+                aviso.append({'severidad': MEDIA, 'mensaje': "Anticipo a proveedor 1"})
             if not pedido.numero_contrato:
-                aviso += "Indicar número de contrato "
+                aviso.append({'severidad': MEDIA, 'mensaje': "Número de contrato"})
+            else:
+                fecha_termino_produccion = pedido.fecha_termino_produccion
+                if not fecha_termino_produccion:
+                    aviso.append({'severidad': MEDIA, 'mensaje': "Fecha de Término de Producción"})
+                else:
+                    hoy = fields.Date.today()
+                    dias_restantes = (fecha_termino_produccion - hoy).days
+                    if not pedido.forwarder and dias_restantes <= 13:
+                            aviso.append({
+                                'severidad': URGENTE,
+                                'mensaje': f"Forwarder faltan: {dias_restantes} días",
+                            })
             if not pedido.pdf_contrato_proveedor:
-                aviso += "Contrato del proveedor "
+                aviso.append({'severidad': URGENTE, 'mensaje': "Contrato del proveedor"})
+            
 
         elif pedido.estado == 'puerto_origen':
             if count_cliente < 2:
-                aviso += "Anticipo de cliente "
+                aviso.append({ MEDIA , "Anticipo de cliente 2"}) 
             if count_proveedor< 2:
-                aviso += "Anticipo a proveedor "
-            if not pedido.forwarder:
-                aviso += "Conseguir Forwarder "
-            if not pedido.pdf_ETD:
-                aviso += "Conseguir ETD "
-            if not pedido.pdf_ETA:
-                aviso += "Conseguir ETA "
-
+                aviso.append({ MEDIA , "Anticipo de proveedor 2"}) 
+            if not pedido.ETD:
+                aviso.append({ MEDIA , "Conseguir ETD "}) 
+            else:
+                hoy = fields.Date.today()           
+                diferencia = pedido.ETD - hoy  
+                dias_restantes = diferencia.days
+                if not pedido.forwarder and dias_restantes <= 3:
+                    aviso.append({'severidad': INFO, 'mensaje': f"Apunto de salir de puerto: {dias_restantes} "})
+            
         elif pedido.estado == 'Embarcado':
             if count_cliente < 3:
-                aviso += "Anticipo de cliente "
+                aviso.append({ MEDIA , "Anticipo de cliente 3"}) 
             if count_proveedor< 3:
-                aviso += "Anticipo a proveedor "
+                aviso.append({ MEDIA , "Anticipo a proveedor 3"}) 
             if not pedido.pdf_BL:
-                aviso += "Subir BL "
+                aviso.append({ MEDIA , "Subir BL"}) 
             if not pedido.pdf_PL:
-                aviso += "Subir PL"
-            if not pedido.pdf_invoice:
-                aviso += "Subir Invoice "
+                aviso.append({ MEDIA , "Subir PL"}) 
+            if not pedido.ETA:
+                aviso.append({ MEDIA , "Conseguir ETA"}) 
 
         elif pedido.estado == 'Descargado':
             if pedido.numero_contrato:
-                aviso += "Cotizar A.A "
+                aviso.append({ MEDIA , "Cotizar A.A"}) 
             if pedido.numero_contrato:
                 aviso += "Pedir flete terreste "
                 aviso += "Aviso de arribo "
+        
         elif pedido.estado == 'Aduana':  
             if pedido.numero_contrato:
                 aviso += "Numero de contrato / Contrato"  
@@ -656,7 +689,7 @@ class rastreo_paquetes(models.Model):
         pedido.write({
             'aviso' : aviso
         })
-        return 
+        return (aviso)
 
         
         
@@ -678,6 +711,7 @@ class rastreo_paquetes(models.Model):
         moneda_usd = self.env.ref('base.USD', raise_if_not_found=False)
 
         for p in pedidos:
+            aviso = self.crear_aviso(p.id)
             actualizacion = self.env['rastreo.pedido_actualizacion'].search_read(
                 [('pedido_id', '=', p.id)],
                 ['fecha_actualizacion', 'actualizacion_texto'],
@@ -751,7 +785,7 @@ class rastreo_paquetes(models.Model):
                 'estado_nombre': estados_dict.get(p.estado, p.estado),
                 'numero_guia': p.numero_guia or '',
                 'bool_contrato_proveedor': bool(p.pdf_contrato_proveedor),
-                'aviso': p.aviso or '',
+                'aviso': aviso or {},
 
                 'ultima_actualizacion': {
                     'fecha': actualizacion[0]['fecha_actualizacion'] if actualizacion else '',

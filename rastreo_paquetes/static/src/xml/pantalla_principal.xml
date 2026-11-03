@@ -105,16 +105,19 @@
                                         <div class="odoo-td truncate" t-att-title="p.cliente_nombre">
                                             <t t-esc="p.cliente_nombre || ''" />
                                         </div>
-                                        <div class="odoo-td truncate"
-                                            t-att-title="p.aviso || 'Sin Pendiente'">
-                                            <t t-if="p.aviso">
-                                                <span class="odoo-badge odoo-badge-warning">
-                                                    <t t-esc="p.aviso" />
-                                                </span>
-                                            </t>
-                                            <t t-else="">
-                                                <span class="odoo-text-muted">Sin Pendiente</span>
-                                            </t>
+                                        <div class="odoo-td truncate">
+                                            <div class="aviso-lista">
+                                                <t t-if="p.aviso and p.aviso.length">
+                                                    <t t-foreach="p.aviso" t-as="a" t-key="a_index">
+                                                        <span t-attf-class="odoo-badge aviso-badge aviso-#{a.severidad}">
+                                                            <t t-esc="a.mensaje"/>
+                                                        </span>
+                                                    </t>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="odoo-text-muted">Sin Pendiente</span>
+                                                </t>
+                                            </div>
                                         </div>
 
                                         <t t-if="p.estado != 'fase_inicial'">
@@ -184,14 +187,18 @@
                                         <div class="odoo-kanban-body">
                                             <div>Cliente: <strong
                                                     t-esc="p.cliente_nombre || 'Sin cliente'" /></div>
-                                            <t t-if="p.aviso">
-                                                <span class="odoo-badge odoo-badge-warning">
-                                                    <t t-esc="p.aviso" />
-                                                </span>
-                                            </t>
-                                            <t t-else="">
-                                                <span class="odoo-text-muted">Sin Pendiente</span>
-                                            </t>
+                                            <div class="aviso-lista">
+                                                <t t-if="p.aviso and p.aviso.length">
+                                                    <t t-foreach="p.aviso" t-as="a" t-key="a_index">
+                                                        <span t-attf-class="odoo-badge aviso-badge aviso-#{a.severidad}">
+                                                            <t t-esc="a.mensaje"/>
+                                                        </span>
+                                                    </t>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="odoo-text-muted">Sin Pendiente</span>
+                                                </t>
+                                            </div>
                                             <div>Saldo cliente: <span
                                                     t-esc="p.anticipos_cliente.saldo_cliente || 0" /></div>
                                             <div>Total cliente: <span

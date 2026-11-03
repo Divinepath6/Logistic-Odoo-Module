@@ -110,10 +110,10 @@ export class PantallaPedido extends Component {
                 this.state.pdfFacturaProveedor = p.bool_factura_proveedor || false;
                 this.state.pdfBL = p.pdf_BL || false;
                 this.state.pdfPL = p.pdf_PL || false;
-                this.state.pdfETA = p.pdf_ETA || false;
-                this.state.pdfETD = p.pdf_ETD || false;
                 this.state.pdfInvoice = p.pdf_invoice || false;
+                
 
+                
                 //listas
                 let totalCliente = 0;
                 this.state.actualizaciones = p.actualizaciones;
@@ -186,6 +186,9 @@ export class PantallaPedido extends Component {
                 this.state.balancePorcentajeProveedor = "% " + porP.toFixed(2);
                  
                 // fechas: 
+                this.state.ETA = p.ETA;
+                this.state.ETD = p.ETD;
+
                 this.state.fecha_compromiso_proveedor_1 = p.fecha_compromiso_proveedor_1;
                 this.state.fecha_compromiso_proveedor_3 = p.fecha_compromiso_proveedor_2;
                 this.state.fecha_compromiso_proveedor_2 = p.fecha_compromiso_proveedor_3;
@@ -343,7 +346,56 @@ export class PantallaPedido extends Component {
         });
         ev.target.checked = this.state.forwarder;
     }
-    
+
+    async onVerificarFechaETD(ev) {
+        const nuevoValor = ev.target.value; 
+        const valorAnterior = this.state.ETD; 
+
+        if (!valorAnterior) {
+            this.state.ETD = nuevoValor;
+            return;
+        }
+
+        if (nuevoValor === valorAnterior) {
+            return;
+        }
+
+        this.dialogService.add(ConfirmationDialog, {
+            title: _t("¿Estás seguro?"),
+            body: _t("¿Estás seguro de cambiar la fecha? La fecha original es: ") + valorAnterior,
+            confirm: () => {
+                this.state.ETD = nuevoValor;
+            },
+            cancel: () => {
+                ev.target.value = valorAnterior;
+            },
+        });
+    }
+
+    async onVerificarFechaETA(ev) {
+        const nuevoValor = ev.target.value; 
+        const valorAnterior = this.state.ETA; 
+
+        if (!valorAnterior) {
+            this.state.ETA = nuevoValor;
+            return;
+        }
+
+        if (nuevoValor === valorAnterior) {
+            return;
+        }
+
+        this.dialogService.add(ConfirmationDialog, {
+            title: _t("¿Estás seguro?"),
+            body: _t("¿Estás seguro de cambiar la fecha? La fecha anterior es: ") + valorAnterior,
+            confirm: () => {
+                this.state.ETA = nuevoValor;
+            },
+            cancel: () => {
+                ev.target.value = valorAnterior;
+            },
+        });
+    }
     async onCambiarCotizacion (){
 
         const guiaActual = this.state.guia; 
@@ -426,6 +478,8 @@ export class PantallaPedido extends Component {
             numero_contrato: this.state.numeroContrato,
             racks_acordados: 0,
             
+            ETD : this.state.ETD,
+            ETA : this.state.ETA,
 
             fecha_compromiso_proveedor_1:this.state.fecha_compromiso_proveedor_1,
             fecha_compromiso_proveedor_2:this.state.fecha_compromiso_proveedor_2,

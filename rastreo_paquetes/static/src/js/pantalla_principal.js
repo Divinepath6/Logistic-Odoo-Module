@@ -268,6 +268,7 @@ export class PantallaPrincipal extends Component {
                 this.state.kpiClientes = resultado.kpi.cliente.toFixed(2);
                 this.state.kpiProveedor  = resultado.kpi.proveedor.toFixed(2);
                 this.asignarColumnas();
+                console.log(resultado.lista)
             }
            
         } finally {
