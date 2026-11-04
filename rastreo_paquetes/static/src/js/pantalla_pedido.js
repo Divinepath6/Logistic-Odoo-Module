@@ -254,7 +254,7 @@ export class PantallaPedido extends Component {
        
     }
     async onClickRegresar() {
-        this.guardarDetalleGeneral();
+        this.onGuardarDetalleGeneral();
         await this.action.doAction("rastreo_paquetes.action_pantalla_principal");
     }
     async cambiarEstado(){
@@ -377,63 +377,19 @@ export class PantallaPedido extends Component {
         });
         ev.target.checked = this.state.forwarder;
     }
-    async onVerificarFechaFTP(ev){
-        const nuevoValor = ev.target.value; 
-        const valorAnterior = this.state.fecha_termino_produccion; 
+
+
+    async onVerificarFecha(ev) {
+        const campo = ev.target.dataset.field;
+        const nuevoValor = ev.target.value;
+        const valorAnterior = this.state[campo];
+
+        if (!campo) {
+            return;
+        }
 
         if (!valorAnterior) {
-            this.state.fecha_termino_produccion = nuevoValor;
-            return;
-        }
-
-        if (nuevoValor === valorAnterior) {
-            return;
-        }
-
-        this.dialogService.add(ConfirmationDialog, {
-            title: _t("¿Estás seguro?"),
-            body: _t("¿Estás seguro de cambiar la fecha? La fecha original es: ") + valorAnterior,
-            confirm: async () =>  {
-                this.state.fecha_termino_produccion = nuevoValor;
-                await this.onGuardarDetalleGeneral();
-            },
-            cancel: () => {
-                ev.target.value = valorAnterior;
-            },
-        });
-    }
-    async onVerificarFechaETD(ev) {
-        const nuevoValor = ev.target.value; 
-        const valorAnterior = this.state.ETD; 
-
-        if (!valorAnterior) {
-            this.state.ETD = nuevoValor;
-            return;
-        }
-
-        if (nuevoValor === valorAnterior) {
-            return;
-        }
-
-        this.dialogService.add(ConfirmationDialog, {
-            title: _t("¿Estás seguro?"),
-            body: _t("¿Estás seguro de cambiar la fecha? La fecha original es: ") + valorAnterior,
-            confirm: async () => {
-                this.state.ETD = nuevoValor;
-                await this.onGuardarDetalleGeneral();
-            },
-            cancel: () => {
-                ev.target.value = valorAnterior;
-            },
-        });
-    }
-
-    async onVerificarFechaETA(ev) {
-        const nuevoValor = ev.target.value; 
-        const valorAnterior = this.state.ETA; 
-
-        if (!valorAnterior) {
-            this.state.ETA = nuevoValor;
+            this.state[campo] = nuevoValor;
             return;
         }
 
@@ -445,7 +401,7 @@ export class PantallaPedido extends Component {
             title: _t("¿Estás seguro?"),
             body: _t("¿Estás seguro de cambiar la fecha? La fecha anterior es: ") + valorAnterior,
             confirm: async () => {
-                this.state.ETA = nuevoValor;
+                this.state[campo] = nuevoValor;
                 await this.onGuardarDetalleGeneral();
             },
             cancel: () => {
@@ -453,6 +409,7 @@ export class PantallaPedido extends Component {
             },
         });
     }
+
     async onCambiarCotizacion (){
 
         const guiaActual = this.state.guia; 

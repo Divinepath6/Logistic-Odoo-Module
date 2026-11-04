@@ -3,27 +3,28 @@
     <t t-name="rastreo_paquetes.pantalla_pedido">
         <div class="odoo-screen">
 
-            <!-- ============================================
-                 ENCABEZADO
-                 ============================================ -->
+
             <div class="odoo-screen-header">
+                <button type="button"
+                    class="odoo-btn odoo-btn-secondary"
+                    t-on-click="onClickRegresar">
+                    <i class="fa fa-home" /></button>
+
                 <h2>
                     <i class="fa fa-cube me-2" /> Cotización: <t t-esc="state.guia or 'Sin número'" />
                 </h2>
 
                 <div class="ms-auto d-flex gap-2">
-                    <button type="button"
-                        class="odoo-btn odoo-btn-ghost"
-                        t-on-click="onClickCambiarEstado">
-                        <i class="fa fa-exchange" /> Cambiar estado </button>
+
                     <button type="button"
                         class="odoo-btn odoo-btn-primary"
                         t-on-click="onGuardarDetalleGeneral">
                         <i class="fa fa-save" /> Guardar </button>
+
                     <button type="button"
-                        class="odoo-btn odoo-btn-secondary"
-                        t-on-click="onClickRegresar">
-                        <i class="fa fa-home" /> Pantalla Principal </button>
+                    class="odoo-btn odoo-btn-ghost"
+                     t-on-click="onClickCambiarEstado">
+                    <i class="fa fa-exchange" /> Siguiente Estado </button>
                 </div>
             </div>
 
@@ -188,6 +189,7 @@
 
 
                     </div>
+
                     <div class="odoo-card odoo-card-accent">
                         <div class="odoo-card-title">
                             <i class="fa fa-info-circle" /> Fechas: </div>
@@ -198,91 +200,116 @@
                                 </span>
                             </h3>
                             <label class="odoo-label" for="fecha_termino_produccion"> Termino de
-                                Producción: </label>
+                                producción: </label>
                             <input type="date"
                                 id="fecha_termino_produccion"
                                 class="form-control"
+                                data-field="fecha_termino_produccion"
                                 t-att-value="state.fecha_termino_produccion"
-                                t-on-change="onVerificarFechaFTP" />
+                                t-on-change="onVerificarFecha" />
 
                             <label class="odoo-label" for="ETA"> ETA: </label>
                             <input type="date"
                                 id="ETA"
                                 class="form-control"
+                                data-field="ETA"
                                 t-att-value="state.ETA"
-                                t-on-change="onVerificarFechaETA" />
+                                t-on-change="onVerificarFecha" />
 
                             <label class="odoo-label" for="ETD"> ETD: </label>
                             <input type="date"
                                 id="ETD"
                                 class="form-control"
+                                data-field="ETD"
                                 t-att-value="state.ETD"
-                                t-on-change="onVerificarFechaETD" />
+                                t-on-change="onVerificarFecha" />
                         </div>
                         <div class="cc-card">
                             <h3 class="cc-card-title">
                                 <span class="cc-badge-dot">
-                                    Compromiso de Pago cliente:
+                                    Fechas limite de compromiso de Pago cliente:
                                 </span>
 
                             </h3>
-                            <label class="odoo-label" for="fecha_compromiso_cliente_1">Fecha 1
-                                (20%): </label>
-                            <input type="date"
-                                id="fechaAnticipo1"
-                                class="form-control"
-                                t-model="state.fecha_compromiso_cliente_1" />
-                            <label class="odoo-label" for="fecha_compromiso_cliente_2">Fecha 2
+                            <!-- 
+        <label class="odoo-label" for="fecha_compromiso_cliente_1">Fecha 1
+            (20%): </label>
+        <input type="date"
+            id="fechaAnticipo1"
+            class="form-control"
+            t-model="state.fecha_compromiso_cliente_1" />
+            -->
+                            <label class="odoo-label" for="fecha_compromiso_cliente_2"> Anticipo 2
                                 (25%): </label>
                             <input type="date"
                                 id="fechaAnticipo2"
                                 class="form-control"
-                                t-model="state.fecha_compromiso_cliente_2" />
-                            <label class="odoo-label" for="fecha_compromiso_cliente_3">Fecha 3
+                                data-field="fecha_compromiso_cliente_2"
+                                t-att-value="state.fecha_compromiso_cliente_2"
+                                t-on-change="onVerificarFecha"
+                            />
+
+                            <label class="odoo-label" for="fecha_compromiso_cliente_3"> Anticipo 3
                                 (25%): </label>
                             <input type="date"
                                 id="fechaAnticipo3"
                                 class="form-control"
-                                t-model="state.fecha_compromiso_cliente_3" />
-                            <label class="odoo-label" for="fecha_compromiso_cliente_4">Fecha 4
+                                data-field="fecha_compromiso_cliente_3"
+                                t-att-value="state.fecha_compromiso_cliente_3"
+                                t-on-change="onVerificarFecha" />
+
+                            <label class="odoo-label" for="fecha_compromiso_cliente_4"> Balance
                                 (30%): </label>
                             <input type="date"
                                 id="fechaAnticipo4"
                                 class="form-control"
-                                t-model="state.fecha_compromiso_cliente_4" />
+                                data-field="fecha_compromiso_cliente_4"
+                                t-att-value="state.fecha_compromiso_cliente_4"
+                                t-on-change="onVerificarFecha" />
 
                             <h3 class="cc-card-title">
                                 <span class="cc-badge-dot">
-                                    Compromiso de Pago Proveedor
+                                    Fechas limite de compromiso de Pago Proveedor
                                 </span>
                             </h3>
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_1">Fecha 1
-                                (20%): </label>
-                            <input type="date"
-                                id="fechaAnticipoP1"
-                                class="form-control"
-                                t-model="state.fecha_compromiso_proveedor_1" />
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_2">Fecha 2
+                            <!-- 
+        <label class="odoo-label" for="fecha_compromiso_proveedor_1"> Antipo 2
+            (20%): </label>
+        <input type="date"
+            id="fechaAnticipoP1"
+            class="form-control"
+            t-model="state.fecha_compromiso_proveedor_1" />
+            -->
+                            <label class="odoo-label" for="fecha_compromiso_proveedor_2"> Anticipo 2
                                 (30%): </label>
                             <input type="date"
                                 id="fechaAnticipoP2"
                                 class="form-control"
-                                t-model="state.fecha_compromiso_proveedor_2" />
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_3">Fecha 3
+                                data-field="fecha_compromiso_proveedor_2"
+                                t-att-value="state.fecha_compromiso_proveedor_2"
+                                t-on-change="onVerificarFecha" />
+
+                            <label class="odoo-label" for="fecha_compromiso_proveedor_3"> Anticipo 3
                                 (20%): </label>
                             <input type="date"
                                 id="fechaAnticipoP3"
                                 class="form-control"
-                                t-model="state.fecha_compromiso_proveedor_3" />
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_4">Fecha 4
+                                data-field="fecha_compromiso_proveedor_3"
+                                t-att-value="state.fecha_compromiso_proveedor_3"
+                                t-on-change="onVerificarFecha" />
+
+                            <label class="odoo-label" for="fecha_compromiso_proveedor_4"> Balance
                                 (Balance): </label>
                             <input type="date"
                                 id="fechaAnticipoP4"
                                 class="form-control"
-                                t-model="state.fecha_compromiso_proveedor_4" />
+                                data-field="fecha_compromiso_proveedor_4"
+                                t-att-value="state.fecha_compromiso_proveedor_4"
+                                t-on-change="onVerificarFecha" />
                         </div>
 
                     </div>
+
                     <!-- CLIENTE  -->
                     <div class="odoo-card">
                         <div class="odoo-card-title">

@@ -243,6 +243,8 @@ class rastreo_paquetes(models.Model):
                 'cliente_id': cotizacion.partner_id.id,
                 'numero_guia': cotizacion.name,
                 'estado': 'produccion',
+                'fecha_compromiso_proveedor_1': fields.Date.today(),
+                'fecha_compromiso_cliente_1': fields.Date.today(),
             })
             self.crear_aviso(pedido.id)
             texto = 'Comienzo de producción'            
@@ -266,11 +268,14 @@ class rastreo_paquetes(models.Model):
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
         siguiente_estado = estado
-            ### rellenaaaaaaaaaaaaaaaaaaaaaaaaaaaar cuando v
+            ### rellenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaar
         match pedido.estado:
             case "fase_inicial":
                 siguiente_estado = 'produccion'
-                
+                pedido.write({
+                    'fecha_compromiso_proveedor_1': fields.Date.today(),
+                    'fecha_compromiso_cliente_1': fields.Date.today(),
+                })
             case "produccion":
                 if not pedido.pdf_contrato_proveedor:
                     return {'success': False, 'error': 'Falta el contrato del proveedor para continuar'}
@@ -643,7 +648,7 @@ class rastreo_paquetes(models.Model):
                 'numero_guia': pedido.numero_guia or '',
                 'cliente_id': pedido.cliente_id.id if pedido.cliente_id else None,
                 'cliente_nombre': pedido.cliente_id.name if pedido.cliente_id else '',
-                'total_cliente': pedido.total_cliente or 0,
+                'total_cliente': cotizacion.amount_total or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
                 'numero_contrato': pedido.numero_contrato or '',
 
