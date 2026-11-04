@@ -209,6 +209,7 @@ class rastreo_paquetes(models.Model):
             'numero_actualizacion': 1,
             'fecha_actualizacion': datetime.now(),
             'actualizacion_texto': 'Fase inicial comenzada',
+            'usuario_id': self.env.user.id,
         })
 
         return {'id': pedido.id, 'sale_order_id': cotizacion.id}
@@ -254,6 +255,7 @@ class rastreo_paquetes(models.Model):
             'numero_actualizacion': 1,
             'fecha_actualizacion': datetime.now(),
             'actualizacion_texto': texto,
+            'usuario_id': self.env.user.id,
         })
         
         return {'success': True}
@@ -340,7 +342,8 @@ class rastreo_paquetes(models.Model):
             'pedido_id': pedido.id,
             'numero_actualizacion': numero,
             'fecha_actualizacion': datetime.now(),
-            'actualizacion_texto': f'Archivo subido: {nombre_amigable} - {self.env.user.name}',
+            'actualizacion_texto': f'Archivo subido: {nombre_amigable}',
+            'usuario_id': self.env.user.id,
         })
 
         return {'success': True}
@@ -392,10 +395,6 @@ class rastreo_paquetes(models.Model):
             raise UserError("El pedido indicado no existe.")
         
         with self.env.cr.savepoint():
-            fecha_termino_produccion = pedido.fecha_termino_produccion
-            if not fecha_termino_produccion:
-                if not pedido.numero_contrato.exists():
-                    pedido.fecha_termino_produccion = datetime.now + "20dd"
             pedido.write({
                 'numero_guia': datos.get('numero_guia') or '',
                 'total_proveedor': datos.get('total_proveedor') or 0,
@@ -407,17 +406,58 @@ class rastreo_paquetes(models.Model):
                 'ETA': datos.get('ETA'),
                 'ETD': datos.get('ETD'),
 
-                'fecha_compromiso_proveedor_1': datos.get('fecha_compromiso_proveedor_1') or "",
-                'fecha_compromiso_proveedor_2': datos.get('fecha_compromiso_proveedor_2') or "",
-                'fecha_compromiso_proveedor_3': datos.get('fecha_compromiso_proveedor_3') or "",
-                'fecha_compromiso_proveedor_4': datos.get('fecha_compromiso_proveedor_4') or "",
+                'fecha_termino_produccion': datos.get('fecha_termino_produccion') or False,
+                'fecha_compromiso_proveedor_1': datos.get('fecha_compromiso_proveedor_1') or False,
+                'fecha_compromiso_proveedor_2': datos.get('fecha_compromiso_proveedor_2') or False,
+                'fecha_compromiso_proveedor_3': datos.get('fecha_compromiso_proveedor_3') or False,
+                'fecha_compromiso_proveedor_4': datos.get('fecha_compromiso_proveedor_4') or False,
 
-                'fecha_compromiso_cliente_1': datos.get('fecha_compromiso_cliente_1') or "",
-                'fecha_compromiso_cliente_2': datos.get('fecha_compromiso_cliente_2') or "",
-                'fecha_compromiso_cliente_3': datos.get('fecha_compromiso_cliente_3') or "",
-                'fecha_compromiso_cliente_4': datos.get('fecha_compromiso_cliente_4') or "",
+                'fecha_compromiso_cliente_1': datos.get('fecha_compromiso_cliente_1') or False,
+                'fecha_compromiso_cliente_2': datos.get('fecha_compromiso_cliente_2') or False,
+                'fecha_compromiso_cliente_3': datos.get('fecha_compromiso_cliente_3') or False,
+                'fecha_compromiso_cliente_4': datos.get('fecha_compromiso_cliente_4') or False,
 
             })
+
+            
+            fecha_termino_produccion = pedido.fecha_termino_produccion
+            if not fecha_termino_produccion:
+                if pedido.numero_contrato:
+                    pedido.fecha_termino_produccion = fields.Date.today() + timedelta(days=20)
+                    
+                    fecha_compromiso_proveedor_1 = pedido.fecha_compromiso_proveedor_1
+                    if not fecha_compromiso_proveedor_1:
+                        pedido.fecha_compromiso_proveedor_1 = fields.Date.today()
+
+                    fecha_compromiso_cliente_1 = pedido.fecha_compromiso_cliente_1
+                    if not fecha_compromiso_cliente_1:
+                         pedido.fecha_compromiso_cliente_1 = fields.Date.today()
+            
+            if pedido.numero_contrato:
+                pedido.fecha_termino_produccion = fields.Date.today() + timedelta(days=20)
+                
+                fecha_compromiso_proveedor_1 = pedido.fecha_compromiso_proveedor_1
+                if not fecha_compromiso_proveedor_1:
+                    pedido.fecha_compromiso_proveedor_1 = fields.Date.today()
+
+                fecha_compromiso_cliente_1 = pedido.fecha_compromiso_cliente_1
+                if not fecha_compromiso_cliente_1:
+                    pedido.fecha_compromiso_cliente_1 = fields.Date.today()
+
+            fecha_compromiso_proveedor_2 = pedido.fecha_compromiso_proveedor_2
+            if not fecha_compromiso_proveedor_2:
+                if pedido.fecha_compromiso_proveedor_1:
+                    pedido.fecha_compromiso_proveedor_2 = pedido.fecha_compromiso_proveedor_1 + timedelta(days=30)
+            
+            fecha_compromiso_cliente_2 = pedido.fecha_compromiso_cliente_2
+            if not fecha_compromiso_cliente_2:
+                if pedido.fecha_compromiso_cliente_1:
+                    pedido.fecha_compromiso_cliente_2 = pedido.fecha_compromiso_cliente_1 + timedelta(days=30)
+
+            if pedido.ETD:
+                pedido.fecha_compromiso_cliente_3 = pedido.ETD + timedelta(days=30)
+
+                
             cambio = datos.get('cambio_racks') or False
             if cambio == False:
                 self.crear_aviso(pedido.id)
@@ -443,10 +483,6 @@ class rastreo_paquetes(models.Model):
                     'cantidad_racks': d.get('cantidad_racks') or '',
                     'pedido_id' : pedido_id        
                 })
-        
-        if not pedido.fecha_termino_produccion:
-            if pedido.numero_contrato:
-                pedido.fecha_termino_produccion = fields.Date.today() + timedelta(days=20)
 
         self.crear_aviso(pedido.id)
         return {
@@ -472,6 +508,7 @@ class rastreo_paquetes(models.Model):
             return {'success': False, 'error': 'Pedido no encontrado'}
         
         cotizacion = pedido.sale_order_id
+
         actualizaciones = self.env['rastreo.pedido_actualizacion'].search(
             [('pedido_id', '=', pedido_id)],
             order='fecha_actualizacion desc',
@@ -483,29 +520,58 @@ class rastreo_paquetes(models.Model):
                 'numero_actualizacion': actualizacion.numero_actualizacion,
                 'fecha': actualizacion.fecha_actualizacion,
                 'texto': actualizacion.actualizacion_texto or '',
+                'usuario_id': actualizacion.usuario_id.id or False,
+                'usuario': actualizacion.usuario_id.name or '',
             })
 
         anticipos_cliente = self.env['rastreo.detalle_cliente'].search(
             [('pedido_id', '=', pedido_id)],
             order='numero desc',
         )
+
+
         lista_pagos_cliente = []
         if cotizacion and cotizacion.exists():
-            for factura in cotizacion.invoice_ids:
-                # Solo facturas de cliente (out_invoice) y no canceladas
-                if factura.move_type == 'out_invoice' and factura.state == 'posted':
-                    for pago in factura.payment_ids:
-                        lista_pagos_cliente.append({
-                            'payment_id': pago.id,
-                            'referencia': pago.name or '',
-                            'monto': pago.amount,
-                            'moneda': pago.currency_id.name,
-                            'fecha': str(pago.date) if pago.date else '',
-                            'estado': pago.state,
-                            'diario': pago.journal_id.name or '',
-                            'factura': factura.name,
-                        })
+            facturas = cotizacion.invoice_ids.filtered(
+                lambda f: f.move_type == 'out_invoice' and f.state == 'posted'
+            )
+            domain_pagos = [
+                ('partner_id', '=', cotizacion.partner_id.id),
+                ('state', 'in', ['paid', 'in_process']),
+                ('payment_type', '=', 'inbound'),
+            ]
+            if cotizacion.name:
+                domain_pagos.append('|')
+                domain_pagos.append(('memo', 'ilike', cotizacion.name))
+                domain_pagos.append(('memo', 'ilike', 'INV'))
 
+            pagos_directos = self.env['account.payment'].search(domain_pagos)
+
+            pagos_totales = facturas.mapped('payment_ids') | pagos_directos
+
+            for pago in pagos_totales:
+                if any(x['payment_id'] == pago.id for x in lista_pagos_cliente):
+                    continue
+
+                factura_origen = ''
+                if pago.reconciled_invoice_ids:
+                    factura_origen = pago.reconciled_invoice_ids[0].name or ''
+                elif pago.reconciled_bill_ids:
+                    factura_origen = pago.reconciled_bill_ids[0].name or ''
+
+                lista_pagos_cliente.append({
+                    'payment_id': pago.id,
+                    'referencia': pago.name or '',
+                    'monto': pago.amount,
+                    'moneda': pago.currency_id.name,
+                    'fecha': str(pago.date) if pago.date else '',
+                    'estado': pago.state,
+                    'diario': pago.journal_id.name or '',
+                    'factura': factura_origen,
+                })
+
+
+        ###=============Sin usar pero se quedara aqui por si acaso=============
         lista_anticipos_cliente = []
         for a in anticipos_cliente:
             lista_anticipos_cliente.append({
@@ -521,6 +587,9 @@ class rastreo_paquetes(models.Model):
             [('pedido_id', '=', pedido_id)],
             order='numero desc',
         )
+        #======================================================================
+
+
         lista_anticipos_proveedor = []
         for a in anticipos_proveedor:
             lista_anticipos_proveedor.append({
@@ -580,7 +649,7 @@ class rastreo_paquetes(models.Model):
 
                 'ETD': pedido.ETD,
                 'ETA': pedido.ETA,
-
+                'fecha_termino_produccion': pedido.fecha_termino_produccion or '',
                 'fecha_compromiso_cliente_1': pedido.fecha_compromiso_cliente_1 or '',
                 'fecha_compromiso_cliente_2': pedido.fecha_compromiso_cliente_2 or '',
                 'fecha_compromiso_cliente_3': pedido.fecha_compromiso_cliente_3 or '',
@@ -608,6 +677,7 @@ class rastreo_paquetes(models.Model):
                 'lista_pagos_cliente': lista_pagos_cliente,
                 'actualizaciones': lista_actualizaciones,
                 'detalle_racks': lista_cotizacion_detalle
+
             }
         }
 
@@ -767,9 +837,7 @@ class rastreo_paquetes(models.Model):
                     total_racks += linea.product_uom_qty or 0
                     total_detalle += linea.price_subtotal or 0.0
 
-            # ----------------------------------------------------------
-            # Saldos
-            # ----------------------------------------------------------
+
             saldo_cliente = (total_cotizacion or 0.0) - total_pagos_cliente
             saldo_proveedor = (p.total_proveedor or 0.0) - total_anticipos_proveedor
 

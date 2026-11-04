@@ -86,124 +86,155 @@ export class PantallaPedido extends Component {
         this.searchTimeout = null;
     }
  
-    async cargarPedido(){
+    async cargarPedido() {
         const pedidoId = this.state.pedidoId;
+        this.state.cargando = true;
         try {
             const resultado = await this.orm.call(
                 "rastreo.pedido",
                 "cargar_pedido",
                 [pedidoId]
             );
-            if(resultado.success){
-                const p = resultado.data;
-                this.state.guia = p.numero_guia;
-                this.state.guiaConfirmada = p.numero_guia;
-                this.state.estado = p.estado;
-                this.state.clienteId = p.cliente_id;
-                this.state.clienteNombre = p.cliente_nombre;
-                this.state.totalCliente = Number(p.total_cliente) || 0;
-                this.state.totalProveedor = Number(p.total_proveedor) || 0;
-                this.state.numeroContrato = p.numero_contrato;
-                //bool
-                this.state.forwarder = p.forwarder || false;
-                this.state.pdfContratoProveedor = p.bool_contrato_proveedor | false;
-                this.state.pdfFacturaProveedor = p.bool_factura_proveedor || false;
-                this.state.pdfBL = p.pdf_BL || false;
-                this.state.pdfPL = p.pdf_PL || false;
-                this.state.pdfInvoice = p.pdf_invoice || false;
-                
 
-                
-                //listas
-                let totalCliente = 0;
-                this.state.actualizaciones = p.actualizaciones;
-                this.state.detalleRacks = p.detalle_racks.map((d,i)=> {
-                           const costo = Number(d.precio) || 0;
-                            const cantidad = Number(d.cantidad) || 0;
-                            const subtotal = costo * cantidad;
-                            totalCliente += subtotal;
-                            return {
-                                clave: d.codigo,
-                                numero: d.numero,
-                                costo_rack: costo.toFixed(2),
-                                rack_id: d.rack_id,
-                                rack_nombre: d.nombre,
-                                cantidad_racks: cantidad,
-                                subtotal: subtotal.toFixed(2),
-                            };
-                })
-                this.state.totalCliente = totalCliente.toFixed(2);
-                let totalAnticiposCliente = 0;
-                if(p.lista_pagos_cliente != null || p.lista_pagos_cliente != undefined){
-                    this.state.detalleCliente = p.lista_pagos_cliente.map((d,i)=> {
-                        const cantidad = Number(d.cantidad) || 0;
-                        //const precioDolar = Number(d.precio_dolar) || 0;
-                        totalAnticiposCliente += cantidad; 
-                        return {
-                            anticipoId: d.anticipo_id,
-                            referencia: d.referencia,
-                            fechaAnticipo: d.fecha,
-                            cantidadAnticipo: monto.toFixed(2),
-                           // precioDolar: precioDolar.toFixed(2),
-                        };
-                })
-                }else{
-                    this.state.detalleCliente = []
-                }
-                this.state.totalAnticiposCliente =  (totalAnticiposCliente).toFixed(2); 
-                let totalAnticiposProveedor = 0;
-                if(p.lista_anticipos_proveedor != null || p.lista_anticipos_proveedor != undefined){
-                    this.state.detalleProveedor = p.lista_anticipos_proveedor.map((d,i)=> {
-                        const cantidad = Number(d.cantidad) || 0;
-                        const precioDolar = Number(d.precio_dolar) || 0;
-                        totalAnticiposProveedor += cantidad;
-                        return {
-                            anticipoId: d.anticipo_id,
-                            numero: d.numero,
-                            fechaEdicion: d.fecha_editado,
-                            fechaAnticipo: d.fecha_anticipo,
-                            cantidadAnticipo: cantidad.toFixed(2),
-                            precioDolar: precioDolar.toFixed(2),
-                            PDFAnticipo: d.pdf_anticipo_proveedor,
-                        };
-                    })
-                }else{
-                    this.state.detalleProveedor = [];
-                }
-                this.state.totalAnticiposProveedor =  (totalAnticiposProveedor).toFixed(2); 
-                
-                // balances
-                const balanceP = (this.state.totalProveedor - this.state.totalAnticiposProveedor);
-                const balanceC = (this.state.totalCliente - this.state.totalAnticiposCliente);
-
-                const porP =  ((this.state.totalProveedor * 100) / this.state.totalAnticiposProveedor) ;
-
-                const porC =  ((this.state.totalCliente * 100) / this.state.totalAnticiposCliente);
-                this.state.balanceCliente = "$ " + balanceC.toFixed(2);
-                this.state.balancePorcentajeCliente ="% " + porC.toFixed(2); 
-
-                this.state.balanceProveedor =  "$ " + balanceP.toFixed(2);
-                this.state.balancePorcentajeProveedor = "% " + porP.toFixed(2);
-                 
-                // fechas: 
-                this.state.ETA = p.ETA;
-                this.state.ETD = p.ETD;
-
-                this.state.fecha_compromiso_proveedor_1 = p.fecha_compromiso_proveedor_1;
-                this.state.fecha_compromiso_proveedor_3 = p.fecha_compromiso_proveedor_2;
-                this.state.fecha_compromiso_proveedor_2 = p.fecha_compromiso_proveedor_3;
-                this.state.fecha_compromiso_proveedor_4 = p.fecha_compromiso_proveedor_4;
-                
-                this.state.fecha_compromiso_cliente_1 = p.fecha_compromiso_cliente_1;
-                this.state.fecha_compromiso_cliente_2 = p.fecha_compromiso_cliente_2;
-                this.state.fecha_compromiso_cliente_3 = p.fecha_compromiso_cliente_3;
-                this.state.fecha_compromiso_cliente_4 = p.fecha_compromiso_cliente_4;
-                
-                this.state.aviso = p.aviso;
-                
-            }else{
-                console.log(resultado);
+            if (!resultado.success) {
+                this.notification.add("No se pudo cargar el pedido", { type: "danger" });
+                return;
             }
+
+            const p = resultado.data;
+            const fmt = (n) => {
+                const num = Number(n) || 0;
+                return num.toLocaleString('es-MX', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            };
+            const toNum = (n) => Number(n) || 0;
+
+            this.state.guia = p.numero_guia || '';
+            this.state.guiaConfirmada = p.numero_guia || '';
+            this.state.estado = p.estado || '';
+            this.state.clienteId = p.cliente_id || 0;
+            this.state.clienteNombre = p.cliente_nombre || '';
+            this.state.numeroContrato = p.numero_contrato || '';
+
+            this.state.totalProveedor = toNum(p.total_proveedor);
+            this.state.totalCliente = toNum(p.total_cliente);
+
+            this.state.forwarder = !!p.forwarder;
+            this.state.pdfContratoProveedor = !!p.bool_contrato_proveedor;
+            this.state.pdfFacturaProveedor = !!p.bool_factura_proveedor;
+            this.state.pdfBL = !!p.pdf_BL;
+            this.state.pdfPL = !!p.pdf_PL;
+            this.state.pdfInvoice = !!p.pdf_invoice;
+
+            this.state.actualizaciones = (p.actualizaciones || []).map((a) => ({
+                id: a.id,
+                numero_actualizacion: a.numero_actualizacion,
+                fecha: a.fecha || '',
+                texto: a.texto || '',
+            }));
+
+            let totalClienteCalculado = 0;
+            this.state.detalleRacks = (p.detalle_racks || []).map((d, i) => {
+                const costo = toNum(d.precio);
+                const cantidad = toNum(d.cantidad);
+                const subtotal = costo * cantidad;
+                totalClienteCalculado += subtotal;
+                return {
+                    id: d.id,
+                    clave: d.codigo || '',
+                    numero: i + 1,
+                    costo_rack_raw: costo,
+                    costo_rack: fmt(costo),
+                    rack_id: d.rack_id || 0,
+                    rack_nombre: d.nombre || '',
+                    cantidad_racks: cantidad,
+                    subtotal_raw: subtotal,
+                    subtotal: fmt(subtotal),
+                };
+            });
+            this.state.totalCliente = totalClienteCalculado;
+
+            const pagos = p.lista_pagos_cliente || [];
+            let totalAnticiposCliente = 0;
+
+            this.state.detalleCliente = pagos.map((d) => {
+                const monto = toNum(d.monto);
+                totalAnticiposCliente += monto;
+                return {
+                    paymentId: d.payment_id,
+                    referencia: d.referencia || '',
+                    factura: d.factura || '',
+                    diario: d.diario || '',
+                    moneda: d.moneda || '',
+                    fechaAnticipo: d.fecha || '',
+                    estado: d.estado || '',
+                    monto_raw: monto,
+                    monto: fmt(monto),
+                    // bandera útil para colorear
+                    //pagado: d.estado === 'paid',
+                };
+            });
+            this.state.totalAnticiposCliente = totalAnticiposCliente;
+
+            const anticiposProv = p.lista_anticipos_proveedor || [];
+            let totalAnticiposProveedor = 0;
+
+            this.state.detalleProveedor = anticiposProv.map((d) => {
+                const cantidad = toNum(d.cantidad);
+                const precioDolar = toNum(d.precio_dolar);
+                totalAnticiposProveedor += cantidad;
+                return {
+                    anticipoId: d.anticipo_id,
+                    numero: d.numero || 0,
+                    fechaEdicion: d.fecha_editado || '',
+                    fechaAnticipo: d.fecha_anticipo || '',
+                    cantidadAnticipo_raw: cantidad,
+                    cantidadAnticipo: fmt(cantidad),
+                    precioDolar_raw: precioDolar,
+                    precioDolar: fmt(precioDolar),
+                    PDFAnticipo: !!d.pdf_anticipo_proveedor,
+                };
+            });
+            this.state.totalAnticiposProveedor = totalAnticiposProveedor;
+
+            const balanceC = this.state.totalCliente - this.state.totalAnticiposCliente;
+            const balanceP = this.state.totalProveedor - this.state.totalAnticiposProveedor;
+
+            const porC = this.state.totalCliente > 0
+                ? (this.state.totalAnticiposCliente * 100) / this.state.totalCliente
+                : 0;
+            const porP = this.state.totalProveedor > 0
+                ? (this.state.totalAnticiposProveedor * 100) / this.state.totalProveedor
+                : 0;
+
+            this.state.balanceCliente = "$ " + fmt(balanceC);
+            this.state.balancePorcentajeCliente = "% " + fmt(porC);
+            this.state.balanceProveedor = "$ " + fmt(balanceP);
+            this.state.balancePorcentajeProveedor = "% " + fmt(porP);
+
+    
+            this.state.ETA = p.ETA || '';
+            this.state.ETD = p.ETD || '';
+            this.state.fecha_termino_produccion = p.fecha_termino_produccion || '';
+
+            this.state.fecha_compromiso_proveedor_1 = p.fecha_compromiso_proveedor_1 || '';
+            this.state.fecha_compromiso_proveedor_2 = p.fecha_compromiso_proveedor_2 || '';
+            this.state.fecha_compromiso_proveedor_3 = p.fecha_compromiso_proveedor_3 || '';
+            this.state.fecha_compromiso_proveedor_4 = p.fecha_compromiso_proveedor_4 || '';
+
+            this.state.fecha_compromiso_cliente_1 = p.fecha_compromiso_cliente_1 || '';
+            this.state.fecha_compromiso_cliente_2 = p.fecha_compromiso_cliente_2 || '';
+            this.state.fecha_compromiso_cliente_3 = p.fecha_compromiso_cliente_3 || '';
+            this.state.fecha_compromiso_cliente_4 = p.fecha_compromiso_cliente_4 || '';
+
+
+            this.state.aviso = p.aviso || [];
+
+        } catch (e) {
+            console.error("Error al cargar pedido:", e);
+            this.notification.add("Error al cargar el pedido", { type: "danger" });
         } finally {
             this.state.cargando = false;
         }
@@ -346,7 +377,31 @@ export class PantallaPedido extends Component {
         });
         ev.target.checked = this.state.forwarder;
     }
+    async onVerificarFechaFTP(ev){
+        const nuevoValor = ev.target.value; 
+        const valorAnterior = this.state.fecha_termino_produccion; 
 
+        if (!valorAnterior) {
+            this.state.fecha_termino_produccion = nuevoValor;
+            return;
+        }
+
+        if (nuevoValor === valorAnterior) {
+            return;
+        }
+
+        this.dialogService.add(ConfirmationDialog, {
+            title: _t("¿Estás seguro?"),
+            body: _t("¿Estás seguro de cambiar la fecha? La fecha original es: ") + valorAnterior,
+            confirm: async () =>  {
+                this.state.fecha_termino_produccion = nuevoValor;
+                await this.onGuardarDetalleGeneral();
+            },
+            cancel: () => {
+                ev.target.value = valorAnterior;
+            },
+        });
+    }
     async onVerificarFechaETD(ev) {
         const nuevoValor = ev.target.value; 
         const valorAnterior = this.state.ETD; 
@@ -363,8 +418,9 @@ export class PantallaPedido extends Component {
         this.dialogService.add(ConfirmationDialog, {
             title: _t("¿Estás seguro?"),
             body: _t("¿Estás seguro de cambiar la fecha? La fecha original es: ") + valorAnterior,
-            confirm: () => {
+            confirm: async () => {
                 this.state.ETD = nuevoValor;
+                await this.onGuardarDetalleGeneral();
             },
             cancel: () => {
                 ev.target.value = valorAnterior;
@@ -388,8 +444,9 @@ export class PantallaPedido extends Component {
         this.dialogService.add(ConfirmationDialog, {
             title: _t("¿Estás seguro?"),
             body: _t("¿Estás seguro de cambiar la fecha? La fecha anterior es: ") + valorAnterior,
-            confirm: () => {
+            confirm: async () => {
                 this.state.ETA = nuevoValor;
+                await this.onGuardarDetalleGeneral();
             },
             cancel: () => {
                 ev.target.value = valorAnterior;
@@ -453,9 +510,6 @@ export class PantallaPedido extends Component {
     }
     
     async onGuardarDetalleGeneral(){
-        if(!this.state.guia){
-            return
-        }
         if(!this.state.pedidoId){
             return
         }
@@ -480,6 +534,7 @@ export class PantallaPedido extends Component {
             
             ETD : this.state.ETD,
             ETA : this.state.ETA,
+            fecha_termino_produccion: this.state.fecha_termino_produccion,
 
             fecha_compromiso_proveedor_1:this.state.fecha_compromiso_proveedor_1,
             fecha_compromiso_proveedor_2:this.state.fecha_compromiso_proveedor_2,
@@ -501,10 +556,13 @@ export class PantallaPedido extends Component {
                 detalle_pedido, 
                 datos] 
             );
-            console.log(resultado)
-            this.notification.add("Información guardada Exitosamente",{ type: "success" });  
+            if(resultado.success){
+                this.notification.add("Información guardada Exitosamente",{ type: "success" });  
+
+            }
+            await this.cargarPedido()
         } catch (error) {
-            this.notification.add("Hubo un error",{ type: "danger" });       
+            this.notification.add("Hubo un error",{ type: "danger" });      
         } finally {
             this.state.cargando = false;
         }        

@@ -33,7 +33,7 @@ export class PantallaPrincipal extends Component {
                 { label: "Estado" },
                 { label: "Referencia" },
                 { label: "Cliente" },
-                { label: "Aviso" },
+                { label: "Pendientes" },
                 { label: "Saldo cliente" },
                 { label: "Total cliente" },
                 { label: "Saldo proveedor" },
@@ -41,7 +41,7 @@ export class PantallaPrincipal extends Component {
                 { label: "Racks" },
                 { label: "Última act." }
             ],
-            colWidths : [100, 100, 150, 230, 110, 110, 110, 130, 90, 220, 20],
+            colWidths : [90, 170, 90, 370, 100, 110, 100, 110, 80, 220, 20],
         });
 
         this.onMouseMove = this.onMouseMove.bind(this);
@@ -263,14 +263,105 @@ export class PantallaPrincipal extends Component {
                 "listar_pedidos",
                 [filtro]
             );
-            if(resultado.success){
-                this.state.pedidos = resultado.lista;
-                this.state.kpiClientes = resultado.kpi.cliente.toFixed(2);
-                this.state.kpiProveedor  = resultado.kpi.proveedor.toFixed(2);
-                this.asignarColumnas();
-                console.log(resultado.lista)
+
+            if (!resultado || !resultado.success) {
+                this.state.pedidos = [];
+                return;
             }
-           
+
+            const fmt = (n) => {
+                const num = Number(n) || 0;
+                return num.toLocaleString('es-MX', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            };
+
+            const toNum = (n) => Number(n) || 0;
+
+            this.state.pedidos = resultado.lista.map((p) => {
+                const cot   = p.cotizacion   || {};
+                const ac    = p.anticipos_cliente    || {};
+                const ap    = p.anticipos_proveedor  || {};
+                const det   = p.detalle_cotizacion   || {};
+                const ult   = p.ultima_actualizacion || {};
+                const aviso = p.aviso        || {};
+
+                return {
+                    id: p.id,
+                    cliente_nombre: p.cliente_nombre || '',
+                    estado: p.estado,
+                    estado_nombre: p.estado_nombre || p.estado || '',
+                    invoice: p.invoice || '',
+                    numero_guia: p.numero_guia || '',
+                    bool_contrato_proveedor: !!p.bool_contrato_proveedor,
+
+                    aviso: aviso,
+                    aviso_texto: aviso.texto || aviso.message || '',
+                    ultima_fecha: ult.fecha || '',
+                    ultima_texto: ult.texto || '',
+
+                    cotizacion_id: cot.id || false,
+                    cotizacion_nombre: cot.nombre || '',
+                    cotizacion_moneda: cot.moneda || '',
+                    cotizacion_total_raw: toNum(cot.total),
+                    cotizacion_total: `${fmt(cot.total)}`.trim(),
+
+                    cliente_count_raw: toNum(ac.count),
+                    cliente_total_raw: toNum(ac.total),
+                    cliente_saldo_raw: toNum(ac.saldo_cliente),
+                    cliente_acordado_raw: toNum(ac.total_acordado),
+
+                    cliente_count:   String(toNum(ac.count)),
+                    cliente_total:   fmt(ac.total),
+                    cliente_saldo:   fmt(ac.saldo_cliente),
+                    cliente_acordado: fmt(ac.total_acordado),
+                    
+                    // Bandera útil para colorear en la tabla
+                    cliente_pagado: toNum(ac.saldo_cliente) <= 0,
+
+                    // ---- Anticipos proveedor ----
+                    proveedor_count_raw: toNum(ap.count),
+                    proveedor_total_raw: toNum(ap.total),
+                    proveedor_saldo_raw: toNum(ap.saldo_proveedor),
+                    proveedor_acordado_raw: toNum(ap.total_acordado),
+
+                    proveedor_count:    String(toNum(ap.count)),
+                    proveedor_total:    fmt(ap.total),
+                    proveedor_saldo:    fmt(ap.saldo_proveedor),
+                    proveedor_acordado: fmt(ap.total_acordado),
+                    proveedor_pagado: toNum(ap.saldo_proveedor) <= 0,
+
+                    // ---- Detalle cotización ----
+                    detalle_count_raw: toNum(det.count),
+                    detalle_racks_raw: toNum(det.total_racks),
+                    detalle_costo_raw: toNum(det.total_costo),
+
+                    detalle_count: String(toNum(det.count)),
+                    detalle_racks: String(toNum(det.total_racks)),
+                    detalle_costo: fmt(det.total_costo),
+
+                    _raw: p,
+                };
+            });
+
+            this.state.kpiClientes  = fmt(resultado.kpi.cliente);
+            this.state.kpiProveedor = fmt(resultado.kpi.proveedor);
+
+            this.state.kpiClientesRaw  = toNum(resultado.kpi.cliente);
+            this.state.kpiProveedorRaw = toNum(resultado.kpi.proveedor);
+
+            this.asignarColumnas();
+
+            console.log("Pedidos formateados:", this.state.pedidos);
+            console.log("KPIs:", {
+                clientes: this.state.kpiClientes,
+                proveedor: this.state.kpiProveedor,
+            });
+
+        } catch (e) {
+            console.error("Error al cargar pedidos:", e);
+            this.state.pedidos = [];
         } finally {
             this.state.cargando = false;
         }

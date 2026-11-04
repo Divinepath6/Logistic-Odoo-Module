@@ -44,7 +44,6 @@
                 <t t-if="state.modoTablero">
                     <div class="odoo-top-scroll-wrapper">
 
-
                         <div class="odoo-table-container odoo-scroll">
                             <div class="odoo-table">
 
@@ -101,10 +100,10 @@
                                             </div>
                                         </t>
 
-
                                         <div class="odoo-td truncate" t-att-title="p.cliente_nombre">
                                             <t t-esc="p.cliente_nombre || ''" />
                                         </div>
+
                                         <div class="odoo-td truncate">
                                             <div class="aviso-lista">
                                                 <t t-if="p.aviso and p.aviso.length">
@@ -122,17 +121,16 @@
 
                                         <t t-if="p.estado != 'fase_inicial'">
                                             <div class="odoo-td odoo-text-right">
-                                                <t t-esc="p.anticipos_cliente.saldo_cliente || 0" />
+                                                <t t-esc="p.cliente_saldo" />
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <t t-esc="p.cotizacion.total || 0" />
+                                                <t t-esc="p.cotizacion_total" />
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <t
-                                                    t-esc="p.anticipos_proveedor.saldo_proveedor || 0" />
+                                                <t t-esc="p.proveedor_saldo" />
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <t t-esc="p.anticipos_proveedor.total_acordado || 0" />
+                                                <t t-esc="p.proveedor_acordado" />
                                             </div>
                                         </t>
                                         <t t-else="">
@@ -143,11 +141,11 @@
                                         </t>
 
                                         <div class="odoo-td odoo-text-center">
-                                            <t t-esc="p.detalle_cotizacion.total_racks || 0" />
+                                            <t t-esc="p.detalle_racks" />
                                         </div>
                                         <div class="odoo-td truncate odoo-text-muted"
-                                            t-att-title="p.ultima_actualizacion.fecha">
-                                            <t t-esc="p.ultima_actualizacion.fecha || ''" />
+                                            t-att-title="p.ultima_fecha">
+                                            <t t-esc="p.ultima_fecha || ''" />
                                         </div>
                                     </div>
                                 </div>
@@ -187,6 +185,7 @@
                                         <div class="odoo-kanban-body">
                                             <div>Cliente: <strong
                                                     t-esc="p.cliente_nombre || 'Sin cliente'" /></div>
+
                                             <div class="aviso-lista">
                                                 <t t-if="p.aviso and p.aviso.length">
                                                     <t t-foreach="p.aviso" t-as="a" t-key="a_index">
@@ -199,18 +198,13 @@
                                                     <span class="odoo-text-muted">Sin Pendiente</span>
                                                 </t>
                                             </div>
-                                            <div>Saldo cliente: <span
-                                                    t-esc="p.anticipos_cliente.saldo_cliente || 0" /></div>
-                                            <div>Total cliente: <span
-                                                    t-esc="p.anticipos_cliente.total_acordado || 0" /></div>
-                                            <div>Saldo proveedor: <span
-                                                    t-esc="p.anticipos_proveedor.saldo_proveedor || 0" /></div>
-                                            <div>Total proveedor: <span
-                                                    t-esc="p.anticipos_proveedor.total_acordado || 0" /></div>
-                                            <div>Racks: <span
-                                                    t-esc="p.detalle_cotizacion.total_racks || 0" /></div>
-                                            <div>Actualización: <span
-                                                    t-esc="p.ultima_actualizacion.fecha || ''" /></div>
+
+                                            <div>Saldo cliente: <span t-esc="p.cliente_saldo" /></div>
+                                            <div>Total cliente: <span t-esc="p.cliente_acordado" /></div>
+                                            <div>Saldo proveedor: <span t-esc="p.proveedor_saldo" /></div>
+                                            <div>Total proveedor: <span t-esc="p.proveedor_acordado" /></div>
+                                            <div>Racks: <span t-esc="p.detalle_racks" /></div>
+                                            <div>Actualización: <span t-esc="p.ultima_fecha || ''" /></div>
                                         </div>
 
                                         <div class="odoo-kanban-footer">

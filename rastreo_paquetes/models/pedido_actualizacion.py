@@ -12,6 +12,14 @@ class rastreo_pedido_actualizacion(models.Model):
     actualizacion_texto = fields.Char(
         string='Texto de que se actualizo'
     )
+    
+    usuario_id = fields.Many2one(
+        'res.users',
+        string='Usuario',
+        default=lambda self: self.env.user,
+        readonly=True,
+        index=True,
+    )
     pedido_id = fields.Many2one(
         'rastreo.pedido',
         string='Pedido',

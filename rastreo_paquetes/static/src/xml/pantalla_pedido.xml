@@ -61,11 +61,11 @@
                                         t-model="state.guia" />
                                 </div>
                             </div>
-
+                            <!-- 
                             <button type="button" class="odoo-btn odoo-btn-primary"
                                 t-on-click="() => this.onCambiarCotizacion()">
                                 <i class="fa fa-random"></i> Buscar Cotización </button>
-
+                            -->
 
                             <div class="col-md-6">
                                 <div class="odoo-field">
@@ -197,6 +197,14 @@
                                     Paquete:
                                 </span>
                             </h3>
+                            <label class="odoo-label" for="fecha_termino_produccion"> Termino de
+                                Producción: </label>
+                            <input type="date"
+                                id="fecha_termino_produccion"
+                                class="form-control"
+                                t-att-value="state.fecha_termino_produccion"
+                                t-on-change="onVerificarFechaFTP" />
+
                             <label class="odoo-label" for="ETA"> ETA: </label>
                             <input type="date"
                                 id="ETA"
@@ -219,25 +227,25 @@
 
                             </h3>
                             <label class="odoo-label" for="fecha_compromiso_cliente_1">Fecha 1
-                                (30%): </label>
+                                (20%): </label>
                             <input type="date"
                                 id="fechaAnticipo1"
                                 class="form-control"
                                 t-model="state.fecha_compromiso_cliente_1" />
                             <label class="odoo-label" for="fecha_compromiso_cliente_2">Fecha 2
-                                (30%): </label>
+                                (25%): </label>
                             <input type="date"
                                 id="fechaAnticipo2"
                                 class="form-control"
                                 t-model="state.fecha_compromiso_cliente_2" />
                             <label class="odoo-label" for="fecha_compromiso_cliente_3">Fecha 3
-                                (20%): </label>
+                                (25%): </label>
                             <input type="date"
                                 id="fechaAnticipo3"
                                 class="form-control"
                                 t-model="state.fecha_compromiso_cliente_3" />
                             <label class="odoo-label" for="fecha_compromiso_cliente_4">Fecha 4
-                                (20%): </label>
+                                (30%): </label>
                             <input type="date"
                                 id="fechaAnticipo4"
                                 class="form-control"
@@ -249,7 +257,7 @@
                                 </span>
                             </h3>
                             <label class="odoo-label" for="fecha_compromiso_proveedor_1">Fecha 1
-                                (30%): </label>
+                                (20%): </label>
                             <input type="date"
                                 id="fechaAnticipoP1"
                                 class="form-control"
@@ -267,7 +275,7 @@
                                 class="form-control"
                                 t-model="state.fecha_compromiso_proveedor_3" />
                             <label class="odoo-label" for="fecha_compromiso_proveedor_4">Fecha 4
-                                (20%): </label>
+                                (Balance): </label>
                             <input type="date"
                                 id="fechaAnticipoP4"
                                 class="form-control"
@@ -278,66 +286,62 @@
                     <!-- CLIENTE  -->
                     <div class="odoo-card">
                         <div class="odoo-card-title">
-                            <i class="fa fa-user" /> Cliente </div>
+                            <i class="fa fa-user" /> Cliente (Pagos registrados) </div>
 
                         <div class="table-responsive">
                             <table class="table table-sm align-middle">
                                 <thead>
                                     <tr>
-                                        <th>Número</th>
-                                        <th>Fecha de Anticipo</th>
-                                        <th class="text-end">Cantidad</th>
-                                        <th class="text-end">Precio dólar</th>
-                                        <th class="text-center">PDF anticipo</th>
+                                        <th>Referencia</th>
+                                        <th>Factura</th>
+                                        <th>Diario</th>
+                                        <th>Fecha</th>
+                                        <th class="text-end">Monto</th>
+                                        <th>Moneda</th>
+                                        <th>Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <t t-if="state.detalleCliente and state.detalleCliente.length">
                                         <tr t-foreach="state.detalleCliente" t-as="d"
-                                            t-key="d.anticipoId">
+                                            t-key="d.paymentId">
                                             <td>
                                                 <t t-esc="d.referencia or ''" />
+                                            </td>
+                                            <td>
+                                                <t t-esc="d.factura or ''" />
+                                            </td>
+                                            <td>
+                                                <t t-esc="d.diario or ''" />
                                             </td>
                                             <td>
                                                 <t t-esc="d.fechaAnticipo or ''" />
                                             </td>
                                             <td class="text-end">
-                                                <t t-esc="d.cantidadAnticipo or 0" />
+                                                <t t-esc="d.monto" />
                                             </td>
-                                            <!-- 
-                                            <td class="text-end"><t t-esc="d.precioDolar or 0"/></td>
-                                            
-                                            <td class="text-end"><t t-esc="d.PDFAnticipo or 'No cargado'"/></td>
-                                            -->
-                                            <!-- 
-                                             
-                                             <td class="text-center">
-                                                <button class="odoo-btn odoo-btn-sm odoo-btn-cyan"
-                                                        t-on-click="() => this.onEditarDetalleCliente(d)">
-                                                    Editar
-                                                </button>
+                                            <td>
+                                                <t t-esc="d.moneda or ''" />
                                             </td>
-                                            -->
+                                            <td>
+                                                <span t-if="d.pagado" class="text-success">
+                                                    <i class="fa fa-check" /> Pagado </span>
+                                                <span t-else="" class="text-warning">
+                                                    <t t-esc="d.estado or ''" />
+                                                </span>
+                                            </td>
                                         </tr>
                                     </t>
                                     <t t-else="">
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted">
-                                                Sin registros
+                                            <td colspan="7" class="text-center text-muted">
+                                                Sin pagos registrados
                                             </td>
                                         </tr>
                                     </t>
                                 </tbody>
                             </table>
                         </div>
-                        <!-- 
-                        <div class="text-center">
-                            <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
-                                    t-on-click="() => this.onEditarDetalleCliente()">
-                                <i class="fa fa-plus"/> Agregar Nuevo Anticipo
-                            </button>
-                        </div>
-                        -->
                     </div>
 
 
@@ -347,11 +351,26 @@
 
                     <!-- ESTADO DEL PEDIDO  -->
                     <div class="odoo-card">
+                        <!-- 
+
                         <div class="odoo-card-title">
                             <i class="fa fa-flag" /> Aviso: </div>
                         <span class="odoo-result-value">
-                            <t t-esc="state.aviso or 'Sin Aviso'" />
+                            <div class="aviso-lista">
+                                <t t-if="state.aviso and state.aviso.length">
+                                    <t t-foreach="state.aviso" t-as="a" t-key="a_index">
+                                        <span
+                                            t-attf-class="odoo-badge aviso-badge aviso-#{a.severidad}">
+                                            <t t-esc="a.mensaje" />
+                                        </span>
+                                    </t>
+                                </t>
+                                <t t-else="">
+                                    <span class="odoo-text-muted">Sin Pendiente</span>
+                                </t>
+                            </div>
                         </span>
+                         -->
 
                         <div class="odoo-card-title">
                             <i class="fa fa-flag" /> Estado del pedido </div>
@@ -614,6 +633,7 @@
                                 <th>N° Actualización</th>
                                 <th>Fecha</th>
                                 <th>Detalle</th>
+                                <th>Usuario</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -627,6 +647,9 @@
                                     </td>
                                     <td>
                                         <t t-esc="act.texto" />
+                                    </td>
+                                    <td>
+                                        <t t-esc="act.usuario" />
                                     </td>
                                 </tr>
                             </t>
