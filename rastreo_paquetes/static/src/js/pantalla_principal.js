@@ -6,9 +6,17 @@ import { componente_creacion_pedido } from "./componente_creacion_pedido";
 import { componente_edicion_racks } from "./componente_edicion_racks";
 import { componente_cargar_cotizacion } from "./componente_cargar_cotizacion";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
+import { Dropdown } from "@web/core/dropdown/dropdown";
+import { DropdownItem } from "@web/core/dropdown/dropdown_item";
+
 
 export class PantallaPrincipal extends Component { 
-    static components = { componente_creacion_pedido, componente_edicion_racks, componente_cargar_cotizacion };
+    static components = { 
+        componente_creacion_pedido, 
+        componente_edicion_racks, 
+        componente_cargar_cotizacion,
+        Dropdown,
+        DropdownItem,};
     
     setup() {
         this.rootRef = useRef("root");
@@ -97,7 +105,7 @@ export class PantallaPrincipal extends Component {
         this.searchTimeout = null;
     }
 
-
+ 
 
     onMouseDown(e) {
         if (e.target && e.target.classList.contains('resizer')) {
@@ -372,15 +380,17 @@ export class PantallaPrincipal extends Component {
         [
             ["fase_inicial", "Fase Inicial"], 
             ["produccion", "En Producción"], 
-            ["forwarder", "A punto de salir a mar"], 
-            ["enviado", "En mar"],
-            ["entregado", "Finalizado"]
+            ["puerto_origen", 'En el puerto de origen'], 
+            ["embarcado", "En Mar"],
+            ["aduana", "Aduana"],
+            ["Entregado", "Entregado"]
         ];
         this.state.columns = estados.map(estado => ({
             name: estado[1],
             packages: this.state.pedidos.filter(p => p.estado === estado[0]),
         }));
     }
+ 
 }
 
 PantallaPrincipal.template = "rastreo_paquetes.pantalla_principal";

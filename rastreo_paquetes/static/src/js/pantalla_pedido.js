@@ -214,7 +214,8 @@ export class PantallaPedido extends Component {
             this.state.balanceProveedor = "$ " + fmt(balanceP);
             this.state.balancePorcentajeProveedor = "% " + fmt(porP);
 
-    
+            // FechasFechas Fechas  
+            this.state.fecha_creacion = p.fecha_creacion || '';
             this.state.ETA = p.ETA || '';
             this.state.ETD = p.ETD || '';
             this.state.fecha_termino_produccion = p.fecha_termino_produccion || '';
@@ -223,7 +224,6 @@ export class PantallaPedido extends Component {
             this.state.fecha_compromiso_proveedor_2 = p.fecha_compromiso_proveedor_2 || '';
             this.state.fecha_compromiso_proveedor_3 = p.fecha_compromiso_proveedor_3 || '';
             this.state.fecha_compromiso_proveedor_4 = p.fecha_compromiso_proveedor_4 || '';
-
             this.state.fecha_compromiso_cliente_1 = p.fecha_compromiso_cliente_1 || '';
             this.state.fecha_compromiso_cliente_2 = p.fecha_compromiso_cliente_2 || '';
             this.state.fecha_compromiso_cliente_3 = p.fecha_compromiso_cliente_3 || '';
@@ -233,7 +233,6 @@ export class PantallaPedido extends Component {
             this.state.aviso = p.aviso || [];
 
         } catch (e) {
-            console.error("Error al cargar pedido:", e);
             this.notification.add("Error al cargar el pedido", { type: "danger" });
         } finally {
             this.state.cargando = false;
@@ -488,7 +487,8 @@ export class PantallaPedido extends Component {
             total_cliente: this.state.totalCliente,
             numero_contrato: this.state.numeroContrato,
             racks_acordados: 0,
-            
+
+            fecha_creacion : this.state.fecha_creacion,
             ETD : this.state.ETD,
             ETA : this.state.ETA,
             fecha_termino_produccion: this.state.fecha_termino_produccion,

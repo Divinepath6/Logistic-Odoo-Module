@@ -15,10 +15,10 @@
                 <div class="odoo-header-actions">
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onCargarCotizacion">
-                        <i class="fa fa-external-link-square" /> Cargar Cotización </button>
+                        <i class="fa fa-external-link-square" /> Cargar </button>
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onClickCrearPedido">
-                        <i class="fa fa-plus-circle" /> Crear Cotización </button>
+                        <i class="fa fa-plus-circle" /> Crear </button>
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onclickEditarRacks">
                         <i class="fa fa-list" /> Racks </button>
@@ -26,6 +26,8 @@
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onCambiarModo">
                         <i class="fa fa-random"></i> Cambiar </button>
+                    
+
 
                     <div class="odoo-header-kpis">
                         <div class="odoo-kpi-card">

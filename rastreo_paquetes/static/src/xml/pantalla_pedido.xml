@@ -11,7 +11,7 @@
                     <i class="fa fa-home" /></button>
 
                 <h2>
-                    <i class="fa fa-cube me-2" /> Cotización: <t t-esc="state.guia or 'Sin número'" />
+                    INVOICE: <t t-esc="state.numeroContrato or 'Sin número'" />
                 </h2>
 
                 <div class="ms-auto d-flex gap-2">
@@ -41,8 +41,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="odoo-field">
-                                    <label class="odoo-label" for="numero_contrato">Número de
-                                        Contrato</label>
+                                    <label class="odoo-label" for="numero_contrato">INVOICE</label>
                                     <input type="text"
                                         id="numero_contrato"
                                         class="odoo-input"
@@ -199,6 +198,16 @@
                                     Paquete:
                                 </span>
                             </h3>
+                            
+                            <label class="odoo-label" for="fecha_creacion"> 
+                                Fecha de creacion de pedido: </label>
+                            <input type="date"
+                                id="fecha_creacion"
+                                class="form-control"
+                                data-field="fecha_creacion"
+                                t-att-value="state.fecha_creacion"
+                                t-on-change="onVerificarFecha" />
+
                             <label class="odoo-label" for="fecha_termino_produccion"> Termino de
                                 producción: </label>
                             <input type="date"
@@ -587,7 +596,6 @@
                             <table class="table table-sm align-middle">
                                 <thead>
                                     <tr>
-                                        <th>Código</th>
                                         <th>Descripción</th>
                                         <th class="text-end">Costo</th>
                                         <th class="text-end">Cant.</th>
@@ -598,9 +606,7 @@
                                 <tbody>
                                     <t t-if="state.detalleRacks and state.detalleRacks.length">
                                         <tr t-foreach="state.detalleRacks" t-as="r" t-key="r.id">
-                                            <td>
-                                                <t t-esc="r.clave or ''" />
-                                            </td>
+
                                             <td>
                                                 <t t-esc="r.rack_nombre or ''" />
                                             </td>
