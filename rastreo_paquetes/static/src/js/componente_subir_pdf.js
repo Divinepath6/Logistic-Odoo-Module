@@ -30,7 +30,35 @@ export class componente_subir_pdf extends Component {
             }
         });
     }
-    
+        onDescargarPDF() {
+        if (!this.state.PDF) {
+            this.notification.add("No hay PDF para descargar", { type: "warning" });
+            return;
+        }
+        try {
+            let base64 = this.state.PDF;
+            if (base64.startsWith("data:")) {
+                base64 = base64.split(",")[1];
+            }
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const blob = new Blob([new Uint8Array(byteNumbers)], { type: "application/pdf" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = this.state.PDFNombre || "documento.pdf";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            this.notification.add("Error al descargar: " + e.message, { type: "danger" });
+        }
+    }
+
     onPdfChange(base64, filename) {
         this.state.PDF = base64;
         this.state.PDFNombre = filename;
@@ -94,7 +122,7 @@ export class componente_subir_pdf extends Component {
             return;
         }
     }
-    onCancel() {
+    onCancelar() {
         if (this.props.cancel) {
             this.props.cancel();
         }

@@ -366,6 +366,12 @@
                                                     <t t-esc="d.estado or ''" />
                                                 </span>
                                             </td>
+                                            <td class="text-end">
+                                                <button class="odoo-btn odoo-btn-sm odoo-btn-cyan"
+                                                    t-on-click="() => this.onEditarDetalleCliente(d)">
+                                                    Editar
+                                                </button>
+                                            </td>
                                         </tr>
                                     </t>
                                     <t t-else="">
@@ -376,6 +382,12 @@
                                         </tr>
                                     </t>
                                 </tbody>
+                                
+                                <div class="text-center">
+                                    <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                        t-on-click="() => this.onEditarDetalleCliente()">
+                                        <i class="fa fa-plus" /> Agregar Nuevo Anticipo </button>
+                                </div>
                             </table>
                         </div>
                     </div>
@@ -423,6 +435,49 @@
                         <div class="odoo-card-title">
                             <i class="fa fa-folder-open" /> Documentos del sistema </div>
 
+                        <div class="odoo-result-row">
+
+                            <span class="odoo-result-label">Contrato Proveedor</span>
+                            <span>
+                                <t t-if="state.pdfContratoProveedor">
+                                    <span>
+                                        <strong>En el sistema</strong>
+                                    </span>
+                                    <i class="oi" data-icon="check" />
+                                </t>
+                                <t t-else="">
+                                    <span class="text-muted">No cargado </span>
+                                </t>
+                                <button type="button"
+                                    class="odoo-btn odoo-btn-primary"
+                                    t-on-click=" () => this.verPDF('pdf_contrato_proveedor')">
+                                    <i class="fa fa-save" /> Ver </button>
+
+                            </span>
+                        </div>
+
+                        
+                        <div class="odoo-result-row">
+                            <span class="odoo-result-label">Prefactura de Proveedor</span>
+                            <span>
+                                <t t-if="state.pdf_prefactura">
+                                    <span>
+                                        <strong>En el sistema</strong>
+                                    </span>
+                                    <i class="oi" data-icon="check" />
+                                </t>
+                                <t t-else="">
+                                    <span class="text-muted">No cargado </span>
+                                </t>
+                                <button type="button"
+                                    class="odoo-btn odoo-btn-primary"
+                                    t-on-click=" () => this.verPDF('pdf_prefactura')">
+                                    <i class="fa fa-save" /> Ver </button>
+
+                            </span>
+                        </div>
+
+
                         <!-- invoice -->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label"> invoice </span>
@@ -445,25 +500,7 @@
 
 
                         <!-- Contrato Proveedor -->
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Contrato Proveedor</span>
-                            <span>
-                                <t t-if="state.pdfContratoProveedor">
-                                    <span>
-                                        <strong>En el sistema</strong>
-                                    </span>
-                                    <i class="oi" data-icon="check" />
-                                </t>
-                                <t t-else="">
-                                    <span class="text-muted">No cargado </span>
-                                </t>
-                                <button type="button"
-                                    class="odoo-btn odoo-btn-primary"
-                                    t-on-click=" () => this.verPDF('pdf_contrato_proveedor')">
-                                    <i class="fa fa-save" /> Ver </button>
 
-                            </span>
-                        </div>
 
                         <!-- Factura Proveedor -->
                         <div class="odoo-result-row">

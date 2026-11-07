@@ -48,6 +48,7 @@ export class PantallaPedido extends Component {
             pdfFacturaProveedor: false,
             PDFETA: false,
             PDFETD: false,
+            pdf_prefactura: false,
 
             // Monedas
             totalProveedor: 0,
@@ -127,7 +128,7 @@ export class PantallaPedido extends Component {
             this.state.pdfBL = !!p.pdf_BL;
             this.state.pdfPL = !!p.pdf_PL;
             this.state.pdfInvoice = !!p.pdf_invoice;
-
+            this.state.pdf_prefactura = !!p.pdf_prefactura;
             this.state.actualizaciones = (p.actualizaciones || []).map((a) => ({
                 id: a.id,
                 numero_actualizacion: a.numero_actualizacion,
@@ -163,7 +164,9 @@ export class PantallaPedido extends Component {
                 const monto = toNum(d.monto);
                 totalAnticiposCliente += monto;
                 return {
+                    crearEditar: "Editar",
                     paymentId: d.payment_id,
+                    anticipoId: d.detalle_id, 
                     referencia: d.referencia || '',
                     factura: d.factura || '',
                     diario: d.diario || '',
@@ -240,6 +243,7 @@ export class PantallaPedido extends Component {
     }
 
     async onClickCambiarEstado(){
+
         this.dialogService.add(ConfirmationDialog, {
             title: _t("¿Estás seguro?"),
             body: _t(this.state.guia),
@@ -253,11 +257,11 @@ export class PantallaPedido extends Component {
        
     }
     async onClickRegresar() {
-        this.onGuardarDetalleGeneral();
+        await this.onGuardarDetalleGeneral();
         await this.action.doAction("rastreo_paquetes.action_pantalla_principal");
     }
     async cambiarEstado(){
-        const pedidoId = this.state.pedido.id
+        const pedidoId = this.state.pedidoId;
         this.state.cargando = true;
         try {
             const resultado = await this.orm.call(
@@ -337,6 +341,7 @@ export class PantallaPedido extends Component {
                 }
         });
     }
+    
     async onEditarDetalleProveedor(d) {
         if(!d){
             d = {

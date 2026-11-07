@@ -1,0 +1,14 @@
+<odoo>
+    <data>
+        <menuitem id="menu_logistics_dashboard_root"
+                  name="Logística"
+                  groups="tu_modulo.rastreo_paquetes"
+                  sequence="10"/>
+        
+        <menuitem id="menu_logistics_dashboard_view"
+                  name="Tablero"
+                  parent="menu_logistics_dashboard_root"
+                  action="action_logistics_dashboard"
+                  groups="tu_modulo.group_logistics_dashboard"/>
+    </data>
+</odoo>

@@ -214,6 +214,12 @@
                                                         <i class="fa fa-pencil"/>
                                                     </button>
                                                 </td>
+                                                <td class="text-end">
+                                                    <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                                        t-on-click="() => this.onEliminarDetalleRacks(r)">
+                                                    <i class="fa fa-trash-o"/>
+                                                    </button>
+                                                </td>
                                             </tr>
                                         </t>
                                         <t t-else="">
@@ -230,6 +236,7 @@
                                     t-on-click="() => this.onEditarDetalleRacks()">
                                 <i class="fa fa-plus"/> Agregar
                             </button>
+
                         </div>
 
                     </div>

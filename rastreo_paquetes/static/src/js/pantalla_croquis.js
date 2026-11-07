@@ -432,6 +432,16 @@ export class PantallaCroquis extends Component {
                 }
         });
     }
+    onEliminarDetalleRacks(r){
+        this.state.detalleRacks = this.state.detalleRacks.filter(fila => fila !== r);
+
+        this.state.detalleRacks.forEach((fila, index) => {
+            fila.numero = index + 1;
+        });
+
+        this.state.detalleRacks = [...this.state.detalleRacks];
+        this.calcularRacks();
+    }
 
     calcularRacks() {
         this.guardarBodegaActual()
@@ -584,6 +594,7 @@ export class PantallaCroquis extends Component {
         }
     }
 
+    
     
     async onGuardarCotizacion(){
                 this.dialogService.add(ConfirmationDialog, {

@@ -1,0 +1,8 @@
+<odoo>
+    <data>
+        <record id="group_logistics_dashboard" model="res.groups">
+            <field name="name">Tablero de Logística</field>
+            <field name="category_id" ref="base.module_category_hidden"/>
+        </record>
+    </data>
+</odoo>
