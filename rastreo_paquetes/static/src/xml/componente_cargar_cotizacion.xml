@@ -73,9 +73,9 @@
                     <t t-foreach="state.detalle" t-as="detalle" t-key="detalle.id">
                         <div class="odoo-list-item">
                             <span class="odoo-list-item-name">
-                                 <t t-esc="detalle.nombre || ''"/>
-                                <t t-esc="detalle.cantidad || 0.0"/>
-                                <t t-esc="detalle.subtotal || ''"/>
+                               <span class="fw-bold"><t t-esc="detalle.nombre || 'Sin nombre'"/></span>
+                                <span class="text-muted">Cant: <t t-esc="detalle.cantidad || 0.0"/></span>
+                                <span class="text-primary fw-bold"><t t-esc="detalle.subtotal || '$0.00'"/></span>
                             </span>
 
                         </div>

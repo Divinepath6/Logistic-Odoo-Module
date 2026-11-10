@@ -3,11 +3,17 @@ from odoo import models, fields
 class rastreo_bodega_adicional(models.Model):
     _name = 'rastreo.bodega_adicional'
     _description = 'Clase para guardar el detalle adicional en la bodega'
+
+    color = fields.Many2one(
+        'rastreo.rack_color',
+        string='Color',  
+        required=False,  
+    )
     
     numero = fields.Char(
         string = 'Número de la bodega'
     )
-
+    
     costo_rack = fields.Monetary(
         string='Costo Unitario',
         currency_field='currency_id'    
@@ -19,8 +25,8 @@ class rastreo_bodega_adicional(models.Model):
     racks_ocupados = fields.Integer(
         string='Cantidad de racks ocupados totales'
     )
-    rack_id = fields.Many2one(
-        'rastreo.rack_detalle',
+    producto_id = fields.Many2one(
+        'product.product',
         string='Rack',  
         required=True,  
     )

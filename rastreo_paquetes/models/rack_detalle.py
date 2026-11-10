@@ -4,11 +4,7 @@ from odoo.exceptions import UserError
 class rastreo_rack_detalle(models.Model):
     _name = 'rastreo.rack_detalle'
     _description = 'Clase para guardar los detalles de cada rack'
-    
-    
-    clave = fields.Char(
-        string = 'Clave del rack' 
-    )
+
     nombre = fields.Char(
         string = 'Nombre del rack' 
     )
@@ -61,7 +57,6 @@ class rastreo_rack_detalle(models.Model):
         usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
         currency_id = usd_currency.id if usd_currency else False
         vals = {
-            'clave':            datos.get('clave', ''),
             'producto_id':      producto_id,
             'nombre':           datos.get('nombre', ''),
             'precio_unitario':  float(datos.get('precio_unitario', 0.0)),
@@ -95,8 +90,7 @@ class rastreo_rack_detalle(models.Model):
         return{
             'success': True, 
             'data': {
-                'id':               rack.id,             
-                'clave':            rack.clave,
+                'id':               rack.id,           
                 'nombre':           rack.nombre,
                 'precio_unitario':  rack.precio_unitario,
                 'altura':           rack.altura,
@@ -118,7 +112,6 @@ class rastreo_rack_detalle(models.Model):
         for r in racks:
             lista.append({
                 'id':               r.id,
-                'clave':            r.clave,
                 'nombre':           r.nombre,
                 'precio_unitario':  r.precio_unitario,
                 'medidas': [r.ancho, r.largo, r.altura],
@@ -150,7 +143,6 @@ class rastreo_rack_detalle(models.Model):
                     'rack_nombre': rack.nombre or "",
                     'rack_existe': True,
                     'rack_id': rack.id or 0,
-                    'rack_clave': rack.clave or '',
                     'rack_precio': rack.precio_unitario or 0,
                     'rack_almacenaje': rack.almacenaje or 0,
                 })

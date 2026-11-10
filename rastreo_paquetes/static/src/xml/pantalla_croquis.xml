@@ -84,6 +84,18 @@
                                    t-model="state.rackSeleccionadoCosto"
                                    t-on-change="onCalcular"/>
                         </div>
+
+                        <div class="odoo-field-croquis">
+                            <label class="odoo-label-croquis">Elegir color del rack:</label>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <span class="odoo-color-swatch" t-att-style="'background-color: ' + state.colorSeleccionado" />
+                                </div>
+
+                            <button class="odoo-btn odoo-btn-warning" t-on-click="onSeleccionarColor">
+                                <i class="fa fa-exchange"/> Color
+                            </button>
+                        </div>
+
                         <div class="odoo-field-croquis">
                             <label for="almacenaje" class="form-label fw-bold"> Almacenaje: </label>
                             <span type="number"
@@ -192,7 +204,7 @@
                                 <table class="table table-sm align-middle">
                                     <thead>
                                         <tr>
-                                            <th>Código</th>
+                                            <th>Nombre</th>
                                             <th class="text-end">Almacenaje Total</th>
                                             <th class="text-end">Costo</th>
                                             <th class="text-end">Cant.</th>
@@ -203,7 +215,7 @@
                                     <tbody>
                                         <t t-if="state.detalleRacks and state.detalleRacks.length">
                                             <tr t-foreach="state.detalleRacks" t-as="r" t-key="r.id">
-                                                <td><t t-esc="r.rackClave or r.rackNombre or ''"/></td>
+                                                <td><t t-esc="r.rackNombre or ''"/></td>
                                                 <td class="text-end"><t t-esc="r.almacenajeTotalDisplay or 0"/></td>
                                                 <td class="text-end"><t t-esc="r.precioUnitario or 0"/></td>
                                                 <td class="text-end"><t t-esc="r.cantidadRacks or 0"/></td>
@@ -254,37 +266,7 @@
                         </div>
                     </div>
 
-                    <div class="cc-card cc-card-results">
-                        <h3 class="cc-card-title">
-                            <span class="cc-badge-dot cc-badge-accent"></span>
-                            Resultados
-                        </h3>
 
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Cantidad de Racks ocupados:</span>
-                            <span class="odoo-result-value" t-esc="state.racksOcupados or 0"/>
-                        </div>
-
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Costo estimado:</span>
-                            <span class="odoo-result-value" t-esc="state.costoEstimadoDisplay or '$0.00'"/>
-                        </div>
-
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Ancho del pasill Vertical (M):</span>
-                            <span class="odoo-result-value" t-esc="state.espacioSobranteHor or '0.00'"/>
-                        </div>
-
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Ancho del pasillo Horizontal(M):</span>
-                            <span class="odoo-result-value" t-esc="state.espacioSobranteVer or '0.00'"/>
-                        </div>
-
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Almacenaje con rack por tonelada:</span>
-                            <span class="odoo-result-value" t-esc="state.almacenajeToneladaDisplay or '0.00'"/>
-                        </div>
-                    </div>
 
                 </div>
 
@@ -323,6 +305,38 @@
                                 sepParedDer="state.sepParedDer"
                                 almacenaje="state.rackSeleccionadoAlmacenaje"
                             />
+                        </div>
+                    </div>
+                    
+                    <div class="cc-card cc-card-results">
+                        <h3 class="cc-card-title">
+                            <span class="cc-badge-dot cc-badge-accent"></span>
+                            Resultados
+                        </h3>
+
+                        <div class="odoo-result-row">
+                            <span class="odoo-result-label">Cantidad de Racks ocupados:</span>
+                            <span class="odoo-result-value" t-esc="state.racksOcupados or 0"/>
+                        </div>
+
+                        <div class="odoo-result-row">
+                            <span class="odoo-result-label">Costo estimado:</span>
+                            <span class="odoo-result-value" t-esc="state.costoEstimadoDisplay or '$0.00'"/>
+                        </div>
+
+                        <div class="odoo-result-row">
+                            <span class="odoo-result-label">Ancho del pasill Vertical (M):</span>
+                            <span class="odoo-result-value" t-esc="state.espacioSobranteHor or '0.00'"/>
+                        </div>
+
+                        <div class="odoo-result-row">
+                            <span class="odoo-result-label">Ancho del pasillo Horizontal(M):</span>
+                            <span class="odoo-result-value" t-esc="state.espacioSobranteVer or '0.00'"/>
+                        </div>
+
+                        <div class="odoo-result-row">
+                            <span class="odoo-result-label">Almacenaje con rack por tonelada:</span>
+                            <span class="odoo-result-value" t-esc="state.almacenajeToneladaDisplay or '0.00'"/>
                         </div>
                     </div>
                 </div>

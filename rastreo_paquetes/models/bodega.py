@@ -46,6 +46,12 @@ class rastreo_bodega(models.Model):
         required=True,  
     )
 
+    color = fields.Many2one(
+        'rastreo.rack_color',
+        string='Color',  
+        required=False,  
+    )
+
     separacion_arriba = fields.Integer(
         string='separacion_arriba'
     )

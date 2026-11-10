@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
     <t t-name="rastreo_paquetes.componente_detalle_racks_embed">
        <Dialog title="'Editar el detalle'" size="'md'">
-            <button class="btn btn-primary" t-on-click="onBuscarProducto">
+            <button class="btn btn-primary mb-2" t-on-click="onBuscarProducto">
                     <i class="oi oi-check me-1"/> Buscar Producto
             </button> 
             
@@ -10,12 +10,16 @@
                     <div class="row g-3">
                         
                         <div class="col-md-6">
-                            <label for="clave" class="form-label fw-bold">Clave del rack:</label>
-                            <span type="text" 
-                                   id="clave" 
-                                   class="form-control" 
-                                   t-esc="state.rackClave"/>
+                            <label class="form-label fw-bold">Color del rack:</label>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="odoo-color-swatch" t-att-style="'background-color: ' + state.colorHex"/>
+                                <span style="font-size: 0.85rem;" t-esc="state.colorClave || 'Sin color'"/>
+                                <button type="button" class="odoo-btn odoo-btn-sm odoo-btn-secondary" t-on-click="onSeleccionarColor">
+                                    <i class="fa fa-exchange"/> Cambiar
+                                </button>
+                            </div>
                         </div>
+
                         <div class="col-md-6">
                             <label for="nombre" class="form-label fw-bold">Nombre del Rack:</label>
                             <span type="text" 
@@ -35,7 +39,6 @@
                                    />
                         </div>
 
-
                         <div class="col-md-6">
                             <label for="cantidad" class="form-label fw-bold"> Cantidad de Racks:</label>
                             <input type="number" 
@@ -46,6 +49,7 @@
                                    t-on-change="onCambiarCantidad"
                                    />
                         </div>
+                        
                         <div class="col-md-6">
                             <label for="almacenaje" class="form-label fw-bold"> Almacenaje por Rack:</label>
                             <input type="number" 
@@ -73,7 +77,6 @@
                                    t-esc="state.almacenajeTotalDisplay"/>
                         </div>            
                     </div>
-
                 </div>
 
             <t t-set-slot="footer">
@@ -85,9 +88,5 @@
                 </button>
             </t>
         </Dialog>
-
     </t>
 </templates>
-
-
-        

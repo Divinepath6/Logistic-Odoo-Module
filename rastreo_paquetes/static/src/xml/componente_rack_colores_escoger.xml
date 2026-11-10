@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="rastreo_paquetes.componente_rack_colores_escoger_embed">
+        <Dialog title="'Seleccionar Color de Rack'">
+            <div class="odoo-screen" style="padding: 0.5rem; max-height: 60vh; overflow-y: auto;">
+                
+
+                <div class="odoo-search-box" style="width: 100%; max-width: 100%; margin-bottom: 1rem;">
+                    <i class="fa fa-search odoo-search-icon" />
+                    <input type="text" 
+                           class="odoo-search-input" 
+                           placeholder="Buscar por nombre o clave del color..." 
+                           t-on-input="onInputBusqueda" 
+                           t-att-value="state.busqueda" />
+                </div>
+
+                <div class="odoo-list">
+                    <t t-if="state.cargando">
+                        <p class="odoo-list-empty">Buscando colores...</p>
+                    </t>
+                    <t t-elif="state.colores.length === 0">
+                        <p class="odoo-list-empty">No se encontraron colores disponibles.</p>
+                    </t>
+                    <t t-else="">
+                        <div class="odoo-list-item" 
+                             t-foreach="state.colores" 
+                             t-as="c" 
+                             t-key="c.id"
+                             style="cursor: pointer;"
+                             t-on-click="() => this.seleccionarColor(c)">
+                            
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="odoo-color-swatch" t-att-style="'background-color: ' + c.color_hex" />
+                                <div>
+                                    <strong><t t-esc="c.nombre"/></strong>
+                                    <div class="odoo-text-muted" style="font-size: 0.75rem;">
+                                        Clave: <t t-esc="c.clave || 'N/A'"/> | Hex: <t t-esc="c.color_hex"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="button" class="odoo-btn odoo-btn-sm odoo-btn-primary">
+                                Seleccionar
+                            </button>
+                        </div>
+                    </t>
+                </div>
+
+            </div>
+        </Dialog>
+    </t>
+</templates>

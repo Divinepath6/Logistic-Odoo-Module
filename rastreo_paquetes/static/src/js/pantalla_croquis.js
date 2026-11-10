@@ -7,9 +7,14 @@ import { _t } from "@web/core/l10n/translation";
 import { CreacionCroquis } from "./creacion_croquis";
 import { calcularLayoutCroquis } from "./funcion_calcular_layout";
 import { componente_detalle_racks } from "./componente_detalle_racks"
+import { componente_rack_colores_escoger } from "./componente_rack_colores_escoger";
 
 export class PantallaCroquis extends Component {
-    static components = { CreacionCroquis, componente_detalle_racks };
+    static components = { 
+        CreacionCroquis, 
+        componente_detalle_racks , 
+        componente_rack_colores_escoger,
+    };
     static template = "rastreo_paquetes.pantalla_croquis";
     setup() {
         this.action = useService("action");
@@ -35,7 +40,7 @@ export class PantallaCroquis extends Component {
             // Valores "de la bodega"
                   
             rackSeleccionadomedidas: [],
-            rackSeleccionadoIndex: 0,
+            rackSeleccionadoIndex: "",
             rackSeleccionadoCosto: 0,
             alturaBodega: 1, // entero
             anchoBodega: 0, // metros
@@ -66,9 +71,12 @@ export class PantallaCroquis extends Component {
             porAncho: 0,      
             porLargo: 0, 
             
-            
-            costoEstimadoTotal: 0.0,
+            // el color del rack:
+            colorSeleccionado: "#cccccc",
+            colorSeleccionadoId: false,
+            colorSeleccionadoClave: "",
 
+            costoEstimadoTotal: 0.0,
             espacioSobranteVer: 0,
             espacioSobranteHor: 0, 
             costoEstimadoDisplay: "$0.00",  
@@ -96,10 +104,19 @@ export class PantallaCroquis extends Component {
         this.state.minimoPasilloY = bodega.minimoPasilloY;        
         this.state.bodegaNombre = bodega.bodegaNombre;
         this.state.bodegaIndex = index;    
-        this.state.rackSeleccionadoIndex = this.buscarRackPorId(bodega.rackId)
+        this.state.rackSeleccionadoIndex = bodega.rackId ? this.buscarRackPorId(bodega.rackId) : "";
         const rack = this.state.rackTipos[this.state.rackSeleccionadoIndex];
-        this.state.rackSeleccionadoAlmacenaje = rack[3];
+        if (rack) {
+            this.state.rackSeleccionadoAlmacenaje = rack[3];
+        } else {
+            this.state.rackSeleccionadoAlmacenaje = 0;
+            this.state.rackSeleccionadoIndex = ""; 
+        }
         this.state.rackSeleccionadoCosto = bodega.rackSeleccionadoCosto;
+        this.state.colorSeleccionadoId = bodega.colorId || false;
+        this.state.colorSeleccionado = bodega.colorHex || "#cccccc";
+        this.state.colorSeleccionadoClave = bodega.colorClave || "";
+
         this.state.alturaBodega = bodega.alturaBodega;
         this.state.anchoBodega = bodega.anchoBodega;
         this.state.largoBodega = bodega.largoBodega;
@@ -111,7 +128,9 @@ export class PantallaCroquis extends Component {
         this.state.sepParedIzq = bodega.sepParedIzq;
         this.state.sepParedDer = bodega.sepParedDer;
         this.state.racksOcupados = bodega.racksOcupados;
-        this.calcularRacks();
+        if (rack) {
+            this.calcularRacks();
+        }
     }
     crearBodegaLista(){
         this.guardarBodegaActual();
@@ -120,7 +139,7 @@ export class PantallaCroquis extends Component {
             minimoPasilloX: 50,
             minimoPasilloY: 50, 
             bodegaNombre: "bodega " + numero,
-            rackSeleccionadoIndex: 0,
+             rackSeleccionadoIndex: "", 
             rackSeleccionadoCosto: 0,
             racksOcupados: 0,
             alturaBodega: 1, 
@@ -131,14 +150,14 @@ export class PantallaCroquis extends Component {
             sepParedAba: 30,
             sepParedIzq: 30,
             sepParedDer: 30,
-            detalleRacks: []
+            detalleRacks: [],
+            colorId: false,
+            colorHex: "#cccccc",
+            colorClave: "",
         });
         this.state.detalleRacks = []
         this.state.bodegaIndex = this.state.bodegas.length- 1; 
     }
-
-
-    //hechos para cargar y guardar en la lista de bodegas[] hechos para cargar y guardar en la lista de bodegas[]
     guardarBodegaActual(){
         const idx = parseInt(this.state.rackSeleccionadoIndex, 10);
         const rackData = this.state.rackTipos[idx];
@@ -159,13 +178,15 @@ export class PantallaCroquis extends Component {
             sepParedDer: this.state.sepParedDer,
             racksOcupados: this.state.racksOcupados,
             detalleRacks: this.state.detalleRacks,
+            colorId: this.state.colorSeleccionadoId,
+            colorHex: this.state.colorSeleccionado,
+            colorClave: this.state.colorSeleccionadoClave,
         }
         this.state.bodegas[this.state.bodegaIndex] = bodega;
     }
-  
     buscarRackPorId(id){
-        if(id === 0){
-            return;
+        if(!id || id === 0){
+            return "";
         }
         const racks = this.state.rackTipos;
         for(let i = 0; i<racks.length; i++){
@@ -175,8 +196,9 @@ export class PantallaCroquis extends Component {
                 return i;
             }
         }
-        return 0;
+        return ""; 
     }
+ //hechos para cargar y guardar en la lista de bodegas[] hechos para cargar y guardar en la lista de bodegas[]
 
      async cargarBodegaDB(){
         try {
@@ -205,16 +227,26 @@ export class PantallaCroquis extends Component {
                         sepParedIzq: b.separacion_izquierda,
                         sepParedDer: b.separacion_derecha,
                         racksOcupados: b.racks_ocupados,
+
+                        colorId: b.color_id || false,
+                        colorHex: b.color_hex || "#cccccc",
+                        colorClave: b.color_clave || "",
+
                         detalleRacks: b.detalle_racks.map((a,i) =>{
                             const costoTotal =  a.racks_ocupados * a.costo_rack;
                             const almacenajeTotal = ((a.almacenaje / 1000) * a.racks_ocupados); 
                             return{
                                 numero: i+1,
+                                
+                                colorId: a.color_id,
+                                colorHex: a.color_hex,
+                                colorClave: a.color_clave,
+
                                 rackClave: a.rack_clave,
                                 rackNombre: a.rack_nombre,
                                 rackId: a.rack_id,
                                 almacenaje: (a.almacenaje / 1000),
-                                productoId: 0,
+                                productoId: a.producto_id,
                                 precioUnitario: a.costo_rack,
                                 cantidadRacks: a.racks_ocupados,
                                 costoTotal: costoTotal,
@@ -230,7 +262,7 @@ export class PantallaCroquis extends Component {
                             minimoPasilloX: 50,
                             minimoPasilloY: 50, 
                             bodegaNombre: "Bodega 1",
-                            rackSeleccionadoIndex: 0,
+                            rackSeleccionadoIndex: "",
                             rackSeleccionadoCosto: 0,
                             alturaBodega: 1, 
                             anchoBodega:0 ,
@@ -242,6 +274,9 @@ export class PantallaCroquis extends Component {
                             sepParedDer: 30,
                             racksOcupados: 0,
                             detalleRacks: [],
+                            colorId: false,
+                            colorHex: "#cccccc",
+                            colorClave: "",
                         });
                         this.state.bodegaIndex = 0; 
                     }
@@ -252,7 +287,7 @@ export class PantallaCroquis extends Component {
                             minimoPasilloX: 50,
                             minimoPasilloY: 50, 
                             bodegaNombre: "Bodega 1",
-                            rackSeleccionadoIndex: 0,
+                            rackSeleccionadoIndex: "",
                             rackSeleccionadoCosto: 0,
                             alturaBodega: 1, 
                             anchoBodega:0 ,
@@ -264,6 +299,9 @@ export class PantallaCroquis extends Component {
                             sepParedDer: 30,
                             racksOcupados: 0,
                             detalleRacks: [],
+                            colorId: false,
+                            colorHex: "#cccccc",
+                            colorClave: "",
                         });
                         this.state.bodegaIndex = 0; 
                     }
@@ -409,14 +447,18 @@ export class PantallaCroquis extends Component {
     async onEditarDetalleRacks(r) {     
         const fila = r || {
             numero: this.state.detalleRacks.length + 1,
-            clave: '',
             rack_nombre: '',
+            producto_id: 0,
             rack_id: false,
             costo_rack: 0,
             cantidad_racks: 1,
             total:0,
             almacenaje:0,
             almacenajeTotal: 0,
+            colorId: false,
+            colorHex: "",
+            colorClave: "",
+
         };
         fila.pedidoId = this.state.pedidoId;
         this.dialogService.add(componente_detalle_racks,  {
@@ -441,6 +483,18 @@ export class PantallaCroquis extends Component {
 
         this.state.detalleRacks = [...this.state.detalleRacks];
         this.calcularRacks();
+    }
+
+    async onSeleccionarColor() {
+        this.dialogService.add(componente_rack_colores_escoger, {
+            confirm: (colorSeleccionado) => {
+                this.state.colorSeleccionadoId = colorSeleccionado.id;
+                this.state.colorSeleccionado = colorSeleccionado.color_hex;
+                this.state.colorSeleccionadoClave = colorSeleccionado.clave;
+                this.guardarBodegaActual();
+            },
+            cancel: () => {}
+        });
     }
 
     calcularRacks() {
@@ -530,7 +584,7 @@ export class PantallaCroquis extends Component {
         this.state.porAncho       = porAncho;
         this.state.porLargo       = porLargo;
         this.notification.add(
-            `Cálculo actualizado: ${this.state.costoEstimado} (${this.state.racksOcupados} racks)`,
+            `Cálculo actualizado: ${this.state.costoEstimadoDisplay} (${this.state.racksOcupados} racks)`,
             { type: "success" }
         );
     }
@@ -564,14 +618,16 @@ export class PantallaCroquis extends Component {
                 separacion_izquierda :  Number(b.sepParedIzq),
                 separacion_derecha :    Number(b.sepParedDer),
                 racks_ocupados:         Number(b.racksOcupados),
+                color_id:     b.colorId || false,
                 detalle_adicional: b.detalleRacks.map((b, i) => { 
                     return{
                         numero: i+1,
+                        color_id: b.colorId,
+                        producto_id: b.productoId,
                         costo_rack: b.precioUnitario,
                         almacenaje_rack: b.almacenaje * 1000, 
                         racks_ocupados: b.cantidadRacks,
                         rack_id: b.rackId,}})
-
                     }
         }); 
         
@@ -608,6 +664,7 @@ export class PantallaCroquis extends Component {
             },
         });
     }
+
     // Descargar PDF ¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿
     async onClickDescargarPDF() {
         for (let i = 0; i < this.state.bodegas.length; i++) {

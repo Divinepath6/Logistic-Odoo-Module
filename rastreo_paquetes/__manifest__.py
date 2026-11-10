@@ -60,6 +60,13 @@
             
             'rastreo_paquetes/static/src/js/componente_cargar_cotizacion.js',
             'rastreo_paquetes/static/src/xml/componente_cargar_cotizacion.xml',
+
+            'rastreo_paquetes/static/src/js/componente_rack_colores_edicion.js',
+            'rastreo_paquetes/static/src/xml/componente_rack_colores_edicion.xml',
+
+            'rastreo_paquetes/static/src/js/componente_rack_colores_escoger.js',
+            'rastreo_paquetes/static/src/xml/componente_rack_colores_escoger.xml',
+
             'rastreo_paquetes/static/src/js/componente_configuracion.js',
             'rastreo_paquetes/static/src/xml/componente_configuracion.xml',
         ],

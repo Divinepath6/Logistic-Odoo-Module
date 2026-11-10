@@ -962,6 +962,7 @@ class rastreo_paquetes(models.Model):
         for b in bodegas:
             detalle.create({
                 'numero': b.numero_bodega or 0,
+                'color': b.color.id or False,
                 'costo_rack': b.costoRack or 0.0,
                 'rack_id': b.rack_id.id if b.rack_id else False,
                 'currency_id': currency_id,

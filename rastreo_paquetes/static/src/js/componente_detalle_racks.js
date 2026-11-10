@@ -2,13 +2,17 @@
 import { Component, useState, onWillStart } from "@odoo/owl";
 import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks"; 
-import {componente_busqueda_producto} from "./componente_busqueda_producto"
+import { componente_busqueda_producto } from "./componente_busqueda_producto";
+import { componente_rack_colores_escoger } from "./componente_rack_colores_escoger";
 
 export class componente_detalle_racks extends Component{
     static template = "rastreo_paquetes.componente_detalle_racks_embed";
-    static components = { Dialog, componente_busqueda_producto }; 
+    static components = { 
+        Dialog, 
+        componente_busqueda_producto, 
+        componente_rack_colores_escoger 
+    }; 
     static props = {
-        // Props que recibe del diálogo
         fila: { type: Object, optional: true },
         confirm: { type: Function, optional: true },
         cancel: { type: Function, optional: true },
@@ -36,6 +40,11 @@ export class componente_detalle_racks extends Component{
             rackPrecio: 0,
             almacenaje: 0,
             almacenajeTotal: 0,
+
+            // Variables de color para el detalle del rack
+            colorId: false,
+            colorHex: "#cccccc",
+            colorClave: "",
         })
         
         onWillStart(async () => {
@@ -44,6 +53,7 @@ export class componente_detalle_racks extends Component{
                 if(r.id != 0){
                     this.state.rackExiste = true
                 }
+                this.state.productoId = r.productoId || 0;
                 this.state.numero = r.numero;
                 this.state.rackClave = r.rackClave || '';
                 this.state.rackNombre = r.rackNombre || '';
@@ -51,6 +61,11 @@ export class componente_detalle_racks extends Component{
                 this.state.almacenaje = r.almacenaje || 0;
                 this.state.precioUnitario = r.precioUnitario || 0;
                 this.state.cantidadRacks = r.cantidadRacks || 1;
+
+                this.state.colorId = r.colorId || false;
+                this.state.colorHex = r.colorHex || "#cccccc";
+                this.state.colorClave = r.colorClave || "";
+
                 this.onCambiarCantidad();
             }
         });
@@ -59,28 +74,42 @@ export class componente_detalle_racks extends Component{
     async onBuscarProducto(ev) {
         this.dialogService.add(componente_busqueda_producto, {
             title: "Buscar producto",
-            confirm: (id, nombre, precio, rackExiste, rackId, rackClave, rackPrecio,rackNombre,rackAlmacenaje) => {
+            confirm: (id, nombre, precio, rackExiste, rackId, rackClave, rackPrecio, rackNombre, rackAlmacenaje) => {
+                this.state.productoId = id;
+                this.state.productoNombre = nombre;
+                this.state.precioUnitario = precio;
                 if(rackExiste){
-                    this.state.productoId = id;
-                    this.state.productoNombre = nombre;
-                    this.state.precioUnitario = precio;
                     this.state.rackExiste = rackExiste;
-                    this.state.rackId =  rackId;
+                    this.state.rackId = rackId;
                     this.state.rackNombre = rackNombre;
-                    
                     this.state.rackClave = rackClave;
-                    this.state.precioUnitario =  rackPrecio;
+                    this.state.precioUnitario = rackPrecio;
                     this.state.almacenaje = rackAlmacenaje;
                     this.onCambiarCantidad();
-                }else{
-                    this.notification.add("Este rack no esta registrado en el sistema", { type: "warning" });
+                } else {
+                    this.state.rackExiste = false;
+                    this.state.rackId = 0;
+                    this.state.rackNombre = nombre;
+                    this.state.rackClave = "";
+                    this.state.precioUnitario = precio;
+                    this.state.almacenaje = 0.0;
+                    this.notification.add("Este rack no esta registrado en el sistema");
                 }
             },
-            cancel: () => {
-            },
+            cancel: () => {},
         });
     }
-       
+
+    onSeleccionarColor() {
+        this.dialogService.add(componente_rack_colores_escoger, {
+            confirm: (colorSeleccionado) => {
+                this.state.colorId = colorSeleccionado.id;
+                this.state.colorHex = colorSeleccionado.color_hex;
+                this.state.colorClave = colorSeleccionado.clave;
+            },
+            cancel: () => {}
+        });
+    }
 
     onCambiarCantidad() {
         this.state.costoTotal = (
@@ -92,14 +121,13 @@ export class componente_detalle_racks extends Component{
         )
         this.state.almacenajeTotalDisplay = this.state.almacenajeTotal.toFixed(3);
     }
-
     
     async onConfirmar() {
-        if(!this.state.productoId || !this.state.rackExiste){
-            this.notification.add("Busca un Rack para guardar", { type: "warning" });
+        if(!this.state.productoId){
+            this.notification.add("Busca un producto para guardar", { type: "warning" });
             return;
         }
-        if(this.state.cantidadRacks <0 || this.state.precioUnitario <0){
+        if(this.state.cantidadRacks < 0 || this.state.precioUnitario < 0){
             this.notification.add("Las cantidades no deben ser negativas", { type: "warning" });
             return;
         }  
@@ -108,6 +136,7 @@ export class componente_detalle_racks extends Component{
             rackClave: this.state.rackClave,
             rackNombre: this.state.rackNombre,
             rackId: this.state.rackId,
+
             productoId: this.state.productoId,
             precioUnitario: this.state.precioUnitario,
             cantidadRacks: this.state.cantidadRacks,
@@ -115,13 +144,17 @@ export class componente_detalle_racks extends Component{
             almacenaje: this.state.almacenaje,
             almacenajeTotal: this.state.almacenajeTotal,
             almacenajeTotalDisplay: this.state.almacenajeTotalDisplay,
-            costoTotalDisplay : this.state.costoTotalDisplay,
+            costoTotalDisplay: this.state.costoTotalDisplay,
+
+            colorId: this.state.colorId,
+            colorHex: this.state.colorHex,
+            colorClave: this.state.colorClave,
         };
 
-  
         this.props.confirm(rack);
         this.props.close();
     }
+
     onCancel() {
         if (this.props.cancel) {
             this.props.cancel();

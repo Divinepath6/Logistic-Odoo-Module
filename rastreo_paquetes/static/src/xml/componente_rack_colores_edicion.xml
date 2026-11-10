@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="rastreo_paquetes.componente_rack_colores_edicion_embed">
+        <Dialog title="'Edicion de colores'" size="'md'">
+        <div class="odoo-screen">
+            <div class="odoo-screen-header">
+                <h2>Gestión de Colores para Racks</h2>
+            </div>
+
+            <div class="odoo-screen-grid" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);">
+                
+                <div class="odoo-col-left">
+                    <div class="odoo-card">
+                        <h3 class="cc-card-title">
+                            <span class="cc-badge-dot"></span>
+                            <t t-if="state.editandoId">Editar Color</t>
+                            <t t-else="">Nuevo Color</t>
+                        </h3>
+
+                        <div class="odoo-field">
+                            <label class="odoo-label">Clave:</label>
+                            <input type="text" class="odoo-input" placeholder="Ej: COL-01" t-model="state.clave" />
+                        </div>
+
+                        <div class="odoo-field">
+                            <label class="odoo-label">Nombre del Color:</label>
+                            <input type="text" class="odoo-input" placeholder="Ej: Azul Metálico" t-model="state.nombre" />
+                        </div>
+
+                        <div class="odoo-field">
+                            <label class="odoo-label">Código Hexadecimal y Muestrario:</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="color" class="odoo-input" style="width: 3rem; padding: 0.2rem; cursor: pointer;" t-model="state.color_hex" />
+                                <input type="text" class="odoo-input" placeholder="#FF5733" t-model="state.color_hex" />
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                            <button type="button" class="odoo-btn odoo-btn-primary" t-on-click="guardarColor">
+                                <i class="fa fa-save"/> <t t-if="state.editandoId">Actualizar</t><t t-else="">Guardar</t>
+                            </button>
+                            <t t-if="state.editandoId">
+                                <button type="button" class="odoo-btn odoo-btn-secondary" t-on-click="limpiarFormulario">
+                                    <i class="fa fa-times"/> Cancelar
+                                </button>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="odoo-col-right">
+                    <div class="odoo-card">
+                        <h3 class="cc-card-title">
+                            <span class="cc-badge-dot"></span>
+                            Colores Registrados
+                        </h3>
+
+                        <div class="odoo-list">
+                            <t t-if="state.cargando">
+                                <p class="odoo-list-empty">Cargando colores...</p>
+                            </t>
+                            <t t-elif="state.colores.length === 0">
+                                <p class="odoo-list-empty">No hay colores registrados todavía.</p>
+                            </t>
+                            <t t-else="">
+                                <div class="odoo-list-item" t-foreach="state.colores" t-as="c" t-key="c.id">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <span class="odoo-color-swatch" t-att-style="'background-color: ' + c.color_hex" />
+                                        <div>
+                                            <strong><t t-esc="c.clave"/></strong>
+                                            <div class="odoo-text-muted" style="font-size: 0.75rem;">
+                                                Nombre: <t t-esc="c.nombre || 'N/A'"/> | Hex: <t t-esc="c.color_hex"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="display: flex; gap: 0.25rem;">
+                                        <button type="button" class="odoo-btn-icon" title="Editar" t-on-click="() => this.seleccionarColor(c)">
+                                            <i class="fa fa-pencil"/>
+                                        </button>
+                                        <button type="button" class="odoo-btn-icon odoo-text-danger" title="Eliminar" t-on-click="() => this.eliminarColor(c.id)">
+                                            <i class="fa fa-trash"/>
+                                        </button>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        </Dialog>
+    </t>
+</templates>

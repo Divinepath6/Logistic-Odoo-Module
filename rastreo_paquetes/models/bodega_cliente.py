@@ -55,9 +55,11 @@ class rastreo_bodega_cliente(models.Model):
             racks_info = []
             for b in bodegas:
                 rack_id = int(b.get('rack_id')) if b.get('rack_id') else False
+                
                 if not rack_id:
                     raise UserError("Cada bodega debe tener un rack asociado.")
 
+                
                 rack = self.env['rastreo.rack_detalle'].browse(rack_id)
                 if not rack.exists() or not rack.producto_id:
                     raise UserError(
@@ -73,6 +75,7 @@ class rastreo_bodega_cliente(models.Model):
                     'largo': float(b.get('largo') or 0.0),
                     'niveles': int(b.get('niveles') or 0),
                     'costoRack': float(b.get('costoRack') or 0.0),
+                    'color': b.get('color_id') or False,
                     'rack_id': rack.id,
                     'separacion_arriba': int(b.get('separacion_arriba') or 30),
                     'separacion_abajo': int(b.get('separacion_abajo') or 30),
@@ -82,22 +85,25 @@ class rastreo_bodega_cliente(models.Model):
                 })
 
                 racks_info.append({
-                    'rack': rack,
+                    'producto_': rack.producto_id,
                     'costo': float(b.get('costoRack') or 0.0),
                     'cantidad': int(b.get('racks_ocupados') or 0),
+                    'rack_id': rack.id, 
                     'numero': b.get('numero_bodega') or '',
+                    'color' : b.get('color_id'),
                 })
 
                 bodega_adicional = self.env['rastreo.bodega_adicional']
                 detalle_adicional = list(b.get('detalle_adicional') or [])
                 for d in detalle_adicional:
-                    rack_id_ad = int(d.get('rack_id')) if d.get('rack_id') else False
-                    if not rack_id_ad:
-                        raise UserError("Cada bodega debe tener un rack asociado.")
-                    rack_ad = self.env['rastreo.rack_detalle'].browse(rack_id_ad)
-                    if not rack.exists() or not rack.producto_id:
+                    producto_id = int(d.get('producto_id')) if d.get('producto_id') else False
+                    if not producto_id:
+                        raise UserError("Una bodega tiene productos no existentes en Odoo")
+                    
+                    producto_ = self.env['product.product'].browse(producto_id)
+                    if not producto_.exists():
                         raise UserError(
-                            f"El rack {rack_id_ad} no existe o no tiene producto de inventario."
+                            f"El {producto_} no existe"
                         )
                     
                     bodega_adicional.create({
@@ -105,15 +111,18 @@ class rastreo_bodega_cliente(models.Model):
                         'costo_rack': float(d.get('costo_rack') or 0.0),
                         'almacenaje_rack': int(d.get('almacenaje_rack') or 0),
                         'racks_ocupados': float(d.get('racks_ocupados') or 0),
-                        'rack_id': rack_id_ad,
+                        'color': d.get('color_id') or False,
+                        'producto_id': producto_.id,
                         'bodega_adicional_id': bodega_creada.id,
                         'currency_id': usd_currency.id,
                     })
                     racks_info.append({
-                        'rack': rack_ad,
+                        'producto_': producto_,
                         'costo': float(d.get('costo_rack') or 0.0),
+                        'rack_id': rack.id, 
                         'cantidad': int(d.get('racks_ocupados') or 0),
                         'numero': d.get('numero') or '',
+                        'color' : d.get('color_id'),
                     })
             if not guardar_cotizacion:
                 return {'success': True,'id': pedido.id}
@@ -122,14 +131,15 @@ class rastreo_bodega_cliente(models.Model):
             if not sale.exists():
                 return {'success': False, 'error' : "No existe la Cotización"}
             lineas_vals = []
+            mapa_racks = {}
             for info in racks_info:
                 lineas_vals.append((0, 0, {
-                    'product_id': info['rack'].producto_id.id,
+                    'product_id': info['producto_'].id,
                     'product_uom_qty': info['cantidad'] or 1,
                     'price_unit': info['costo'],
-                    'name': info['rack'].nombre or info['rack'].producto_id.name,
+                    'name': info['producto_'].name,
                 }))
-
+                mapa_racks[info['producto_'].id] = info.get('rack_id', False)
             sale.write({
                 'order_line': [(5, 0, 0)] + lineas_vals, 
                 'partner_id': pedido.cliente_id.id,
@@ -141,14 +151,14 @@ class rastreo_bodega_cliente(models.Model):
             for linea in sale.order_line:
                 if linea.display_type:
                     continue
-                rack = self.env['rastreo.rack_detalle'].search(
-                    [('producto_id', '=', linea.product_id.id)],
-                    order='id desc', limit=1,
-                )
+                rack_id = mapa_racks.get(linea.product_id.id)
+                
                 detalle.create({
                     'numero': len(pedido.detalle_cotizacion_ids) + 1,
                     'costo_rack': linea.price_unit,
-                    'rack_id': rack.id if rack else False,
+                    'product_id': linea.product_id.id,  
+                    'rack_id': rack_id,       
+                    'color': linea.color,
                     'currency_id': usd_currency.id,
                     'cantidad_racks': int(linea.product_uom_qty),
                     'pedido_id': pedido_id,
@@ -190,15 +200,16 @@ class rastreo_bodega_cliente(models.Model):
                 order='numero',
             )
             for d in detalle_adicional:
-                rack = self.env['rastreo.rack_detalle'].browse(d.rack_id)
                 detalle_racks.append({
                     'numero': d.numero or 0,
                     'costo_rack': d.costo_rack or 0.0,
                     'almacenaje': d.almacenaje_rack or 0,
                     'racks_ocupados': d.racks_ocupados or 0,
-                    'rack_id': d.rack_id.id,
-                    'rack_clave': d.rack_id.clave or '',
-                    'rack_nombre':  d.rack_id.nombre or '',              
+                    'producto_id': d.producto_id.id,
+                    'rack_nombre':  d.producto_id.name or '',   
+                    'color_id': d.color.id or False,
+                    'color_hex': d.color.color_hex or '',
+                    'color_clave': d.color.clave or '',
                 })
             bodegas_lista.append({
                 'nombre': b.nombre or '',
@@ -209,6 +220,9 @@ class rastreo_bodega_cliente(models.Model):
                 'largo': float(b.largo or 0.0),
                 'niveles': int(b.niveles or 0),
                 'costoRack': float(b.costoRack or 0.0),
+                'color_id': (b.color.id or False),
+                'color_hex': (b.color.color_hex or ''),
+                'color_clave': (b.color.clave or ''),
                 'rack_id': b.rack_id.id if hasattr(b.rack_id, 'id') else int(b.rack_id or 0),
                 'separacion_arriba' : int(b.separacion_arriba or 30),
                 'separacion_abajo' : int(b.separacion_abajo or 30),
@@ -218,7 +232,6 @@ class rastreo_bodega_cliente(models.Model):
                 'detalle_racks' : detalle_racks or [],
             })
             
-
         return {
                 'success': True,
                 'data': {

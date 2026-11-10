@@ -7,7 +7,7 @@
     --odoo-primary:        #875a7b;
     --odoo-primary-hover:  #6c4762;
     --odoo-primary-soft:   #cbceff;
-    --odoo-accent:         #9275bb;
+    --odoo-accent:         #96598a;
     --odoo-cyan:           #936289;
     --odoo-cyan-hover:     #924182;
 
@@ -506,6 +506,61 @@
     background-color: #fdecea;
     color: #b3261e;
     border-color: #f5c2c0;
+}
+
+/* ============================================================
+   ESTILOS PARA LISTA DINÁMICA (Detalles / Items)
+   ============================================================ */
+
+.odoo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+/* Mensajes de carga o vacío */
+.odoo-list-empty {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--odoo-text-muted);
+    font-size: 0.85rem;
+    background: #f8fafc;
+    border: 1px dashed var(--odoo-border);
+    border-radius: var(--odoo-radius-sm);
+    margin: 0;
+}
+
+/* Elemento individual de la lista estilo tarjeta compacta */
+.odoo-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.875rem;
+    background: var(--odoo-card-bg);
+    border: 1px solid var(--odoo-border);
+    border-radius: var(--odoo-radius-sm);
+    box-shadow: var(--odoo-shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.odoo-list-item:hover {
+    border-color: var(--odoo-accent);
+    box-shadow: var(--odoo-shadow-md);
+    transform: translateY(-1px);
+}
+
+/* Contenedor del texto (Nombre, Cantidad, Subtotal) */
+.odoo-list-item-name {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 0.88rem;
+    color: var(--odoo-text-strong);
+    font-weight: 500;
+    gap: 1rem;
 }
 
 @media (max-width: 48em) { /* ~768px en em */

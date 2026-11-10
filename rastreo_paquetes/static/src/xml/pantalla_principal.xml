@@ -3,7 +3,6 @@
     <t t-name="rastreo_paquetes.pantalla_principal">
         <div class="odoo-screen odoo-dashboard" t-ref="root">
 
-            <!-- HEADER -->
             <div class="odoo-screen-header">
                 <h2>LOGÍSTICA</h2>
                 <div class="odoo-search-box">
@@ -12,22 +11,25 @@
                         placeholder="Buscar por nombre de cliente o cotización..."
                         t-on-input="onBusqueda" />
                 </div>
+                
                 <div class="odoo-header-actions">
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onCargarCotizacion">
-                        <i class="fa fa-external-link-square" /> Cargar </button>
+                    <i class="fa fa-external-link-square" /> Cargar </button>
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onClickCrearPedido">
-                        <i class="fa fa-plus-circle" /> Crear </button>
+                    <i class="fa fa-plus-circle" /> Crear </button>
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onclickEditarRacks">
-                        <i class="fa fa-list" /> Racks </button>
+                    <i class="fa fa-list" /> Racks </button>
 
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onCambiarModo">
-                        <i class="fa fa-random"></i> Cambiar </button>
+                    <i class="fa fa-random"></i> Cambiar </button>
                     
-
+                    <button type="button" class="odoo-btn odoo-btn-primary"
+                        t-on-click="onEditarColores">
+                    <i class="fa fa-paint-brush"></i> Colores </button>
 
                     <div class="odoo-header-kpis">
                         <div class="odoo-kpi-card">

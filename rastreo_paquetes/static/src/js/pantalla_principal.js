@@ -5,6 +5,7 @@ import { useService } from "@web/core/utils/hooks";
 import { componente_creacion_pedido } from "./componente_creacion_pedido";
 import { componente_edicion_racks } from "./componente_edicion_racks";
 import { componente_cargar_cotizacion } from "./componente_cargar_cotizacion";
+import { componente_rack_colores_edicion } from "./componente_rack_colores_edicion";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import { Dropdown } from "@web/core/dropdown/dropdown";
 import { DropdownItem } from "@web/core/dropdown/dropdown_item";
@@ -15,6 +16,7 @@ export class PantallaPrincipal extends Component {
         componente_creacion_pedido, 
         componente_edicion_racks, 
         componente_cargar_cotizacion,
+        componente_rack_colores_edicion,
         Dropdown,
         DropdownItem,};
     
@@ -194,6 +196,17 @@ export class PantallaPrincipal extends Component {
                 confirm: async () => {},
                 cancel: () => {}
         });
+    }
+    async onEditarColores(){
+        try {
+            this.dialogService.add(componente_rack_colores_edicion, {
+                confirm: async () => {},
+                cancel: () => {}
+            });
+        } catch (error) {
+            console.error("Error al abrir el componente de colores:", error);
+            this.notification.add("No se pudo abrir la gestión de colores.", { type: "danger" });
+        }
     }
 
     onBusqueda(ev){

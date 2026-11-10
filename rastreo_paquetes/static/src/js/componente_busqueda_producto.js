@@ -16,7 +16,7 @@ export class componente_busqueda_producto extends Component {
         this.orm = useService("orm");
         this.state = useState({
             productoSeleccionadoId: 0,
-            termino_busqueda: "",
+            termino_busqueda: "rack",
             productoSeleccionadoNombre: "",
             productoSeleccionadoPrecio: "$0.00",
             
@@ -49,7 +49,6 @@ export class componente_busqueda_producto extends Component {
             }
         } catch (e) {
             console.error("Error al listar productos:", e);
-            this.state.productos = [];
         } finally {
             this.state.cargando = false;
         }

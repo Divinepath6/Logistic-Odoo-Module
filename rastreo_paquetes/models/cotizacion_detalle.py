@@ -4,6 +4,12 @@ class rastreo_cotizacion_detalle(models.Model):
     _name = 'rastreo.cotizacion_detalle'
     _description = 'Clase para guardar el detalle de cada pedido'
 
+    color = fields.Many2one(
+        'rastreo.rack_color',
+        string='Color',  
+        required=False,  
+    )
+    
     numero = fields.Integer(
         string='numero de la cotizacion', 
     )
@@ -11,12 +17,21 @@ class rastreo_cotizacion_detalle(models.Model):
         string='costo individual del rack',
         currency_field='currency_id'    
     )
+    
+    product_id = fields.Many2one(
+        'product.product',
+        string='Producto',
+        required=True,
+        ondelete='restrict',
+    )
     rack_id = fields.Many2one(
         'rastreo.rack_detalle',
         string='Id del rack',
-        required=True,
-        ondelete='cascade',
+        required=False, 
+        ondelete='set null', 
     )
+
+    
     sale_order_line_id = fields.Many2one(
         'sale.order.line',
         string='Línea de cotización de Odoo',
@@ -36,4 +51,3 @@ class rastreo_cotizacion_detalle(models.Model):
         required=True,   
         ondelete='cascade',  
     )
-        
