@@ -45,16 +45,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <label for="clave" class="form-label fw-bold">Clave</label>
-                            <input type="text" 
-                                   id="clave" 
-                                   class="form-control" 
-                                   placeholder="Ej. RACK-001" 
-                                   t-model="state.clave"/>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="nombre" class="form-label fw-bold">Nombre / Descripción</label>
+                            <label for="nombre" class="form-label fw-bold">Nombre en este sistema:</label>
                             <input type="text" 
                                    id="nombre" 
                                    class="form-control" 

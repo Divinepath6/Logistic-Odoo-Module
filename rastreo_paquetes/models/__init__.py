@@ -9,3 +9,4 @@ from . import cotizacion_detalle
 from . import anticipo_detalle_cliente
 from . import bodega_adicional
 from . import rack_color
+from . import sale_order_line

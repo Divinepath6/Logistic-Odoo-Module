@@ -9,13 +9,15 @@ import { componente_detalle_proveedor } from "./componente_detalle_proveedor"
 import { componente_detalle_racks } from "./componente_detalle_racks"
 import { componente_detalle_cliente } from "./componente_detalle_cliente"
 import { componente_subir_pdf } from "./componente_subir_pdf";
+import { componente_rack_colores_escoger } from "./componente_rack_colores_escoger"; 
 
 export class PantallaPedido extends Component {
     static components = { 
         componente_detalle_proveedor, 
         componente_detalle_racks, 
         componente_detalle_cliente, 
-        componente_subir_pdf 
+        componente_subir_pdf,
+        componente_rack_colores_escoger,
     };
     setup() {
         this.action = useService("action");
@@ -65,6 +67,9 @@ export class PantallaPedido extends Component {
          
             cargando: false,
             // fechas
+            ETA: "",
+            ETD: "",
+            CRD: "",
             fecha_compromiso_proveedor_1 : "",
             fecha_compromiso_proveedor_3 : "",
             fecha_compromiso_proveedor_2 : "",
@@ -144,7 +149,9 @@ export class PantallaPedido extends Component {
                 totalClienteCalculado += subtotal;
                 return {
                     id: d.id,
-                    clave: d.codigo || '',
+                    colorId: d.color_id,
+                    colorHex: d.color_hex,
+                    colorClave: d.color_clave,
                     numero: i + 1,
                     costo_rack_raw: costo,
                     costo_rack: fmt(costo),
@@ -218,6 +225,7 @@ export class PantallaPedido extends Component {
             this.state.balancePorcentajeProveedor = "% " + fmt(porP);
 
             // FechasFechas Fechas  
+            this.state.CRD = p.CRD || '';
             this.state.fecha_creacion = p.fecha_creacion || '';
             this.state.ETA = p.ETA || '';
             this.state.ETD = p.ETD || '';
@@ -288,18 +296,20 @@ export class PantallaPedido extends Component {
     }
 
 
-    async onEditarDetalleRacks(r) {     
+    async onEditarDetalleRacks(r) {    
         const fila = r || {
             numero: this.state.detalleRacks.length + 1,
-            rackClave: '',
             rackNombre: '',
             rackId: false,
             precioUnitario: 0,
             cantidadRacks: 1,
             costoTotal: 0,
+            colorId: false,
+            colorHex: "#cccccc",
+            colorClave: "",
         };
         fila.pedidoId = this.state.pedidoId;
-        this.dialogService.add(componente_detalle_racks,  {
+        this.dialogService.add(componente_detalle_racks, {
                 title: fila.numero === 0 ? _t("Nuevo Rack") : _t("Editar Rack"),
                 objeto: fila,
                 confirm: async (rEditado) => {
@@ -312,8 +322,7 @@ export class PantallaPedido extends Component {
                     }
                     this.state.detalleRacks = [...this.state.detalleRacks];
                 },
-                cancel: () => {
-                }
+                cancel: () => {}
         });
     }
 
@@ -341,7 +350,21 @@ export class PantallaPedido extends Component {
                 }
         });
     }
-    
+    async onEditarColorRack(r) {
+        this.dialogService.add(componente_rack_colores_escoger, {
+            confirm: (colorSeleccionado) => {
+                r.colorId = colorSeleccionado.id;
+                r.colorHex = colorSeleccionado.color_hex;
+                r.colorClave = colorSeleccionado.clave;
+                
+                this.state.cambioRacks = true;
+                this.state.detalleRacks = [...this.state.detalleRacks];
+                
+                this.notification.add("Color actualizado correctamente.", { type: "success" });
+            },
+            cancel: () => {}
+        });
+    }
     async onEditarDetalleProveedor(d) {
         if(!d){
             d = {
@@ -492,7 +515,7 @@ export class PantallaPedido extends Component {
             total_cliente: this.state.totalCliente,
             numero_contrato: this.state.numeroContrato,
             racks_acordados: 0,
-
+            CRD: this.state.CRD,
             fecha_creacion : this.state.fecha_creacion,
             ETD : this.state.ETD,
             ETA : this.state.ETA,
@@ -506,10 +529,14 @@ export class PantallaPedido extends Component {
             fecha_compromiso_cliente_2:this.state.fecha_compromiso_cliente_2,
             fecha_compromiso_cliente_3:this.state.fecha_compromiso_cliente_3,
             fecha_compromiso_cliente_4:this.state.fecha_compromiso_cliente_4,
-
+            
         }
         const pedido_id = this.state.pedidoId;
-        const detalle_pedido = this.state.detalleRacks;
+        const detalle_pedido = this.state.detalleRacks.map(d => ({
+            ...d,
+            color_id: d.colorId || false
+        }));
+
         try {
             const resultado = await this.orm.call(
                 "rastreo.pedido",

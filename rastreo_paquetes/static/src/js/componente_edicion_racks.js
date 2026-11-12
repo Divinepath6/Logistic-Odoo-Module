@@ -24,7 +24,6 @@ export class componente_edicion_racks extends Component{
         this.state = useState({
             //state para el rack seleccionado:
             rackSeleccionadoId: 0,
-            clave: "",
             nombre: "",
             
             //coma flotante recordatorio
@@ -62,7 +61,7 @@ export class componente_edicion_racks extends Component{
                 this.state.productoNombre = productoNombre;
                 this.state.precioUnitario = productoPrecio;
                 this.state.productoPrecio = productoPrecio;
-
+                this.state.nombre = productoNombre;
             },
             cancel: () => {
                 console.log("Cancelado");

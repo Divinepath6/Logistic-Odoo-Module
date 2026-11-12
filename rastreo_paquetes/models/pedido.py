@@ -152,6 +152,9 @@ class rastreo_paquetes(models.Model):
         string = 'Termino de pago numero 4'
     )
 
+    termino_5 = fields.Integer(
+        string = 'Termino de pago numero 5'
+    )
 
     fecha_termino_produccion = fields.Date(
         string = 'Fecha de termino de produccion'
@@ -291,6 +294,15 @@ class rastreo_paquetes(models.Model):
         return {'success': True}
     
     @api.model
+    def eliminar_pedido(self, pedido_id):
+        pedido = self.browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False, 'error': 'Pedido no encontrado'}
+        
+        pedido.unlink()
+        return {'success': True}
+
+    @api.model
     def cambiar_estado(self, pedido_id, estado=None):
         pedido = self.browse(pedido_id)
         if not pedido.exists():
@@ -300,6 +312,10 @@ class rastreo_paquetes(models.Model):
         match pedido.estado:
             case "fase_inicial":
                 siguiente_estado = 'produccion'
+                if pedido.sale_order_id.exists():
+                    if pedido.sale_order_id.state in ('draft', 'sent'):
+                        pedido.sale_order_id.action_confirm()
+
                 pedido.write({
                     'fecha_compromiso_proveedor_1': fields.Date.today(),
                     'fecha_compromiso_cliente_1': fields.Date.today(),
@@ -442,7 +458,8 @@ class rastreo_paquetes(models.Model):
                 'ETD': datos.get('ETD') or False,
                 'CRD': datos.get('CRD') or False,
 
-                'fecha_creacion': datos.get('fecha_termino_produccion') or False,
+                'fecha_creacion': datos.get('fecha_creacion') or False,
+                'fecha_termino_produccion' : datos.get('fecha_termino_produccion') or False,
                 'fecha_compromiso_proveedor_1': datos.get('fecha_compromiso_proveedor_1') or False,
                 'fecha_compromiso_proveedor_2': datos.get('fecha_compromiso_proveedor_2') or False,
                 'fecha_compromiso_proveedor_3': datos.get('fecha_compromiso_proveedor_3') or False,
@@ -452,14 +469,11 @@ class rastreo_paquetes(models.Model):
                 'fecha_compromiso_cliente_2': datos.get('fecha_compromiso_cliente_2') or False,
                 'fecha_compromiso_cliente_3': datos.get('fecha_compromiso_cliente_3') or False,
                 'fecha_compromiso_cliente_4': datos.get('fecha_compromiso_cliente_4') or False,
-
             })
 
-            
             fecha_termino_produccion = pedido.fecha_termino_produccion
             if not fecha_termino_produccion:
                 pedido.fecha_termino_produccion = fields.Date.today() + timedelta(days=20)
-
 
             cambio = datos.get('cambio_racks') or False
             if cambio == False:
@@ -467,6 +481,7 @@ class rastreo_paquetes(models.Model):
                 return {
                     'success': True,
                 }
+
             dp = self.env['rastreo.cotizacion_detalle']
 
             pedido.detalle_cotizacion_ids.unlink()
@@ -474,34 +489,38 @@ class rastreo_paquetes(models.Model):
                 try:
                     numero_val = int(d.get('numero') or 0)
                 except (ValueError, TypeError):
-                    raise UserError("El número de línea del rack debe ser un entero.")
+                    numero_val = 0
+
                 try:
                     rack_id_val = int(d.get('rack_id') or 0)
                 except (ValueError, TypeError):
-                    rack_id_val = 0
+                    rack_id_val = False
+
+                try:
+                    product_id_val = int(d.get('product_id') or d.get('id') or 0)
+                except (ValueError, TypeError):
+                    product_id_val = False
+
+                if not product_id_val:
+                    continue
+
+                color_id_val = int(d.get('color_id') or 0) if d.get('color_id') else False
+                costo_val = float(d.get('costo_rack_raw') or d.get('costo_rack') or 0.0)
+                cantidad_val = int(d.get('cantidad_racks') or 0)
+
                 dp.create({
                     'numero': numero_val,
-                    'costo_rack': d.get('costo_rack') or '',
-                    'rack_id': rack_id_val or 0,
-                    'cantidad_racks': d.get('cantidad_racks') or '',
-                    'pedido_id' : pedido_id        
+                    'costo_rack': costo_val,
+                    'product_id': product_id_val,
+                    'rack_id': rack_id_val,
+                    'cantidad_racks': cantidad_val,
+                    'color': color_id_val,
+                    'pedido_id': pedido_id
                 })
 
-        self.crear_aviso(pedido.id)
         return {
             'success': True,
         }
-
-
-
-    @api.model
-    def eliminar_pedido(self, pedido_id):
-        pedido = self.browse(pedido_id)
-        if not pedido.exists():
-            return {'success': False, 'error': 'Pedido no encontrado'}
-        
-        pedido.unlink()
-        return {'success': True}
 
 
     @api.model
@@ -532,25 +551,30 @@ class rastreo_paquetes(models.Model):
             order='numero desc',
         )
 
-
         lista_pagos_cliente = []
         if cotizacion and cotizacion.exists():
-            facturas = cotizacion.invoice_ids.filtered(
+            facturas = cotizacion.invoice_ids
+            facturas_origen = self.env['account.move'].search([
+                ('move_type', '=', 'out_invoice'),
+                ('state', '=', 'posted'),
+                ('invoice_origin', '=', cotizacion.name),
+            ])
+            facturas = (facturas | facturas_origen).filtered(
                 lambda f: f.move_type == 'out_invoice' and f.state == 'posted'
             )
-            domain_pagos = [
+
+            pagos_factura = self.env['account.payment'].search([
+                ('reconciled_invoice_ids', 'in', facturas.ids)
+            ]) if facturas else self.env['account.payment']
+
+            pagos_anticipo = self.env['account.payment'].search([
                 ('partner_id', '=', cotizacion.partner_id.id),
-                ('state', 'in', ['paid', 'in_process']),
                 ('payment_type', '=', 'inbound'),
-            ]
-            if cotizacion.name:
-                domain_pagos.append('|')
-                domain_pagos.append(('memo', 'ilike', cotizacion.name))
-                domain_pagos.append(('memo', 'ilike', 'INV'))
+                ('state', '=', 'posted'),
+                ('move_id.ref', 'ilike', cotizacion.name),  
+            ]) if cotizacion.partner_id else self.env['account.payment']
 
-            pagos_directos = self.env['account.payment'].search(domain_pagos)
-
-            pagos_totales = facturas.mapped('payment_ids') | pagos_directos
+            pagos_totales = pagos_factura | pagos_anticipo
 
             for pago in pagos_totales:
                 if any(x['payment_id'] == pago.id for x in lista_pagos_cliente):
@@ -558,40 +582,25 @@ class rastreo_paquetes(models.Model):
 
                 factura_origen = ''
                 if pago.reconciled_invoice_ids:
-                    factura_origen = pago.reconciled_invoice_ids[0].name or ''
+                    factura_origen = ', '.join(pago.reconciled_invoice_ids.mapped('name'))
                 elif pago.reconciled_bill_ids:
-                    factura_origen = pago.reconciled_bill_ids[0].name or ''
+                    factura_origen = ', '.join(pago.reconciled_bill_ids.mapped('name'))
 
                 lista_pagos_cliente.append({
                     'payment_id': pago.id,
                     'referencia': pago.name or '',
                     'monto': pago.amount,
-                    'moneda': pago.currency_id.name,
+                    'moneda': pago.currency_id.name or '',
                     'fecha': str(pago.date) if pago.date else '',
                     'estado': pago.state,
                     'diario': pago.journal_id.name or '',
                     'factura': factura_origen,
                 })
 
-
-        ###=============Sin usar pero se quedara aqui por si acaso=============
-        lista_anticipos_cliente = []
-        for a in anticipos_cliente:
-            lista_anticipos_cliente.append({
-                'anticipo_id': a.id,
-                'numero': a.numero or 0,
-                'fecha_editado': a.fecha_editado or "",
-                'fecha_anticipo': a.fecha_anticipo or "",
-                'cantidad': a.cantidad or 0,
-                'precio_dolar': a.precio_dolar or 0,
-                'pdf_anticipo_cliente': bool(a.pdf_anticipo_cliente),
-            })
         anticipos_proveedor = self.env['rastreo.detalle_proveedor'].search(
             [('pedido_id', '=', pedido_id)],
             order='numero desc',
         )
-        #======================================================================
-
 
         lista_anticipos_proveedor = []
         for a in anticipos_proveedor:
@@ -607,36 +616,40 @@ class rastreo_paquetes(models.Model):
  
         lista_cotizacion_detalle = []
 
-        if cotizacion and cotizacion.exists() and cotizacion.order_line:
+        detalles_guardados = self.env['rastreo.cotizacion_detalle'].search([('pedido_id', '=', pedido_id)])
+        if detalles_guardados:
+            for d in detalles_guardados:
+                lista_cotizacion_detalle.append({
+                    'id': d.product_id.id,
+                    'nombre': d.product_id.name,
+                    'rack_id': d.rack_id.id if d.rack_id else 0,
+                    'precio': d.costo_rack,
+                    'unidad': d.product_id.uom_id.name if d.product_id.uom_id else '',
+                    'cantidad': d.cantidad_racks,
+                    'subtotal': d.costo_rack * d.cantidad_racks,
+                    'color_id': d.color.id if d.color else False,
+                    'color_hex': d.color.color_hex if d.color else "#ffffff",
+                    'color_clave': d.color.clave if d.color else '',
+                })
+        elif cotizacion and cotizacion.exists() and cotizacion.order_line:
             for linea in cotizacion.order_line:
-                # Dominio correcto: nombre de campo, sin ".id"
                 rack = self.env['rastreo.rack_detalle'].search(
                     [('producto_id', '=', linea.product_id.id)],
                     order='id desc',
                     limit=1,
                 )
-                if rack:
-                    lista_cotizacion_detalle.append({
-                        'id': linea.product_id.id,
-                        'nombre': linea.product_id.name,
-                        'codigo': rack.clave or '',
-                        'rack_id': rack.id,
-                        'precio': linea.price_unit,
-                        'unidad': linea.product_uom_id.name,
-                        'cantidad': linea.product_uom_qty,
-                        'subtotal': linea.price_subtotal,
-                    })
-                else:
-                    lista_cotizacion_detalle.append({
-                        'id': linea.product_id.id,
-                        'nombre': linea.product_id.name,
-                        'codigo': linea.product_id.default_code or '',
-                        'rack_id': 0,
-                        'precio': linea.price_unit,
-                        'unidad': linea.product_uom_id.name,
-                        'cantidad': linea.product_uom_qty,
-                        'subtotal': linea.price_subtotal,
-                    })
+                lista_cotizacion_detalle.append({
+                    'id': linea.product_id.id,
+                    'nombre': linea.product_id.name,
+                    'rack_id': rack.id if rack else 0,
+                    'precio': linea.price_unit,
+                    'unidad': linea.product_uom_id.name,
+                    'cantidad': linea.product_uom_qty,
+                    'subtotal': linea.price_subtotal,
+                    'color_id': False,
+                    'color_hex': '#cccccc',
+                    'color_clave': '',
+                })
         
         return {
             'success': True,
@@ -649,7 +662,6 @@ class rastreo_paquetes(models.Model):
                 'total_cliente': cotizacion.amount_total or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
                 'numero_contrato': pedido.numero_contrato or '',
-
                 'fecha_creacion': pedido.fecha_creacion or '',
                 'CRD': pedido.CRD or '',
                 'ETD': pedido.ETD or '',
@@ -659,7 +671,6 @@ class rastreo_paquetes(models.Model):
                 'fecha_compromiso_cliente_2': pedido.fecha_compromiso_cliente_2 or '',
                 'fecha_compromiso_cliente_3': pedido.fecha_compromiso_cliente_3 or '',
                 'fecha_compromiso_cliente_4': pedido.fecha_compromiso_cliente_4 or '',
-
                 'fecha_compromiso_proveedor_1' : pedido.fecha_compromiso_proveedor_1 or '',
                 'fecha_compromiso_proveedor_2' : pedido.fecha_compromiso_proveedor_2 or '',
                 'fecha_compromiso_proveedor_3' : pedido.fecha_compromiso_proveedor_3 or '',
@@ -677,12 +688,10 @@ class rastreo_paquetes(models.Model):
                 'pdf_prefactura': bool(pedido.pdf_prefactura),
 
                 #listas
-                'lista_anticipos_cliente': lista_anticipos_cliente,
                 'lista_anticipos_proveedor': lista_anticipos_proveedor,
                 'lista_pagos_cliente': lista_pagos_cliente,
                 'actualizaciones': lista_actualizaciones,
                 'detalle_racks': lista_cotizacion_detalle
-
             }
         }
 
@@ -775,16 +784,15 @@ class rastreo_paquetes(models.Model):
         ## Avisos de Pagos
 
         pagado = 0.0
-        if pagado < pedido.termino_3:
-            if pedido.fecha_compromiso_cliente_3:
-                dias_restantes = (pedido.fecha_compromiso_cliente_3 - hoy).days
-                if dias_restantes <= 5:
-                    if dias_restantes <= 1:
-                        aviso.append({ URGENTE , "Anticipo de cliente 3"}) 
-                    else:
-                        aviso.append({ MEDIA , "Anticipo de cliente 3"}) 
+        if pagado < pedido.termino_1:
+            if pedido.fecha_compromiso_proveedor_1:
+                dias_restantes = (pedido.fecha_compromiso_proveedor_1 - hoy).days
+                if dias_restantes <= 1:
+                    aviso.append({ URGENTE , "Anticipo de proveedor 1"}) 
+                else:
+                    aviso.append({ MEDIA , "Anticipo de proveedor 1"}) 
 
-        if count_proveedor < 3:
+        if pagado < pedido.termino_2:
             if pedido.fecha_compromiso_proveedor_3:
                 dias_restantes = (pedido.fecha_compromiso_proveedor_3 - hoy).days
                 if dias_restantes <= 5:
@@ -794,19 +802,30 @@ class rastreo_paquetes(models.Model):
                         aviso.append({ MEDIA , "Anticipo de proveedor 3"}) 
 
 
+        if pagado < pedido.termino_3:
+            if pedido.fecha_compromiso_cliente_3:
+                dias_restantes = (pedido.fecha_compromiso_cliente_3 - hoy).days
+                if dias_restantes <= 5:
+                    if dias_restantes <= 1:
+                        aviso.append({ URGENTE , "Anticipo de cliente 3"}) 
+                    else:
+                        aviso.append({ MEDIA , "Anticipo de cliente 3"}) 
+
+
+
+
         pedido.write({
             'aviso' : aviso
         })
         return (aviso)
 
         
-        
     @api.model
     def listar_pedidos(self, termino_busqueda=None):
         domain = []
         if termino_busqueda:
             domain = [
-                '|',
+                '|', '|',
                 ('numero_guia', 'ilike', termino_busqueda),
                 ('cliente_id.name', 'ilike', termino_busqueda),
                 ('numero_contrato', 'ilike', termino_busqueda),
@@ -835,31 +854,41 @@ class rastreo_paquetes(models.Model):
             total_pagos_cliente = 0.0
             count_pagos_cliente = 0
             if cotizacion:
+                # 1. Facturas publicadas de la venta
                 facturas = cotizacion.invoice_ids.filtered(
                     lambda f: f.move_type == 'out_invoice' and f.state == 'posted'
                 )
-                
+
+                # 2. Buscar pagos relacionados directamente mediante las facturas
+                pagos_factura = self.env['account.payment'].search([
+                    ('reconciled_invoice_ids', 'in', facturas.ids)
+                ]) if facturas else self.env['account.payment']
+
+                # 3. Buscar pagos/anticipos directos utilizando la referencia del asiento contable (move_id.ref)
                 domain_pagos = [
                     ('partner_id', '=', cotizacion.partner_id.id),
-                    ('state', 'in', ['paid', 'in_process']), 
-                    ('payment_type', '=', 'inbound'), 
+                    ('state', '=', 'posted'),  # Estado correcto para pagos confirmados
+                    ('payment_type', '=', 'inbound'),
                 ]
                 
                 if cotizacion.name:
-                    domain_pagos.append('|')
-                    domain_pagos.append(('memo', 'ilike', cotizacion.name))
-                    domain_pagos.append(('memo', 'ilike', 'INV')) 
+                    domain_pagos.extend([
+                        '|',
+                        ('move_id.ref', 'ilike', cotizacion.name),
+                        ('move_id.ref', 'ilike', 'INV'),
+                    ])
 
-                pagos_directos = self.env['account.payment'].search(domain_pagos)
+                pagos_directos = self.env['account.payment'].search(domain_pagos) if cotizacion.partner_id else self.env['account.payment']
                 
-                pagos_totales = facturas.mapped('payment_ids') | pagos_directos
+                # Unir pagos de factura y pagos directos sin duplicados
+                pagos_totales = pagos_factura | pagos_directos
                 
                 for pago in pagos_totales:
                     count_pagos_cliente += 1
                     total_pagos_cliente += pago.currency_id._convert(
                         pago.amount,
-                           self.env.company.currency_id,
-                            self.env.company,
+                        self.env.company.currency_id,
+                        self.env.company,
                         pago.date or fields.Date.today(),
                     )
 
@@ -875,7 +904,6 @@ class rastreo_paquetes(models.Model):
                     count_lineas_detalle += 1
                     total_racks += linea.product_uom_qty or 0
                     total_detalle += linea.price_subtotal or 0.0
-
 
             saldo_cliente = (total_cotizacion or 0.0) - total_pagos_cliente
             saldo_proveedor = (p.total_proveedor or 0.0) - total_anticipos_proveedor

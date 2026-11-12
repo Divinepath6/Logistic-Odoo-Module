@@ -8,10 +8,10 @@
                 <button type="button"
                     class="odoo-btn odoo-btn-secondary"
                     t-on-click="onClickRegresar">
-                    <i class="fa fa-home" /></button>
+                    <i class="fa fa-home" />
+                </button>
 
-                <h2>
-                    INVOICE: <t t-esc="state.numeroContrato or 'Sin número'" />
+                <h2> INVOICE: <t t-esc="state.numeroContrato or 'Sin número'" />
                 </h2>
 
                 <div class="ms-auto d-flex gap-2">
@@ -22,9 +22,9 @@
                         <i class="fa fa-save" /> Guardar </button>
 
                     <button type="button"
-                    class="odoo-btn odoo-btn-ghost"
-                     t-on-click="onClickCambiarEstado">
-                    <i class="fa fa-exchange" /> Siguiente Estado </button>
+                        class="odoo-btn odoo-btn-ghost"
+                        t-on-click="onClickCambiarEstado">
+                        <i class="fa fa-exchange" /> Siguiente Estado </button>
                 </div>
             </div>
 
@@ -57,7 +57,6 @@
                                     <input type="text"
                                         id="numero_guia"
                                         class="odoo-input"
-                                        placeholder="Ej. GUIA-001"
                                         t-model="state.guia" />
                                 </div>
                             </div>
@@ -193,13 +192,14 @@
                         <div class="odoo-card-title">
                             <i class="fa fa-info-circle" /> Fechas: </div>
                         <div class="cc-card">
+
                             <h3 class="cc-card-title">
                                 <span class="cc-badge-dot">
                                     Paquete:
                                 </span>
                             </h3>
-                            
-                            <label class="odoo-label" for="fecha_creacion"> 
+
+                            <label class="odoo-label" for="fecha_creacion">
                                 Fecha de creacion de pedido: </label>
                             <input type="date"
                                 id="fecha_creacion"
@@ -217,7 +217,24 @@
                                 t-att-value="state.fecha_termino_produccion"
                                 t-on-change="onVerificarFecha" />
 
-                            <label class="odoo-label" for="ETA"> ETA: </label>
+                            <label class="odoo-label" for="CRD"> Cargo Ready Date (CRD): </label>
+                            <input type="date"
+                                id="CRD"
+                                class="form-control"
+                                data-field="CRD"
+                                t-att-value="state.CRD"
+                                t-on-change="onVerificarFecha" />
+
+
+                            <label class="odoo-label" for="ETD"> Estimated Time of Departure (ETD): </label>
+                            <input type="date"
+                                id="ETD"
+                                class="form-control"
+                                data-field="ETD"
+                                t-att-value="state.ETD"
+                                t-on-change="onVerificarFecha" />
+
+                            <label class="odoo-label" for="ETA"> Estimated Time of Arrival (ETA): </label>
                             <input type="date"
                                 id="ETA"
                                 class="form-control"
@@ -225,31 +242,25 @@
                                 t-att-value="state.ETA"
                                 t-on-change="onVerificarFecha" />
 
-                            <label class="odoo-label" for="ETD"> ETD: </label>
-                            <input type="date"
-                                id="ETD"
-                                class="form-control"
-                                data-field="ETD"
-                                t-att-value="state.ETD"
-                                t-on-change="onVerificarFecha" />
-                        </div>
-                        <div class="cc-card">
-                            <h3 class="cc-card-title">
-                                <span class="cc-badge-dot">
-                                    Fechas limite de compromiso de Pago cliente:
-                                </span>
 
-                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="odoo-card odoo-card-accent">
+                        <div class="odoo-card-title">
+                            <i class="fa fa-info-circle" /> Fechas limite de compromiso de Pago
+                            cliente </div>
+                        <div class="cc-card">
                             <!-- 
         <label class="odoo-label" for="fecha_compromiso_cliente_1">Fecha 1
-            (20%): </label>
+            (%): </label>
         <input type="date"
             id="fechaAnticipo1"
             class="form-control"
             t-model="state.fecha_compromiso_cliente_1" />
             -->
                             <label class="odoo-label" for="fecha_compromiso_cliente_2"> Anticipo 2
-                                (25%): </label>
+                                (%): </label>
                             <input type="date"
                                 id="fechaAnticipo2"
                                 class="form-control"
@@ -259,7 +270,7 @@
                             />
 
                             <label class="odoo-label" for="fecha_compromiso_cliente_3"> Anticipo 3
-                                (25%): </label>
+                                (%): </label>
                             <input type="date"
                                 id="fechaAnticipo3"
                                 class="form-control"
@@ -268,29 +279,33 @@
                                 t-on-change="onVerificarFecha" />
 
                             <label class="odoo-label" for="fecha_compromiso_cliente_4"> Balance
-                                (30%): </label>
+                                (%): </label>
                             <input type="date"
                                 id="fechaAnticipo4"
                                 class="form-control"
                                 data-field="fecha_compromiso_cliente_4"
                                 t-att-value="state.fecha_compromiso_cliente_4"
                                 t-on-change="onVerificarFecha" />
+                        </div>
+                    </div>
 
-                            <h3 class="cc-card-title">
-                                <span class="cc-badge-dot">
-                                    Fechas limite de compromiso de Pago Proveedor
-                                </span>
-                            </h3>
+                    <div class="odoo-card odoo-card-accent">
+                        <div class="odoo-card-title">
+                            <i class="fa fa-info-circle" /> Fechas limite de compromiso de Pago
+                            Proveedor </div>
+                        <div class="cc-card">
+
                             <!-- 
-        <label class="odoo-label" for="fecha_compromiso_proveedor_1"> Antipo 2
-            (20%): </label>
-        <input type="date"
-            id="fechaAnticipoP1"
-            class="form-control"
-            t-model="state.fecha_compromiso_proveedor_1" />
-            -->
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_2"> Anticipo 2
-                                (30%): </label>
+                                    <label class="odoo-label" for="fecha_compromiso_proveedor_1"> Antipo 2
+                                        (%): </label>
+                                    <input type="date"
+                                        id="fechaAnticipoP1"
+                                        class="form-control"
+                                        t-model="state.fecha_compromiso_proveedor_1" />
+                                        -->
+                            <label class="odoo-label" for="fecha_compromiso_proveedor_2">
+                                Anticipo 2
+                                (%): </label>
                             <input type="date"
                                 id="fechaAnticipoP2"
                                 class="form-control"
@@ -298,8 +313,9 @@
                                 t-att-value="state.fecha_compromiso_proveedor_2"
                                 t-on-change="onVerificarFecha" />
 
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_3"> Anticipo 3
-                                (20%): </label>
+                            <label class="odoo-label" for="fecha_compromiso_proveedor_3">
+                                Anticipo 3
+                                (%): </label>
                             <input type="date"
                                 id="fechaAnticipoP3"
                                 class="form-control"
@@ -307,7 +323,8 @@
                                 t-att-value="state.fecha_compromiso_proveedor_3"
                                 t-on-change="onVerificarFecha" />
 
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_4"> Balance
+                            <label class="odoo-label" for="fecha_compromiso_proveedor_4">
+                                Balance
                                 (Balance): </label>
                             <input type="date"
                                 id="fechaAnticipoP4"
@@ -316,11 +333,10 @@
                                 t-att-value="state.fecha_compromiso_proveedor_4"
                                 t-on-change="onVerificarFecha" />
                         </div>
-
                     </div>
 
-                    <!-- CLIENTE  -->
-                    <div class="odoo-card">
+                    <div
+                        class="odoo-card">
                         <div class="odoo-card-title">
                             <i class="fa fa-user" /> Cliente (Pagos registrados) </div>
 
@@ -382,7 +398,7 @@
                                         </tr>
                                     </t>
                                 </tbody>
-                                
+
                                 <div class="text-center">
                                     <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
                                         t-on-click="() => this.onEditarDetalleCliente()">
@@ -456,7 +472,7 @@
                             </span>
                         </div>
 
-                        
+
                         <div class="odoo-result-row">
                             <span class="odoo-result-label">Prefactura de Proveedor</span>
                             <span>
@@ -478,7 +494,6 @@
                         </div>
 
 
-                        <!-- invoice -->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label"> invoice </span>
                             <span>
@@ -499,10 +514,6 @@
                         </div>
 
 
-                        <!-- Contrato Proveedor -->
-
-
-                        <!-- Factura Proveedor -->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label">Factura Proveedor </span>
                             <span>
@@ -523,7 +534,6 @@
                             </span>
                         </div>
 
-                        <!-- ETA-->
                         <div class="odoo-result-row">
                             <span class="odoo-result-label"> BL </span>
                             <span>
@@ -643,9 +653,30 @@
                                 <tbody>
                                     <t t-if="state.detalleRacks and state.detalleRacks.length">
                                         <tr t-foreach="state.detalleRacks" t-as="r" t-key="r.id">
-
                                             <td>
-                                                <t t-esc="r.rack_nombre or ''" />
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 0.75rem;">
+                                                    <div title="Haz clic para cambiar el color"
+                                                        style="position: relative; cursor: pointer; display: inline-flex; align-items: center;"
+                                                        t-on-click="() => this.onEditarColorRack(r)">
+
+                                                        <span
+                                                            t-att-style="'background-color: ' + (r.colorHex || '#cccccc') + '; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 1px solid #ccc; display: inline-block;'" />
+
+                                                        <i class="fa fa-pencil"
+                                                            style="position: absolute; font-size: 0.65rem; background: rgba(0,0,0,0.6); color: #fff; border-radius: 50%; padding: 2px; bottom: -2px; right: -2px;" />
+                                                    </div>
+
+                                                    <div>
+                                                        <strong>
+                                                            <t t-esc="r.rack_nombre or ''" />
+                                                        </strong>
+                                                        <div class="odoo-text-muted"
+                                                            style="font-size: 0.75rem;"> Clave: <t
+                                                                t-esc="r.colorClave || 'N/A'" />
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="text-end">
                                                 <t t-esc="r.costo_rack or 0" />
@@ -656,15 +687,6 @@
                                             <td class="text-end">
                                                 <t t-esc="r.subtotal or 0" />
                                             </td>
-
-                                            <!-- 
-                                            <td class="text-end">
-                                                <button class="odoo-btn odoo-btn-sm odoo-btn-ghost"
-                                                        t-on-click="() => this.onEditarDetalleRacks(r)">
-                                                    <i class="fa fa-pencil"/>
-                                                </button>
-                                            </td
-                                            >-->
 
                                         </tr>
                                     </t>
@@ -678,15 +700,9 @@
                                 </tbody>
                             </table>
                         </div>
-                        <!-- creacion de detalle para detalle rack 
-                        <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
-                                t-on-click="() => this.onEditarDetalleRacks()">
-                            <i class="fa fa-plus"/> Agregar Rack
-                        </button>
-                        -->
                     </div>
-                </div>
 
+                </div>
             </div>
 
             <!-- ============================================

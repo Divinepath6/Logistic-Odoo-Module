@@ -26,7 +26,6 @@ class rastreo_anticipo_detalle_cliente(models.Model):
     pdf_anticipo_cliente = fields.Binary(string='Documento PDF', attachment=True)
     pdf_anticipo_cliente_nombre = fields.Char(string='Nombre del PDF')
 
-
     tipo_registro = fields.Selection(
         selection=[
             ('pago', 'Pago'),
@@ -46,7 +45,6 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         ondelete='set null',
     )
 
-
     def _get_sale_order(self, pedido):
         return pedido.sale_order_id
 
@@ -60,51 +58,62 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         return journal
 
     def _crear_pago(self, sale_order, cantidad, fecha, ref, currency):
-        invoice = self.env['account.move'].search([
-            ('invoice_origin', '=', sale_order.name),
-            ('move_type', '=', 'out_invoice'),
-            ('state', '=', 'posted'),
-            ('payment_state', '!=', 'paid'),
-        ], limit=1)
-        
-        if not invoice:
-            raise UserError(_('No hay factura publicada pendiente de pago para esta cotización.'))
-        
-        journal = self._get_bank_journal()
-        
-        wizard = self.env['account.payment.register'].with_context(
-            active_model='account.move',
-            active_ids=invoice.ids,
-        ).create({
-            'payment_date': fecha,
-            'amount': cantidad,
-            'journal_id': journal.id,
-            'communication': ref,
-            'currency_id': currency.id,
-        })
-        
-        payment = wizard.action_create_payments()
-        return payment
+            journal = self._get_bank_journal()
+            payment = self.env['account.payment'].create({
+                'payment_type': 'inbound',
+                'partner_type': 'customer',
+                'partner_id': sale_order.partner_id.id,
+                'amount': cantidad,
+                'date': fecha,
+                'journal_id': journal.id,
+                'currency_id': currency.id,
+            })
 
+            if payment.move_id:
+                payment.move_id.write({'ref': ref})
 
+            payment.action_post()
+            
+            facturas_pendientes = sale_order.invoice_ids.filtered(
+                lambda f: f.move_type == 'out_invoice' and f.state == 'posted' and f.payment_state != 'paid'
+            )
+            if facturas_pendientes:
+                lines = (payment.line_ids + facturas_pendientes.line_ids).filtered(
+                    lambda l: l.account_id.account_type == 'asset_receivable' and not l.reconciled
+                )
+                if lines:
+                    lines.reconcile()
+
+            return payment
+
+    
     def _crear_factura(self, sale_order, cantidad, fecha, ref, currency):
-        vals = {
+        journal = self.env['account.journal'].search([
+            ('type', '=', 'sale'),
+            ('company_id', '=', self.env.company.id)
+        ], limit=1)
+
+        if not journal:
+            raise UserError(_('No hay un diario de ventas configurado para la compañía.'))
+
+        move_vals = {
             'move_type': 'out_invoice',
             'partner_id': sale_order.partner_id.id,
             'invoice_date': fecha,
-            'invoice_origin': ref,
             'currency_id': currency.id,
+            'invoice_origin': sale_order.name,
+            'ref': ref,
+            'journal_id': journal.id,
             'invoice_line_ids': [(0, 0, {
-                'name': ref,
-                'quantity': 1,
+                'name': f'Anticipo / Factura asociada a {sale_order.name}',
+                'quantity': 1.0,
                 'price_unit': cantidad,
             })],
         }
-        invoice = self.env['account.move'].create(vals)
-        invoice.action_post() 
+        invoice = self.env['account.move'].create(move_vals)
+        invoice.action_post()
         return invoice
-
-
+    
     @api.model
     def guardar_detalle(self, pedido_id, anticipoId, datos, pdf=None, pdf_name=None):
         if not pedido_id:
@@ -117,55 +126,53 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         anticipo = self.browse(anticipoId)
 
         with self.env.cr.savepoint():
-                if anticipo.exists():
-                    anticipo.write({
-                        'pedido_id': pedido_id,
-                        'precio_dolar': datos.get('precio_dolar') or 0.0,
-                    })
-                    return {'success': True, 'anticipo_id': anticipo.id}
-
-                sale_order = self._get_sale_order(pedido)
-                if not sale_order:
-                    return {'success': False, 'error': 'El pedido no tiene una cotización asociada.'}
-
-                tipo = datos.get('tipo') or 'pago'
-                cantidad = datos.get('cantidad') or 0.0
-                precio_dolar = datos.get('precio_dolar') or 0.0
-                fecha_anticipo = datos.get('fecha_anticipo') or fields.Date.today()
-
-                # ... (tus validaciones de cantidad y precio_dolar) ...
-
-                usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
-                currency = usd_currency or self.env.company.currency_id
-                ref = f'Anticipo {sale_order.name}'
-                numero = self.search_count([('pedido_id', '=', pedido_id)]) + 1
-
-                payment = self.env['account.payment']
-                invoice = self.env['account.move']
-
-                if tipo == 'pago':
-                    payment = self._crear_pago(sale_order, cantidad, fecha_anticipo, ref, currency)
-                else:
-                    invoice = self._crear_factura(sale_order, cantidad, fecha_anticipo, ref, currency)
-
-                valores = {
+            if anticipo.exists():
+                anticipo.write({
                     'pedido_id': pedido_id,
-                    'numero': numero,
-                    'currency_id': currency.id,
-                    'fecha_editado': fields.Datetime.now(),
-                    'fecha_anticipo': fecha_anticipo,
-                    'cantidad': cantidad,
-                    'precio_dolar': precio_dolar,
-                    'tipo_registro': tipo,
-                    'account_payment_id': payment.id if payment else False,
-                    'account_move_id': invoice.id if invoice else False,
-                }
-                if pdf:
-                    valores['pdf_anticipo_cliente'] = pdf
-                    valores['pdf_anticipo_cliente_nombre'] = (
-                        pdf_name or f"anticipo_{pedido.numero_guia}_{numero}.pdf"
-                    )
-                detalle = self.create(valores)
+                    'precio_dolar': datos.get('precio_dolar') or 0.0,
+                })
+                return {'success': True, 'anticipo_id': anticipo.id}
+
+            sale_order = self._get_sale_order(pedido)
+            if not sale_order:
+                return {'success': False, 'error': 'El pedido no tiene una cotización asociada.'}
+
+            tipo = datos.get('tipo') or 'pago'
+            cantidad = datos.get('cantidad') or 0.0
+            precio_dolar = datos.get('precio_dolar') or 0.0
+            fecha_anticipo = datos.get('fecha_anticipo') or fields.Date.today()
+
+            usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
+            currency = usd_currency or self.env.company.currency_id
+            ref = f'Anticipo {sale_order.name}'
+            numero = self.search_count([('pedido_id', '=', pedido_id)]) + 1
+
+            payment = self.env['account.payment']
+            invoice = self.env['account.move']
+
+            if tipo == 'pago':
+                payment = self._crear_pago(sale_order, cantidad, fecha_anticipo, ref, currency)
+            else:
+                invoice = self._crear_factura(sale_order, cantidad, fecha_anticipo, ref, currency)
+
+            valores = {
+                'pedido_id': pedido_id,
+                'numero': numero,
+                'currency_id': currency.id,
+                'fecha_editado': fields.Datetime.now(),
+                'fecha_anticipo': fecha_anticipo,
+                'cantidad': cantidad,
+                'precio_dolar': precio_dolar,
+                'tipo_registro': tipo,
+                'account_payment_id': payment.id if payment else False,
+                'account_move_id': invoice.id if invoice else False,
+            }
+            if pdf:
+                valores['pdf_anticipo_cliente'] = pdf
+                valores['pdf_anticipo_cliente_nombre'] = (
+                    pdf_name or f"anticipo_{pedido.numero_guia}_{numero}.pdf"
+                )
+            detalle = self.create(valores)
 
         return {'success': True, 'anticipo_id': detalle.id}
     

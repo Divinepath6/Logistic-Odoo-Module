@@ -17,7 +17,7 @@ export class componente_rack_colores_edicion extends Component {
             editandoId: null,
             clave: "",
             nombre: "",
-            color_hex: "#3498db"
+            color_hex: "#ec962e",
         });
 
         onWillStart(async () => {
@@ -52,7 +52,7 @@ export class componente_rack_colores_edicion extends Component {
         this.state.editandoId = null;
         this.state.clave = "";
         this.state.nombre = "";
-        this.state.color_hex = "#3498db";
+        this.state.color_hex = "#ec962e";
     }
 
     async guardarColor() {

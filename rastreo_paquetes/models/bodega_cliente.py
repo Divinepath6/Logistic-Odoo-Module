@@ -122,7 +122,7 @@ class rastreo_bodega_cliente(models.Model):
                         'rack_id': rack.id, 
                         'cantidad': int(d.get('racks_ocupados') or 0),
                         'numero': d.get('numero') or '',
-                        'color' : d.get('color_id'),
+                        'color' : d.get('color_id') or False,
                     })
             if not guardar_cotizacion:
                 return {'success': True,'id': pedido.id}
@@ -130,40 +130,44 @@ class rastreo_bodega_cliente(models.Model):
             sale = pedido.sale_order_id
             if not sale.exists():
                 return {'success': False, 'error' : "No existe la Cotización"}
+            
             lineas_vals = []
-            mapa_racks = {}
             for info in racks_info:
                 lineas_vals.append((0, 0, {
                     'product_id': info['producto_'].id,
                     'product_uom_qty': info['cantidad'] or 1,
                     'price_unit': info['costo'],
                     'name': info['producto_'].name,
+                    'rastreo_rack_id': info['rack_id'] or False,
+                    'rastreo_color_id': info['color'] or False,
+                    'rastreo_numero': info['numero'] or '',
                 }))
-                mapa_racks[info['producto_'].id] = info.get('rack_id', False)
+
             sale.write({
-                'order_line': [(5, 0, 0)] + lineas_vals, 
+                'order_line': [(5, 0, 0)] + lineas_vals,
                 'partner_id': pedido.cliente_id.id,
             })
 
             detalle = self.env['rastreo.cotizacion_detalle']
             detalle.search([('pedido_id', '=', pedido_id)]).unlink()
 
+            numero = 1
             for linea in sale.order_line:
                 if linea.display_type:
                     continue
-                rack_id = mapa_racks.get(linea.product_id.id)
-                
+
                 detalle.create({
-                    'numero': len(pedido.detalle_cotizacion_ids) + 1,
+                    'numero': numero,
                     'costo_rack': linea.price_unit,
-                    'product_id': linea.product_id.id,  
-                    'rack_id': rack_id,       
-                    'color': linea.color,
+                    'product_id': linea.product_id.id,
+                    'rack_id': linea.rastreo_rack_id.id or False,
+                    'color': linea.rastreo_color_id.id or False,
                     'currency_id': usd_currency.id,
                     'cantidad_racks': int(linea.product_uom_qty),
                     'pedido_id': pedido_id,
                     'sale_order_line_id': linea.id,
                 })
+                numero += 1
 
         return {
             'id': pedido.id,

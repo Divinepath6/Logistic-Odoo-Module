@@ -356,11 +356,6 @@ export class PantallaCroquis extends Component {
                     this.notification.add("Ha habido un error al guardar", { type: "warning" });
                     return
                 }
-                const r = await this.guardarDetalle();
-                if(r.success === false){
-                    this.notification.add("Ha habido un error cambiar de estado", { type: "warning" });
-                    return
-                }
                 await this.cambiarEstado();
                 await this.action.doAction("rastreo_paquetes.action_pantalla_principal");
             },
@@ -594,7 +589,7 @@ export class PantallaCroquis extends Component {
         if (typeof cotizacion !== 'boolean') cotizacion = false;
         
         this.guardarBodegaActual();
-        let altoBodega   = Number(this.state.alturaBodega) || 1;
+        let altoBodega  = Number(this.state.alturaBodega) || 1;
 
         if(altoBodega < 1){
             altoBodega = 1;
