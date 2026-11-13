@@ -97,22 +97,29 @@ export class PantallaCroquis extends Component {
         this.searchTimeout = null;
     }
     //hechos para cargar y guardar en la lista de bodegas[] hechos para cargar y guardar en la lista de bodegas[]
-    cargarBodega(index){
+   cargarBodega(index){
         const bodega = this.state.bodegas[index];
         if (!bodega) return; 
+        
         this.state.minimoPasilloX = bodega.minimoPasilloX;
         this.state.minimoPasilloY = bodega.minimoPasilloY;        
         this.state.bodegaNombre = bodega.bodegaNombre;
         this.state.bodegaIndex = index;    
-        this.state.rackSeleccionadoIndex = bodega.rackId ? this.buscarRackPorId(bodega.rackId) : "";
-        const rack = this.state.rackTipos[this.state.rackSeleccionadoIndex];
+        
+        this.state.rackSeleccionadoIndex = bodega.rackSeleccionadoIndex !== undefined ? bodega.rackSeleccionadoIndex : "";
+        
+        const idx = parseInt(this.state.rackSeleccionadoIndex, 10);
+        const rack = !isNaN(idx) ? this.state.rackTipos[idx] : null;
+        
         if (rack) {
+            this.state.rackSeleccionadoCosto = rack[2];
             this.state.rackSeleccionadoAlmacenaje = rack[3];
         } else {
+            this.state.rackSeleccionadoCosto = bodega.rackSeleccionadoCosto || 0;
             this.state.rackSeleccionadoAlmacenaje = 0;
             this.state.rackSeleccionadoIndex = ""; 
         }
-        this.state.rackSeleccionadoCosto = bodega.rackSeleccionadoCosto;
+
         this.state.colorSeleccionadoId = bodega.colorId || false;
         this.state.colorSeleccionado = bodega.colorHex || "#cccccc";
         this.state.colorSeleccionadoClave = bodega.colorClave || "";
@@ -121,29 +128,30 @@ export class PantallaCroquis extends Component {
         this.state.anchoBodega = bodega.anchoBodega;
         this.state.largoBodega = bodega.largoBodega;
         this.state.comentarios = bodega.comentarios;
-        this.state.detalleRacks = [];
-        this.state.detalleRacks = bodega.detalleRacks;
+        this.state.detalleRacks = bodega.detalleRacks || [];
         this.state.sepParedArr = bodega.sepParedArr;
         this.state.sepParedAba = bodega.sepParedAba;
         this.state.sepParedIzq = bodega.sepParedIzq;
         this.state.sepParedDer = bodega.sepParedDer;
         this.state.racksOcupados = bodega.racksOcupados;
+        
         if (rack) {
             this.calcularRacks();
         }
     }
+
     crearBodegaLista(){
         this.guardarBodegaActual();
-        const numero = (this.state.bodegas.length + 1)
+        const numero = (this.state.bodegas.length + 1);
         this.state.bodegas.push({
             minimoPasilloX: 50,
             minimoPasilloY: 50, 
             bodegaNombre: "bodega " + numero,
-             rackSeleccionadoIndex: "", 
+            rackSeleccionadoIndex: "", 
             rackSeleccionadoCosto: 0,
             racksOcupados: 0,
             alturaBodega: 1, 
-            anchoBodega:0 ,
+            anchoBodega: 0,
             largoBodega: 0, 
             comentarios: "",
             sepParedArr: 30,
@@ -155,9 +163,12 @@ export class PantallaCroquis extends Component {
             colorHex: "#cccccc",
             colorClave: "",
         });
-        this.state.detalleRacks = []
-        this.state.bodegaIndex = this.state.bodegas.length- 1; 
+        this.state.detalleRacks = [];
+        this.state.bodegaIndex = this.state.bodegas.length - 1; 
+        
+        this.cargarBodega(this.state.bodegaIndex);
     }
+    
     guardarBodegaActual(){
         const idx = parseInt(this.state.rackSeleccionadoIndex, 10);
         const rackData = this.state.rackTipos[idx];
@@ -405,26 +416,35 @@ export class PantallaCroquis extends Component {
     onRackChange(ev) {
         const idx = parseInt(ev.target.value, 10);
         this.state.rackSeleccionadoIndex = isNaN(idx) ? "" : idx;
+
         if (isNaN(idx)) {
             this.state.racksOcupados = 0;
-            this.state.costoEstimado = "$0.00";
+            this.state.costoEstimado = 0;
+            this.state.costoEstimadoDisplay = "$0.00";
             this.state.rackSeleccionadoAlmacenaje = 0;
+            this.state.rackSeleccionadoCosto = 0;
+            this.guardarBodegaActual();   
             return;
         }
+
         const [, , costo, almacenaje] = this.state.rackTipos[idx];
         this.state.rackSeleccionadoCosto = costo;
         this.state.rackSeleccionadoAlmacenaje = almacenaje;
+
         this.calcularRacks();
     }
-
     onClickCrearBodega(){
         this.guardarBodegaActual();
         this.crearBodegaLista();
     }
-    onclickCambiarBodega(bodegaIndex){
+    onclickCambiarBodega(bodegaIndex) {
+        const newIndex = parseInt(bodegaIndex, 10);
+        if (isNaN(newIndex)) return;
+        if (newIndex === parseInt(this.state.bodegaIndex, 10)) return;
+
         this.guardarBodegaActual();
-        this.cargarBodega(bodegaIndex)
-    } 
+        this.cargarBodega(newIndex);
+    }
     async autoGuardado(){
         await onClickGuardar;
     }

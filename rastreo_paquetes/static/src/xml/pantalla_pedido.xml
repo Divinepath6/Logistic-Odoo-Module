@@ -285,56 +285,40 @@
                                 class="form-control"
                                 data-field="fecha_compromiso_cliente_4"
                                 t-att-value="state.fecha_compromiso_cliente_4"
-                                t-on-change="onVerificarFecha" />
+                                t-on-change="onVerificarFecha"/>
                         </div>
                     </div>
 
+                    <!-- compromisos de pagoss -->
                     <div class="odoo-card odoo-card-accent">
                         <div class="odoo-card-title">
-                            <i class="fa fa-info-circle" /> Fechas limite de compromiso de Pago
+                            <i class="fa fa-info-circle" /> Fechas límite de compromiso de pago -
                             Proveedor </div>
                         <div class="cc-card">
-
-                            <!-- 
-                                    <label class="odoo-label" for="fecha_compromiso_proveedor_1"> Antipo 2
-                                        (%): </label>
-                                    <input type="date"
-                                        id="fechaAnticipoP1"
-                                        class="form-control"
-                                        t-model="state.fecha_compromiso_proveedor_1" />
-                                        -->
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_2">
-                                Anticipo 2
-                                (%): </label>
-                            <input type="date"
-                                id="fechaAnticipoP2"
-                                class="form-control"
-                                data-field="fecha_compromiso_proveedor_2"
-                                t-att-value="state.fecha_compromiso_proveedor_2"
-                                t-on-change="onVerificarFecha" />
-
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_3">
-                                Anticipo 3
-                                (%): </label>
-                            <input type="date"
-                                id="fechaAnticipoP3"
-                                class="form-control"
-                                data-field="fecha_compromiso_proveedor_3"
-                                t-att-value="state.fecha_compromiso_proveedor_3"
-                                t-on-change="onVerificarFecha" />
-
-                            <label class="odoo-label" for="fecha_compromiso_proveedor_4">
-                                Balance
-                                (Balance): </label>
-                            <input type="date"
-                                id="fechaAnticipoP4"
-                                class="form-control"
-                                data-field="fecha_compromiso_proveedor_4"
-                                t-att-value="state.fecha_compromiso_proveedor_4"
-                                t-on-change="onVerificarFecha" />
+                            <t t-if="state.terminos and state.terminos.length > 0">
+                                <t t-foreach="state.terminos" t-as="t" t-key="t_index">
+                                    <div class="mb-3">
+                                        <label class="odoo-label">
+                                            <t t-esc="t.nombre or ('Término ' + (t_index + 1))" /> 
+                                                $<t
+                                                t-esc="t.cantidad" />
+                                                (<t
+                                                t-esc="t.porcentaje" />%): </label>
+                                        <input type="date"
+                                            class="form-control"
+                                            t-model="t.fecha_compromiso"
+                                            t-on-change="(ev) => this.onVerificarFechaTermino(t_index, ev)" />
+                                    </div>
+                                </t>
+                            </t>
+                            <t t-else="">
+                                <p class="text-muted text-center py-2">Primero agregue términos de
+                                    pago para configurar sus fechas.</p>
+                            </t>
                         </div>
                     </div>
 
+                    <!-- pagos de cliente -->
                     <div
                         class="odoo-card">
                         <div class="odoo-card-title">
@@ -466,7 +450,7 @@
                                 </t>
                                 <button type="button"
                                     class="odoo-btn odoo-btn-primary"
-                                    t-on-click=" () => this.verPDF('pdf_contrato_proveedor')">
+                                    t-on-click=" () => this.terminosCondiciones('pdf_contrato_proveedor')">
                                     <i class="fa fa-save" /> Ver </button>
 
                             </span>

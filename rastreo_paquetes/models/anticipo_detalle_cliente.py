@@ -20,8 +20,18 @@ class rastreo_anticipo_detalle_cliente(models.Model):
     )
     fecha_editado = fields.Datetime(string='Fecha de edición')
     fecha_anticipo = fields.Date(string='Fecha del anticipo')
+    
     cantidad = fields.Monetary(string='Cantidad en dólares')
-    precio_dolar = fields.Monetary(string='Precio del dólar al momento')
+
+    precio_dolar = fields.Monetary(
+        string='Precio del dólar al momento'
+    )
+    camtidad_mxn = fields.Monetary(
+        string='Precio del dólar al momento'
+    )
+    camtidad_usd = fields.Monetary(
+        string='Precio del dólar al momento'
+    )
 
     pdf_anticipo_cliente = fields.Binary(string='Documento PDF', attachment=True)
     pdf_anticipo_cliente_nombre = fields.Char(string='Nombre del PDF')
@@ -58,35 +68,34 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         return journal
 
     def _crear_pago(self, sale_order, cantidad, fecha, ref, currency):
-            journal = self._get_bank_journal()
-            payment = self.env['account.payment'].create({
-                'payment_type': 'inbound',
-                'partner_type': 'customer',
-                'partner_id': sale_order.partner_id.id,
-                'amount': cantidad,
-                'date': fecha,
-                'journal_id': journal.id,
-                'currency_id': currency.id,
-            })
+        journal = self._get_bank_journal()
+        payment = self.env['account.payment'].create({
+            'payment_type': 'inbound',
+            'partner_type': 'customer',
+            'partner_id': sale_order.partner_id.id,
+            'amount': cantidad,
+            'date': fecha,
+            'journal_id': journal.id,
+            'currency_id': currency.id,
+        })
 
-            if payment.move_id:
-                payment.move_id.write({'ref': ref})
+        if payment.move_id:
+            payment.move_id.write({'ref': ref})
 
-            payment.action_post()
-            
-            facturas_pendientes = sale_order.invoice_ids.filtered(
-                lambda f: f.move_type == 'out_invoice' and f.state == 'posted' and f.payment_state != 'paid'
+        payment.action_post()
+        
+        facturas_pendientes = sale_order.invoice_ids.filtered(
+            lambda f: f.move_type == 'out_invoice' and f.state == 'posted' and f.payment_state != 'paid'
+        )
+        if facturas_pendientes:
+            lines = (payment.line_ids + facturas_pendientes.line_ids).filtered(
+                lambda l: l.account_id.account_type == 'asset_receivable' and not l.reconciled
             )
-            if facturas_pendientes:
-                lines = (payment.line_ids + facturas_pendientes.line_ids).filtered(
-                    lambda l: l.account_id.account_type == 'asset_receivable' and not l.reconciled
-                )
-                if lines:
-                    lines.reconcile()
+            if lines:
+                lines.reconcile()
 
-            return payment
+        return payment
 
-    
     def _crear_factura(self, sale_order, cantidad, fecha, ref, currency):
         journal = self.env['account.journal'].search([
             ('type', '=', 'sale'),

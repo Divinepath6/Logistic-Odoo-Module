@@ -85,10 +85,12 @@ class rastreo_paquetes(models.Model):
     pdf_factura_proveedor_nombre = fields.Char(
         string='Nombre de PDF'
     )
+
     total_proveedor = fields.Monetary(
         string= 'Total acordado con el proveedor',
         currency_field='currency_id' 
     )
+
     pdf_prefactura  = fields.Binary(
         string='Prefactura del proveedor',
         attachment=True
@@ -96,6 +98,7 @@ class rastreo_paquetes(models.Model):
     pdf_prefactura_nombre = fields.Char(
         string='Nombre de PDF'
     )
+
    ## FECHAS %$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$%$
     fecha_creacion = fields.Date(
         string = 'Fecha de la creacion del pedido'
@@ -113,18 +116,6 @@ class rastreo_paquetes(models.Model):
     )
 
 
-    fecha_compromiso_proveedor_1 = fields.Date(
-        string = '1 Fecha acordada con el proveedor'
-    )
-    fecha_compromiso_proveedor_2 = fields.Date(
-        string =  '2 Fecha acordada con el proveedor'
-    )
-    fecha_compromiso_proveedor_3 = fields.Date(
-        string =  '3 Fecha acordada con el proveedor'
-    )
-    fecha_compromiso_proveedor_4 = fields.Date(
-        string =  '4 Fecha acordada con el proveedor'
-    )
 
     fecha_compromiso_cliente_1 = fields.Date(
         string = '1 Fecha acordada con el cliente'
@@ -139,26 +130,10 @@ class rastreo_paquetes(models.Model):
         string = '4 Fecha acordada con el cliente'
     )    
 
-    termino_1 = fields.Integer(
-        string = 'Termino de pago numero 1'
-    )
-    termino_2 = fields.Integer(
-        string = 'Termino de pago numero 2'
-    )    
-    termino_3 = fields.Integer(
-        string = 'Termino de pago numero 3'
-    )    
-    termino_4 = fields.Integer(
-        string = 'Termino de pago numero 4'
-    )
-
-    termino_5 = fields.Integer(
-        string = 'Termino de pago numero 5'
-    )
-
     fecha_termino_produccion = fields.Date(
         string = 'Fecha de termino de produccion'
     ) 
+
     
     ## Cliente ///////////////////////////////////////////////////////////////////////////////
     total_cliente = fields.Monetary(
@@ -168,7 +143,6 @@ class rastreo_paquetes(models.Model):
     racks_acordados = fields.Integer(
         string = 'Total de rack acordados con el cliente'
     )
-
 
     
 
@@ -205,6 +179,11 @@ class rastreo_paquetes(models.Model):
         'rastreo.cotizacion_detalle', 
         'pedido_id',                    
         string='Detalles de la cotización',
+    )
+    termino_ids = fields.One2many(
+        'rastreo.termino', 
+        'pedido_id', 
+        string='Términos de Pago'
     )
     
     # anticipo
@@ -317,7 +296,6 @@ class rastreo_paquetes(models.Model):
                         pedido.sale_order_id.action_confirm()
 
                 pedido.write({
-                    'fecha_compromiso_proveedor_1': fields.Date.today(),
                     'fecha_compromiso_cliente_1': fields.Date.today(),
                 })
             case "produccion":
@@ -395,8 +373,8 @@ class rastreo_paquetes(models.Model):
             'actualizacion_texto': f'Archivo subido: {nombre_amigable}',
             'usuario_id': self.env.user.id,
         })
-
         return {'success': True}
+
 
     @api.model
     def obtener_pdf(self, pedido_id, nombre_pdf):
@@ -436,7 +414,62 @@ class rastreo_paquetes(models.Model):
             'pdf': pdf or False,
             'filename': nombre_documento,
         }
+    
+    @api.model
+    def guardar_terminos(self, tipo_documento, pdf, pedido_id, nombre_archivo, terminos, totalProveedor):
+        if not pedido_id:
+            return {'success': False, 'error': "Debes indicar un pedido"}
+        
+        pedido = self.browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False, 'error': "El pedido indicado no existe."}
+            
+        if not terminos or len(terminos) == 0:
+            return {
+                'success': False, 
+                'error': "Debe haber al menos un término de pago"
+            }
+            
+        ##try:
+           # with self.env.cr.savepoint():
+        res_pdf = self.guardar_pdf(tipo_documento, pdf, pedido_id, nombre_archivo)
+        if not res_pdf.get('success'):
+            return res_pdf
+                ##try:
+        proveedor_total_num = float(totalProveedor) if totalProveedor else 0.0
+                ##except (ValueError, TypeError):
+                    #proveedor_total_num = 0.0
 
+        pedido.write({
+                    'total_proveedor': proveedor_total_num or 0.0
+                })
+        if hasattr(pedido, 'termino_ids'):
+                    pedido.termino_ids.unlink()
+
+                    nuevos_terminos_vals = []
+                    for index, t in enumerate(terminos, start=1):
+                        nuevos_terminos_vals.append({
+                            'pedido_id': pedido.id,
+                            'numero': index,
+                            'porcentaje': t.get('porcentaje', 0),
+                            'texto': t.get('nombre', f'Término {index}'),
+                        })
+                    
+                    self.env['rastreo.termino'].create(nuevos_terminos_vals)
+        else:
+            return {
+                        'success': False, 
+                        'error': "El modelo de pedido no tiene configurado el campo relacional 'termino_ids'."
+                    }
+        return {
+                'success': True,
+        }
+        #except Exception as e:
+        #    return {
+        #        'success': False,
+        #        'error': str(e)
+        #    }
+        
     @api.model
     def actualizar_pedido(self, pedido_id, detalle_pedido, datos):
         if not pedido_id:
@@ -460,16 +493,27 @@ class rastreo_paquetes(models.Model):
 
                 'fecha_creacion': datos.get('fecha_creacion') or False,
                 'fecha_termino_produccion' : datos.get('fecha_termino_produccion') or False,
-                'fecha_compromiso_proveedor_1': datos.get('fecha_compromiso_proveedor_1') or False,
-                'fecha_compromiso_proveedor_2': datos.get('fecha_compromiso_proveedor_2') or False,
-                'fecha_compromiso_proveedor_3': datos.get('fecha_compromiso_proveedor_3') or False,
-                'fecha_compromiso_proveedor_4': datos.get('fecha_compromiso_proveedor_4') or False,
 
                 'fecha_compromiso_cliente_1': datos.get('fecha_compromiso_cliente_1') or False,
                 'fecha_compromiso_cliente_2': datos.get('fecha_compromiso_cliente_2') or False,
                 'fecha_compromiso_cliente_3': datos.get('fecha_compromiso_cliente_3') or False,
                 'fecha_compromiso_cliente_4': datos.get('fecha_compromiso_cliente_4') or False,
             })
+
+            terminos_data = datos.get('terminos', [])
+            for t in terminos_data:
+                numero_termino = t.get('numero')
+                fecha_nueva = t.get('fecha_compromiso') or False
+                
+                termino_rec = self.env['rastreo.termino'].search([
+                    ('pedido_id', '=', pedido.id),
+                    ('numero', '=', numero_termino)
+                ], limit=1)
+                
+                if termino_rec:
+                    termino_rec.write({
+                        'fecha_compromiso': fecha_nueva
+                    })
 
             fecha_termino_produccion = pedido.fecha_termino_produccion
             if not fecha_termino_produccion:
@@ -546,10 +590,6 @@ class rastreo_paquetes(models.Model):
                 'usuario': actualizacion.usuario_id.name or '',
             })
 
-        anticipos_cliente = self.env['rastreo.detalle_cliente'].search(
-            [('pedido_id', '=', pedido_id)],
-            order='numero desc',
-        )
 
         lista_pagos_cliente = []
         if cotizacion and cotizacion.exists():
@@ -650,7 +690,17 @@ class rastreo_paquetes(models.Model):
                     'color_hex': '#cccccc',
                     'color_clave': '',
                 })
-        
+        lista_terminos = []
+        termino_ids = self.env['rastreo.termino'].search([('pedido_id', '=', pedido_id)], order='numero asc')
+        if termino_ids:
+            for t in termino_ids:
+                lista_terminos.append({
+                    'numero': t.numero,
+                    'porcentaje': t.porcentaje,
+                    'texto': t.texto,
+                    'fecha_compromiso': t.fecha_compromiso,
+                })     
+
         return {
             'success': True,
             'data': {
@@ -671,10 +721,8 @@ class rastreo_paquetes(models.Model):
                 'fecha_compromiso_cliente_2': pedido.fecha_compromiso_cliente_2 or '',
                 'fecha_compromiso_cliente_3': pedido.fecha_compromiso_cliente_3 or '',
                 'fecha_compromiso_cliente_4': pedido.fecha_compromiso_cliente_4 or '',
-                'fecha_compromiso_proveedor_1' : pedido.fecha_compromiso_proveedor_1 or '',
-                'fecha_compromiso_proveedor_2' : pedido.fecha_compromiso_proveedor_2 or '',
-                'fecha_compromiso_proveedor_3' : pedido.fecha_compromiso_proveedor_3 or '',
-                'fecha_compromiso_proveedor_4' : pedido.fecha_compromiso_proveedor_4 or '',
+                
+                'terminos' : lista_terminos,
 
                 'aviso': pedido.aviso,
 
@@ -784,6 +832,7 @@ class rastreo_paquetes(models.Model):
         ## Avisos de Pagos
 
         pagado = 0.0
+        a = """
         if pagado < pedido.termino_1:
             if pedido.fecha_compromiso_proveedor_1:
                 dias_restantes = (pedido.fecha_compromiso_proveedor_1 - hoy).days
@@ -811,9 +860,7 @@ class rastreo_paquetes(models.Model):
                     else:
                         aviso.append({ MEDIA , "Anticipo de cliente 3"}) 
 
-
-
-
+        """
         pedido.write({
             'aviso' : aviso
         })

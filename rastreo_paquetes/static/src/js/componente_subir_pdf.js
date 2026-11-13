@@ -28,9 +28,11 @@ export class componente_subir_pdf extends Component {
                 this.notification.add("Hubo un error desconocido",{ type: "danger" });  
                 this.props.close();  
             }
+
         });
     }
-        onDescargarPDF() {
+    
+    onDescargarPDF() {
         if (!this.state.PDF) {
             this.notification.add("No hay PDF para descargar", { type: "warning" });
             return;

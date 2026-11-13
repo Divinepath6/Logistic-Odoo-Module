@@ -10,6 +10,7 @@ import { componente_detalle_racks } from "./componente_detalle_racks"
 import { componente_detalle_cliente } from "./componente_detalle_cliente"
 import { componente_subir_pdf } from "./componente_subir_pdf";
 import { componente_rack_colores_escoger } from "./componente_rack_colores_escoger"; 
+import { componente_terminos_condiciones} from "./componente_terminos_condiciones";
 
 export class PantallaPedido extends Component {
     static components = { 
@@ -18,6 +19,7 @@ export class PantallaPedido extends Component {
         componente_detalle_cliente, 
         componente_subir_pdf,
         componente_rack_colores_escoger,
+        componente_terminos_condiciones,
     };
     setup() {
         this.action = useService("action");
@@ -40,7 +42,8 @@ export class PantallaPedido extends Component {
             detalleCliente: [],
             detalleProveedor: [],
             actualizaciones: [],
-            
+            terminos: [],
+
             //bool de PDF
             forwarder: false,
             PDFBL: false,
@@ -186,7 +189,22 @@ export class PantallaPedido extends Component {
                     //pagado: d.estado === 'paid',
                 };
             });
-            this.state.totalAnticiposCliente = totalAnticiposCliente;
+
+            this.state.terminos = p.terminos.map((t) => { 
+                let cantidadMonto = 0
+                if (this.state.totalProveedor != 0 ){
+                    cantidadMonto = (this.state.totalProveedor / 100) * t.porcentaje;
+                }
+                return {
+                    numero: t.numero,
+                    nombre: t.texto || "",
+                    porcentaje: t.porcentaje,
+                    cantidad: cantidadMonto,
+                    fecha_compromiso: t.fecha_compromiso || "" 
+                };
+            });
+
+            this.state.totalAnticiposCliente = totalAnticiposCliente.toFixed(2);
 
             const anticiposProv = p.lista_anticipos_proveedor || [];
             let totalAnticiposProveedor = 0;
@@ -207,7 +225,7 @@ export class PantallaPedido extends Component {
                     PDFAnticipo: !!d.pdf_anticipo_proveedor,
                 };
             });
-            this.state.totalAnticiposProveedor = totalAnticiposProveedor;
+            this.state.totalAnticiposProveedor = totalAnticiposProveedor.toFixed(2);
 
             const balanceC = this.state.totalCliente - this.state.totalAnticiposCliente;
             const balanceP = this.state.totalProveedor - this.state.totalAnticiposProveedor;
@@ -268,6 +286,7 @@ export class PantallaPedido extends Component {
         await this.onGuardarDetalleGeneral();
         await this.action.doAction("rastreo_paquetes.action_pantalla_principal");
     }
+
     async cambiarEstado(){
         const pedidoId = this.state.pedidoId;
         this.state.cargando = true;
@@ -520,16 +539,13 @@ export class PantallaPedido extends Component {
             ETD : this.state.ETD,
             ETA : this.state.ETA,
             fecha_termino_produccion: this.state.fecha_termino_produccion,
-
-            fecha_compromiso_proveedor_1:this.state.fecha_compromiso_proveedor_1,
-            fecha_compromiso_proveedor_2:this.state.fecha_compromiso_proveedor_2,
-            fecha_compromiso_proveedor_3:this.state.fecha_compromiso_proveedor_3,
-            fecha_compromiso_proveedor_4:this.state.fecha_compromiso_proveedor_4, 
+           
             fecha_compromiso_cliente_1:this.state.fecha_compromiso_cliente_1,
             fecha_compromiso_cliente_2:this.state.fecha_compromiso_cliente_2,
             fecha_compromiso_cliente_3:this.state.fecha_compromiso_cliente_3,
             fecha_compromiso_cliente_4:this.state.fecha_compromiso_cliente_4,
-            
+
+            terminos: this.state.terminos,
         }
         const pedido_id = this.state.pedidoId;
         const detalle_pedido = this.state.detalleRacks.map(d => ({
@@ -570,15 +586,59 @@ export class PantallaPedido extends Component {
             confirm: async (documento) => {
                 if(documento.editado){
                     // documento.documentoNombre <- tiene el nombre del documento
-                    this.state.pdf_invoice = false;
-                    this.state.pdf_BL = false
                 }
             },
             cancel: () => {
             }
         });
     }
-    
+
+    async terminosCondiciones(documentoNombre){
+        if(!documentoNombre){
+            return;
+        }
+        const objeto = {
+            pedidoId:       this.state.pedidoId,
+            documentoNombre:documentoNombre,
+            pdfContratoProveedor: this.state.pdfContratoProveedor,
+            terminos: this.state.terminos,
+            totalProveedor: this.state.totalProveedor,
+        }
+        this.dialogService.add(componente_terminos_condiciones,  {
+            title: "Confirmación",
+            objeto: objeto,
+            confirm: async (documento) => {
+                await this.cargarPedido();
+                if(documento.editado){
+                    // documento.documentoNombre <- tiene el nombre del documento
+                }
+            },
+            cancel: () => {
+            }
+        });
+    }
+
+    async onVerificarFechaTermino(index, ev) {
+    const nuevoValor = ev.target.value;
+    const termino = this.state.terminos[index];
+    const valorAnterior = termino.fecha_compromiso || "";
+
+    if (nuevoValor === valorAnterior) {
+        return;
+    }
+
+    this.dialogService.add(ConfirmationDialog, {
+        title: _t("¿Estás seguro?"),
+        body: _t("¿Estás seguro de cambiar la fecha de este término? La fecha anterior es: ") + (valorAnterior || "Ninguna"),
+        confirm: async () => {
+            termino.fecha_compromiso = nuevoValor;
+            await this.onGuardarDetalleGeneral();
+        },
+        cancel: () => {
+            ev.target.value = valorAnterior;
+        },
+    });
+}
 }
 
 PantallaPedido.template = "rastreo_paquetes.pantalla_pedido";

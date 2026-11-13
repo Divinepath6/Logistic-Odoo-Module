@@ -69,6 +69,9 @@
 
             'rastreo_paquetes/static/src/js/componente_configuracion.js',
             'rastreo_paquetes/static/src/xml/componente_configuracion.xml',
+
+            'rastreo_paquetes/static/src/js/componente_terminos_condiciones.js',
+            'rastreo_paquetes/static/src/xml/componente_terminos_condiciones.xml',
         ],
     },
     'installable': True,
