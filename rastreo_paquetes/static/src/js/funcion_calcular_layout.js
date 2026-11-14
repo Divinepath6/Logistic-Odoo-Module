@@ -79,9 +79,9 @@ export function calcularLayoutCroquis(props) {
         pasillos.push({
             id: `px-central`,
             x: offsetX + px * escala,
-            y: offsetY + separacionParedIzq * escala,
+             y: offsetY + separacionParedArr * escala, 
             w: anchoPasilloX * escala,
-            h: (largoBodega - (separacionParedIzq + separacionParedDer)) * escala,
+            h: (largoBodega - (separacionParedArr + separacionParedAba)) * escala, 
             orientacion: "vertical",
         });
     }
@@ -90,9 +90,9 @@ export function calcularLayoutCroquis(props) {
         const py = separacionParedArr + (racksArr * largoRack) + ((racksArr - 1) * SEP_RACK);
         pasillos.push({
             id: `py-central`,
-            x: offsetX + separacionParedArr * escala,
+             x: offsetX + separacionParedIzq * escala,
             y: offsetY + py * escala,
-            w: (anchoBodega - ( separacionParedArr + separacionParedAba)) * escala,
+            w: (anchoBodega - (separacionParedIzq + separacionParedDer)) * escala,
             h: anchoPasilloY * escala,
             orientacion: "horizontal",
         });

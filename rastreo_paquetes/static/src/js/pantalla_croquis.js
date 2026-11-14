@@ -1,6 +1,6 @@
 /** @odoo-module **/
 import { registry } from "@web/core/registry";
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, useState, onWillStart,useRef, onMounted, onPatched  } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import { _t } from "@web/core/l10n/translation";
@@ -8,12 +8,14 @@ import { CreacionCroquis } from "./creacion_croquis";
 import { calcularLayoutCroquis } from "./funcion_calcular_layout";
 import { componente_detalle_racks } from "./componente_detalle_racks"
 import { componente_rack_colores_escoger } from "./componente_rack_colores_escoger";
+import { componente_confimacion_dolar } from "./componente_confimacion_dolar";
 
 export class PantallaCroquis extends Component {
     static components = { 
         CreacionCroquis, 
         componente_detalle_racks , 
         componente_rack_colores_escoger,
+        componente_confimacion_dolar,
     };
     static template = "rastreo_paquetes.pantalla_croquis";
     setup() {
@@ -82,6 +84,21 @@ export class PantallaCroquis extends Component {
             costoEstimadoDisplay: "$0.00",  
             almacenajeToneladaDisplay: "0.000",
         });
+           this.rackSelect = useRef("rackSelect");
+
+            const syncRackSelect = () => {
+                const el = this.rackSelect.el;
+                if (!el) return;
+                const target = this.state.rackSeleccionadoIndex == null
+                    ? ""
+                    : String(this.state.rackSeleccionadoIndex);
+                if (el.value !== target) {
+                    el.value = target;
+                }
+            };
+
+            onMounted(syncRackSelect);
+            onPatched(syncRackSelect);
         onWillStart(async () => {
             if (this.props.action && this.props.action.params) {
                 const pedidoId = this.props.action.params.pedido_id || null;
@@ -357,25 +374,23 @@ export class PantallaCroquis extends Component {
     }
 
     async onClickCambiarEstado(){
-        this.dialogService.add(ConfirmationDialog, {
-            title: _t("¿Estás seguro?"),
-            body: _t("El cliente acepto la propuesta? ¿Desea continuar?"),
-            confirm: async () => {
-                this.guardarBodegaActual();
-                const r1 = await this.onClickGuardar(true)
-                if(r1.success === false){
-                    this.notification.add("Ha habido un error al guardar", { type: "warning" });
-                    return
-                }
-                await this.cambiarEstado();
-                await this.action.doAction("rastreo_paquetes.action_pantalla_principal");
-            },
-            cancel: () => {
+        this.dialogService.add(componente_confimacion_dolar, {
+        confirm: async (costoDolar) => {
+            this.guardarBodegaActual();
+            const r1 = await this.onClickGuardar(true);
+            if (r1.success === false) {
+                this.notification.add("Ha habido un error al guardar", { type: "warning" });
                 return;
+            }
+        
+                
+                await this.cambiarEstado(costoDolar);
+                await this.action.doAction("rastreo_paquetes.action_pantalla_principal");
             },
         });
        
     }
+
     async onClickRegresar() {
         this.guardarBodegaActual();
         this.onClickGuardar();
@@ -398,13 +413,16 @@ export class PantallaCroquis extends Component {
                 return { success: false };
         }
     }
-    async cambiarEstado(){
+    async cambiarEstado(costoDolar){
         const pedidoId = this.state.pedidoId
         try {
             const resultado = await this.orm.call(
                 "rastreo.pedido",
                 "cambiar_estado",
-                [pedidoId]
+                [
+                    pedidoId,
+                    costoDolar
+                ]
             );
             this.state.pedido = resultado.data ?? resultado;
 

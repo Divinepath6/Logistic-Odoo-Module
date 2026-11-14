@@ -90,7 +90,10 @@ class rastreo_paquetes(models.Model):
         string= 'Total acordado con el proveedor',
         currency_field='currency_id' 
     )
-
+    total_proveedor_costo_dolar = fields.Monetary(
+        string= 'Costo del dolar al momento de el total',
+        currency_field='currency_id' 
+    )
     pdf_prefactura  = fields.Binary(
         string='Prefactura del proveedor',
         attachment=True
@@ -103,7 +106,6 @@ class rastreo_paquetes(models.Model):
     fecha_creacion = fields.Date(
         string = 'Fecha de la creacion del pedido'
     )
-
     CRD = fields.Date(
         string = 'Fecha de la Cargo Ready Date'
     )
@@ -114,8 +116,6 @@ class rastreo_paquetes(models.Model):
     ETA = fields.Date(
         string = 'Fecha de la  Estimated Time of Arrival'
     )
-
-
 
     fecha_compromiso_cliente_1 = fields.Date(
         string = '1 Fecha acordada con el cliente'
@@ -140,6 +140,11 @@ class rastreo_paquetes(models.Model):
         string= 'Total acordado con el cliente',
         currency_field='currency_id' 
     )
+    total_cliente_costo_dolar = fields.Monetary(
+        string= 'Total acordado con el cliente',
+        currency_field='currency_id' 
+    )
+
     racks_acordados = fields.Integer(
         string = 'Total de rack acordados con el cliente'
     )
@@ -203,15 +208,19 @@ class rastreo_paquetes(models.Model):
             'estado': 'fase_inicial',
         })
 
+        usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
+        if not usd_currency:
+            raise UserError("No se encontró la moneda USD en el sistema.")
+
         cotizacion = self.env['sale.order'].create({
             'partner_id': cliente_id,
             'origin': f'Rastreo pedido #{pedido.id}',
+            'currency_id': usd_currency.id, 
         })
 
         pedido.write({
             'sale_order_id': cotizacion.id,
             'numero_guia': cotizacion.name
-        
         })
 
         self.env['rastreo.pedido_actualizacion'].create({
@@ -221,8 +230,8 @@ class rastreo_paquetes(models.Model):
             'actualizacion_texto': 'Fase inicial comenzada',
             'usuario_id': self.env.user.id,
         })
-
-        return {'id': pedido.id, 'sale_order_id': cotizacion.id}
+        
+        return pedido.id
     
     @api.model
     def crear_pedido_cotizacion(self, numero, fase):
@@ -253,11 +262,11 @@ class rastreo_paquetes(models.Model):
                 'cliente_id': cotizacion.partner_id.id,
                 'numero_guia': cotizacion.name,
                 'estado': 'produccion',
-                'fecha_compromiso_proveedor_1': fields.Date.today(),
                 'fecha_compromiso_cliente_1': fields.Date.today(),
+                'fecha_creacion' : fields.Date.today(),
             })
             self.crear_aviso(pedido.id)
-            texto = 'Comienzo de producción'            
+            texto = 'Creación de pedido'            
         else:
             return {'success': False, 'error' : 'Fase no existente en el sistema'}
 
@@ -282,10 +291,11 @@ class rastreo_paquetes(models.Model):
         return {'success': True}
 
     @api.model
-    def cambiar_estado(self, pedido_id, estado=None):
+    def cambiar_estado(self, pedido_id,costoDolar, estado=None):
         pedido = self.browse(pedido_id)
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
+        
         siguiente_estado = estado
             ### rellenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaar
         match pedido.estado:
@@ -294,14 +304,15 @@ class rastreo_paquetes(models.Model):
                 if pedido.sale_order_id.exists():
                     if pedido.sale_order_id.state in ('draft', 'sent'):
                         pedido.sale_order_id.action_confirm()
-
                 pedido.write({
                     'fecha_compromiso_cliente_1': fields.Date.today(),
+                    'total_proveedor_costo_dolar': costoDolar or 10.0,
+                    'total_cliente_costo_dolar': costoDolar or 10.0,
+                    'fecha_creacion': fields.Date.today(),
                 })
             case "produccion":
                 if not pedido.pdf_contrato_proveedor:
                     return {'success': False, 'error': 'Falta el contrato del proveedor para continuar'}
-                
                 siguiente_estado = 'puerto_origen'
             case _:
                 if not siguiente_estado:
@@ -487,6 +498,8 @@ class rastreo_paquetes(models.Model):
                 'forwarder': datos.get('forwarder') or False,
                 'total_cliente': datos.get('total_cliente'),
 
+
+                
                 'ETA': datos.get('ETA') or False,
                 'ETD': datos.get('ETD') or False,
                 'CRD': datos.get('CRD') or False,
@@ -711,6 +724,10 @@ class rastreo_paquetes(models.Model):
                 'cliente_nombre': pedido.cliente_id.name if pedido.cliente_id else '',
                 'total_cliente': cotizacion.amount_total or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
+
+                'total_proveedor_costo_dolar': pedido.total_cliente_costo_dolar or 0,
+                'total_cliente_costo_dolar': pedido.total_cliente_costo_dolar or 0,
+
                 'numero_contrato': pedido.numero_contrato or '',
                 'fecha_creacion': pedido.fecha_creacion or '',
                 'CRD': pedido.CRD or '',
@@ -721,9 +738,10 @@ class rastreo_paquetes(models.Model):
                 'fecha_compromiso_cliente_2': pedido.fecha_compromiso_cliente_2 or '',
                 'fecha_compromiso_cliente_3': pedido.fecha_compromiso_cliente_3 or '',
                 'fecha_compromiso_cliente_4': pedido.fecha_compromiso_cliente_4 or '',
-                
-                'terminos' : lista_terminos,
 
+                
+
+                'terminos' : lista_terminos,
                 'aviso': pedido.aviso,
 
                 # booleanos
@@ -753,7 +771,7 @@ class rastreo_paquetes(models.Model):
         cotizacion = pedido.sale_order_id
         hoy = fields.Date.today()
 
-        cotizacion = False #pedido.sale_order_id
+        cotizacion = False 
         total_cotizacion = cotizacion.amount_total if cotizacion else 0.0
         moneda = cotizacion.currency_id.name if cotizacion else ''
         total_pagos_cliente = 0.0

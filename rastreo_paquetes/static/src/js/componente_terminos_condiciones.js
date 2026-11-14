@@ -3,7 +3,8 @@ import { Component, useState, onWillStart } from "@odoo/owl";
 import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks"; 
 import { PdfUploader } from "./Pdf_uploader";
-
+import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
+import { _t } from "@web/core/l10n/translation";
 export class componente_terminos_condiciones extends Component {
     static template = "rastreo_paquetes.componente_terminos_condiciones_embed";
     static components = { Dialog, PdfUploader }; 
@@ -51,20 +52,20 @@ export class componente_terminos_condiciones extends Component {
     }
 
     recalcularMontos() {
-        this.state.editado = true;
         const total = Number(this.state.totalProveedor) || 0;
         for (let t of this.state.terminos) {
             const porc = Number(t.porcentaje) || 0;
             t.cantidad = parseFloat(((total * porc) / 100).toFixed(2));
         }
+        this.state.editado = true;
     }
 
     onPorcentajeChange(index) {
-        this.state.editado = true;
         const term = this.state.terminos[index];
         const total = Number(this.state.totalProveedor) || 0;
         const porc = Number(term.porcentaje) || 0;
         term.cantidad = parseFloat(((total * porc) / 100).toFixed(2));
+        this.state.editado = true;
     }
 
     formatCurrency(value) {
@@ -145,6 +146,17 @@ export class componente_terminos_condiciones extends Component {
         this.state.terminos.splice(index, 1);
         this.state.editado = true;
     }
+    
+    onConfirmarCambios() {
+        return new Promise((resolve) => {
+            this.dialogService.add(ConfirmationDialog, {
+                title: _t("¿Estás seguro?"),
+                body: _t("¿Esta seguro de hacer estos cambios?"),
+                confirm: () => resolve(true),
+                cancel: () => resolve(false),
+            });
+        });
+    }
 
     async onConfirmar() {
         if (!this.state.pedidoId) {
@@ -167,8 +179,14 @@ export class componente_terminos_condiciones extends Component {
             this.notification.add("Por favor colocar un total de proveedor", { type: "warning" });
             return;
         }
+        let seguir = true;
+        if(this.state.editado && !this.state.nuevo){
+            seguir = await this.onConfirmarCambios();
+        }
+        if(seguir == false){
+            return
+        }
         const total = Number(this.state.totalProveedor) || 0.0;
-        console.log( this.state )
         try{
             const resultado = await this.orm.call(
                 "rastreo.pedido",

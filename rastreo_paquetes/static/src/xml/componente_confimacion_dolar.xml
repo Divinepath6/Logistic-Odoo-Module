@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="rastreo_paquetes.componente_confimacion_dolar_embed">
+        <Dialog title="'¿Estás seguro?'" size="'md'">
+            <div class="p-3">
+                <p>El cliente aceptó la propuesta? ¿Desea continuar?</p>
+                <div class="mt-3">
+                    <label class="fw-bold">Costo del dólar del día:</label>
+                    <input type="number" 
+                           class="form-control" 
+                           step="0.01" 
+                           t-model="state.costoDolar"/>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="props.close">Cancelar</button>
+                <button class="btn btn-primary" t-on-click="onConfirm">Aceptar</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

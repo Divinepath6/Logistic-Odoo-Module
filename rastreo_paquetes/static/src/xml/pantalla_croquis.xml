@@ -56,6 +56,7 @@
                                     <i class="fa fa-save"/> Guardar
                                 </button>
                             </div>
+                            
                         </h3>
 
                         <div class="odoo-field-croquis">
@@ -68,17 +69,21 @@
                         <div class="odoo-field-croquis">
                             <label class="odoo-label-croquis">Elegir rack:</label>
                             <select class="odoo-select"
-                            t-att-value="state.rackSeleccionadoIndex"
-                            t-on-change="onRackChange">
-                        <option value="">— Selecciona un rack —</option>
-                        <t t-foreach="state.rackTipos" t-as="rack" t-key="rack_index">
-                            <option t-att-value="rack_index" t-esc="rack[0]"/>
-                        </t>
-                    </select>
+                                t-ref="rackSelect"
+                                t-on-change="onRackChange">
+                            <option value="">— Selecciona un rack —</option>
+                            <t t-foreach="state.rackTipos" t-as="rack" t-key="rack_index">
+                                <option t-att-value="rack_index" t-esc="rack[0]"/>
+                            </t>
+                        </select>
                         </div>
 
                         <div class="odoo-field-croquis">
-                            <label class="odoo-label-croquis">Elegir costo del rack:</label>
+                            <label class="odoo-label-croquis">Elegir costo del rack: <h3 class="cc-card-title">
+                                    (DOLARES)
+                                </h3>
+                            </label>
+
                             <input type="number" class="odoo-input"
                                    placeholder="$0.00"
                                    t-model="state.rackSeleccionadoCosto"

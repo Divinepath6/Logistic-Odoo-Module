@@ -34,7 +34,7 @@ export class componente_busqueda_producto extends Component {
         });
     }
     
-     async listarProductos() {
+    async listarProductos() {
         try {
             this.state.cargando = true;
             const resultado = await this.orm.call(

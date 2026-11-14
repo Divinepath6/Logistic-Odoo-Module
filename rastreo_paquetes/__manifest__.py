@@ -72,6 +72,9 @@
 
             'rastreo_paquetes/static/src/js/componente_terminos_condiciones.js',
             'rastreo_paquetes/static/src/xml/componente_terminos_condiciones.xml',
+            
+            'rastreo_paquetes/static/src/js/componente_confimacion_dolar.js',
+            'rastreo_paquetes/static/src/xml/componente_confimacion_dolar.xml',
         ],
     },
     'installable': True,
