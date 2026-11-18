@@ -1,69 +1,80 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="rastreo_paquetes.componente_detalle_proveedor_embed">
-        <Dialog title="state.crearEditar + ' el anticipo del proveedor numero: ' + state.numero" size="'md'">
+        <Dialog title="state.crearEditar + ' el anticipo del proveedor número: ' + state.numero" size="'xl'">
             
-                <div class="o_form_view p-2 border rounded bg-light">
-                    <div class="row g-3">
-                        
-                        <div class="col-md-6">
-                            <label for="numero" class="form-label fw-bold">Número: </label>
-                            <span type="text" 
-                                   id="numero" 
-                                   class="form-control" 
-                                   t-esc="state.numero"/>
-                        </div>
-	
+            <div class="o_form_view p-3 border rounded bg-light">
+                <div class="row g-4">
+                    
+                    <!-- COLUMNA IZQUIERDA: Campos de captura y montos -->
+                    <div class="col-md-7">
+                        <div class="row g-3">
+                            
+                            <div class="col-md-6">
+                                <label for="numero" class="form-label fw-bold">Número de anticipo:</label>
+                                <span id="numero" class="form-control bg-white" t-esc="state.numero"/>
+                            </div>
 
-                        <div class="col-md-6">
-                            <label for="fecha" class="form-label fw-bold">ultima Fecha edición:</label>
-                            <span type="text" 
-                                   id="fecha" 
-                                   class="form-control" 
-                                   t-esc="state.fechaEdicion"/>
-                        </div>
+                            <div class="col-md-6">
+                                <label for="fecha" class="form-label fw-bold">Última edición:</label>
+                                <span id="fecha" class="form-control bg-white" t-esc="state.fechaEdicion"/>
+                            </div>
 
-                        <div class="col-md-6">
-                            <label for="fechaAnticipo" class="form-label fw-bold">Fecha del anticipo:</label>
-                            <input type="date" 
-                                   id="fechaAnticipo" 
-                                   class="form-control" 
-                                   t-model="state.fechaAnticipo"/>
-                        </div>
+                            <div class="col-md-6">
+                                <label for="fechaAnticipo" class="form-label fw-bold">Fecha del anticipo:</label>
+                                <input type="date" 
+                                       id="fechaAnticipo" 
+                                       class="form-control" 
+                                       t-model="state.fechaAnticipo"/>
+                            </div>
 
-                        <div class="col-md-6">
-                            <label for="cantidad" class="form-label fw-bold">Cantidad dada al proveedor ($):</label>
-                            <input type="number" 
-                                   step="0.1" 
-                                   id="cantidad" 
-                                   class="form-control" 
-                                   t-model.number="state.cantidadAnticipo"/>
+                            <div class="col-md-6">
+                                <label for="cantidad" class="form-label fw-bold">Cantidad (USD $):</label>
+                                <input type="number" 
+                                       step="0.01" 
+                                       id="cantidad" 
+                                       class="form-control" 
+                                       t-model.number="state.cantidadAnticipo"/>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="dolar" class="form-label fw-bold">Precio del Dólar ($):</label>
+                                <input type="number" 
+                                       step="0.0001" 
+                                       id="dolar" 
+                                       class="form-control" 
+                                       t-model.number="state.precioDolar"/>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Equivalente en MXN ($):</label>
+                                <input type="text" 
+                                       class="form-control bg-white fw-bold text-success" 
+                                       t-att-value="state.montoMxnText" 
+                                       readonly="1"/>
+                            </div>
+
                         </div>
-                        <div class="col-md-6">
-                            <label for="dolar" class="form-label fw-bold"> Precio dólar ($):</label>
-                            <input type="number" 
-                                   step="0.1" 
-                                   id="dolar" 
-                                   class="form-control" 
-                                   t-model.number="state.precioDolar"/>
-                        </div>
-                
-                        <div class="col-12">
-                            <label class="form-label fw-bold">PDF del anticipo:</label>
+                    </div>
+
+                    <div class="col-md-5 border-start">
+                        <div class="d-flex flex-column h-100">
+                            <label class="form-label fw-bold text-primary">Comprobante PDF del Anticipo:</label>
+                            <div class="flex-grow-1">
                                 <PdfUploader
                                     value="state.PDFAnticipo"
                                     filename="state.PDFAnticipoNombre"
                                     onChange="(b64, name) => this.onPdfChange(b64, name)"
-                                    previewMaxWidth="400"/>
+                                    previewMaxWidth="'100%'"/>
+                            </div>
                         </div>
                     </div>
 
                 </div>
-   
-
+            </div>
 
             <t t-set-slot="footer">
-                <button class="btn btn-secondary" t-on-click="onConfirmar">
+                <button class="btn btn-primary" t-on-click="onConfirmar">
                     Guardar y salir
                 </button>
                 <button class="btn btn-secondary" t-on-click="onCancelar">

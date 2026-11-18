@@ -131,6 +131,11 @@ export class componente_detalle_racks extends Component{
             this.notification.add("Las cantidades no deben ser negativas", { type: "warning" });
             return;
         }  
+        if(this.state.cantidadRacks == 0 || this.state.precioUnitario ==  0){
+            this.notification.add("Las cantidades no deben ser cero", { type: "warning" });
+            return;
+        }  
+        
         const rack = {
             numero: this.state.numero,
             rackClave: this.state.rackClave,

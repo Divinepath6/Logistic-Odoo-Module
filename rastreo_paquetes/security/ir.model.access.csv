@@ -11,3 +11,4 @@ access_rastreo_cotizacion_detalle,access_rastreo_cotizacion_detalle,model_rastre
 access_rastreo_bodega_adicional,access_rastreo_bodega_adicional,model_rastreo_bodega_adicional,base.group_user,1,1,1,1
 access_rastreo_rack_color,access_rastreo_rack_color,model_rastreo_rack_color,base.group_user,1,1,1,1
 access_rastreo_termino,access_rastreo_termino,model_rastreo_termino,base.group_user,1,1,1,1
+access_rastreo_aviso,access_rastreo_aviso,model_rastreo_aviso,base.group_user,1,1,1,1

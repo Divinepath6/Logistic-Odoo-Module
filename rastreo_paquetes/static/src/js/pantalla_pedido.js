@@ -44,6 +44,7 @@ export class PantallaPedido extends Component {
             actualizaciones: [],
             terminos: [],
 
+            contenedores : 0,
             //bool de PDF
             forwarder: false,
             PDFBL: false,
@@ -61,14 +62,18 @@ export class PantallaPedido extends Component {
             totalAnticiposCliente: 0,
             totalAnticiposProveedor: 0,
 
+            proveedorCostoDolar: 0,
+            clienteCostoDolar: 0,
+
             balanceCliente : "",
             balancePorcentajeProveedor: "",
             balanceProveedor: "",
             balancePorcentajeCliente: "",
 
             numeroContrato: "",
-         
+            
             cargando: false,
+
             // fechas
             ETA: "",
             ETD: "",
@@ -127,9 +132,15 @@ export class PantallaPedido extends Component {
             this.state.clienteNombre = p.cliente_nombre || '';
             this.state.numeroContrato = p.numero_contrato || '';
 
+            
+            
             this.state.totalProveedor = toNum(p.total_proveedor);
             this.state.totalCliente = toNum(p.total_cliente);
 
+            this.state.proveedorCostoDolar =toNum(p.total_proveedor_costo_dolar);
+            this.state.clienteCostoDolar = toNum(p.total_cliente_costo_dolar);     
+            this.state.contenedores = toNum(p.contenedores);
+            
             this.state.forwarder = !!p.forwarder;
             this.state.pdfContratoProveedor = !!p.bool_contrato_proveedor;
             this.state.pdfFacturaProveedor = !!p.bool_factura_proveedor;
@@ -170,23 +181,31 @@ export class PantallaPedido extends Component {
             const pagos = p.lista_pagos_cliente || [];
             let totalAnticiposCliente = 0;
 
-            this.state.detalleCliente = pagos.map((d) => {
+            this.state.detalleCliente = pagos.map((d, index) => {
                 const monto = toNum(d.monto);
+                const precioDolar = toNum(d.precio_dolar);
+                const montoMxn = toNum(d.monto_mxn);
                 totalAnticiposCliente += monto;
                 return {
                     crearEditar: "Editar",
                     paymentId: d.payment_id,
-                    anticipoId: d.detalle_id, 
+                    anticipoId: d.detalle_id || d.anticipo_id || 0,
+                    numero: d.numero || (index + 1),
+                    tipo: d.tipo_registro || 'pago',
                     referencia: d.referencia || '',
                     factura: d.factura || '',
                     diario: d.diario || '',
                     moneda: d.moneda || '',
+                    fechaEdicion: d.fecha_editado || '',
                     fechaAnticipo: d.fecha || '',
                     estado: d.estado || '',
                     monto_raw: monto,
                     monto: fmt(monto),
-                    // bandera útil para colorear
-                    //pagado: d.estado === 'paid',
+                    cantidadAnticipo: monto,
+                    precioDolar: precioDolar,
+                    precioDolar_fmt: fmt(precioDolar),
+                    montoMxn_raw: montoMxn,
+                    montoMxn: fmt(montoMxn),
                 };
             });
 
@@ -205,7 +224,7 @@ export class PantallaPedido extends Component {
             });
 
             this.state.totalAnticiposCliente = totalAnticiposCliente.toFixed(2);
-
+            
             const anticiposProv = p.lista_anticipos_proveedor || [];
             let totalAnticiposProveedor = 0;
 
@@ -218,10 +237,11 @@ export class PantallaPedido extends Component {
                     numero: d.numero || 0,
                     fechaEdicion: d.fecha_editado || '',
                     fechaAnticipo: d.fecha_anticipo || '',
-                    cantidadAnticipo_raw: cantidad,
-                    cantidadAnticipo: fmt(cantidad),
-                    precioDolar_raw: precioDolar,
-                    precioDolar: fmt(precioDolar),
+                    cantidadAnticipo: cantidad,
+                    referencia: d.referencia || '',
+                    cantidadAnticipo_fmt: fmt(cantidad),
+                    precioDolar: precioDolar,
+                    precioDolar_fmt: fmt(precioDolar),
                     PDFAnticipo: !!d.pdf_anticipo_proveedor,
                 };
             });
@@ -249,10 +269,6 @@ export class PantallaPedido extends Component {
             this.state.ETD = p.ETD || '';
             this.state.fecha_termino_produccion = p.fecha_termino_produccion || '';
 
-            this.state.fecha_compromiso_proveedor_1 = p.fecha_compromiso_proveedor_1 || '';
-            this.state.fecha_compromiso_proveedor_2 = p.fecha_compromiso_proveedor_2 || '';
-            this.state.fecha_compromiso_proveedor_3 = p.fecha_compromiso_proveedor_3 || '';
-            this.state.fecha_compromiso_proveedor_4 = p.fecha_compromiso_proveedor_4 || '';
             this.state.fecha_compromiso_cliente_1 = p.fecha_compromiso_cliente_1 || '';
             this.state.fecha_compromiso_cliente_2 = p.fecha_compromiso_cliente_2 || '';
             this.state.fecha_compromiso_cliente_3 = p.fecha_compromiso_cliente_3 || '';
@@ -346,27 +362,35 @@ export class PantallaPedido extends Component {
     }
 
     async onEditarDetalleCliente(d) {
-        if(!d){
-            d = {
+        let objetoModal;
+        if (!d) {
+            objetoModal = {
                 crearEditar: "Crear",
                 anticipoId: 0,
+                pedidoId: this.state.pedidoId,
                 numero: this.state.detalleCliente.length + 1,
                 fechaEdicion: "",
                 fechaAnticipo: "",
                 cantidadAnticipo: 0.0,
                 precioDolar: 0.0,
-                PDFAnticipo: null, 
-            }
+                tipo: "pago",
+                PDFAnticipo: null,
+            };
+        } else {
+            objetoModal = {
+                ...d,
+                crearEditar: "Editar",
+                pedidoId: this.state.pedidoId,
+            };
         }
-        d.pedidoId = this.state.pedidoId;
-        this.dialogService.add(componente_detalle_cliente,  {
-                title: "Confirmación",
-                objeto:d,
-                confirm: async () => {
-                    await this.cargarPedido();
-                },
-                cancel: () => {
-                }
+
+        this.dialogService.add(componente_detalle_cliente, {
+            title: "Confirmación",
+            objeto: objetoModal,
+            confirm: async () => {
+                await this.cargarPedido();
+            },
+            cancel: () => {},
         });
     }
     async onEditarColorRack(r) {
@@ -533,6 +557,12 @@ export class PantallaPedido extends Component {
             total_proveedor: this.state.totalProveedor,
             total_cliente: this.state.totalCliente,
             numero_contrato: this.state.numeroContrato,
+            
+            total_proveedor_costo_dolar:this.state.proveedorCostoDolar,
+            total_cliente_costo_dolar: this.state.clienteCostoDolar,
+
+
+            contenedores : this.state.contenedores,
             racks_acordados: 0,
             CRD: this.state.CRD,
             fecha_creacion : this.state.fecha_creacion,

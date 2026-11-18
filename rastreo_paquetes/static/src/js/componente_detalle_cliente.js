@@ -18,6 +18,7 @@ export class componente_detalle_cliente extends Component {
             pedidoId: 0,
             anticipoId: 0,
             numero: 0,
+            referenciaOdoo: "",
             fechaEdicion: "",
             fechaAnticipo: "",
             cantidadAnticipo: 0.0,
@@ -25,23 +26,28 @@ export class componente_detalle_cliente extends Component {
             PDFAnticipo: "",
             PDFAnticipoNombre: "",
             crearEditar: "Editar",
-            tipo: "pago",          
+            tipo: "pago",
             targetCurrency: "MXN",
             fetchingRate: false,
+            get montoMxnText() {
+                const total = (Number(this.cantidadAnticipo) || 0) * (Number(this.precioDolar) || 0);
+                return total.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+            },
         });
 
         onWillStart(async () => {
             const r = this.props.objeto;
             if (r) {
-                this.state.crearEditar = r.crearEditar || "Editar";
-                this.state.anticipoId = r.anticipoId;
-                this.state.pedidoId = r.pedidoId;
-                this.state.numero = r.numero;
-                this.state.fechaEdicion = r.fechaEdicion;
-                this.state.fechaAnticipo = r.fechaAnticipo;
-                this.state.cantidadAnticipo = r.cantidadAnticipo;
-                this.state.precioDolar = r.precioDolar;
-                this.state.tipo = r.tipo || "pago";
+                this.state.crearEditar = r.crearEditar || (r.anticipoId ? "Editar" : "Crear");
+                this.state.anticipoId = r.anticipoId || r.detalle_id || 0;
+                this.state.pedidoId = r.pedidoId || 0;
+                this.state.numero = r.numero || 0;
+                this.state.referenciaOdoo = r.referencia || "";
+                this.state.fechaEdicion = r.fechaEdicion || r.fecha_editado || "";
+                this.state.fechaAnticipo = r.fechaAnticipo || r.fecha || new Date().toISOString().split("T")[0];
+                this.state.cantidadAnticipo = Number(r.cantidadAnticipo ?? r.monto_usd ?? r.monto_raw ?? 0) || 0.0;
+                this.state.precioDolar = Number(r.precioDolar ?? r.precio_dolar ?? 0) || 0.0;
+                this.state.tipo = r.tipo || r.tipo_registro || "pago";
                 await this.obtenerPDF();
             }
 
@@ -63,7 +69,7 @@ export class componente_detalle_cliente extends Component {
                     data.rates.USD ||
                     null;
                 if (rate) {
-                    this.state.precioDolar = parseFloat(Number(rate).toFixed(2));
+                    this.state.precioDolar = parseFloat(Number(rate).toFixed(4));
                 }
             }
         } catch (e) {
@@ -82,7 +88,9 @@ export class componente_detalle_cliente extends Component {
         if (!this.state.anticipoId || this.state.anticipoId === 0) return;
         try {
             const resultado = await this.orm.call(
-                "rastreo.detalle_cliente", "obtener_pdf", [this.state.anticipoId]
+                "rastreo.detalle_cliente",
+                "obtener_pdf",
+                [this.state.anticipoId]
             );
             if (resultado.success) {
                 this.state.PDFAnticipo = resultado.pdf || "";
@@ -111,37 +119,35 @@ export class componente_detalle_cliente extends Component {
             return;
         }
 
-        const esEdicion = this.state.anticipoId && this.state.anticipoId !== 0;
+        const esEdicion = Boolean(this.state.anticipoId && this.state.anticipoId !== 0);
 
         if (!esEdicion) {
             if (!this.state.cantidadAnticipo || this.state.cantidadAnticipo <= 0) {
                 this.notification.add(
-                    "Necesita indicar una cantidad recibida", { type: "danger" }
+                    "Necesita indicar una cantidad recibida",
+                    { type: "danger" }
                 );
                 return;
             }
             if (this.state.tipo === "pago" && !this.state.PDFAnticipo) {
                 this.notification.add(
-                    "Necesita subir el PDF del pago", { type: "danger" }
+                    "Necesita subir el PDF del pago",
+                    { type: "danger" }
                 );
                 return;
             }
         }
 
         try {
-            const datos = esEdicion
-                ? { precio_dolar: this.state.precioDolar }
-                : {
-                      cantidad: Number(this.state.cantidadAnticipo),
-                      precio_dolar: Number(this.state.precioDolar),
-                      fecha_anticipo: this.state.fechaAnticipo,
-                      tipo: this.state.tipo,
-                  };
+            const datos = {
+                cantidad: Number(this.state.cantidadAnticipo),
+                precio_dolar: Number(this.state.precioDolar),
+                fecha_anticipo: this.state.fechaAnticipo,
+                tipo: this.state.tipo,
+            };
 
-            const pdf = esEdicion ? false : (this.state.PDFAnticipo || false);
-            const pdfName = esEdicion
-                ? false
-                : (this.state.PDFAnticipoNombre || false);
+            const pdf = this.state.PDFAnticipo || false;
+            const pdfName = this.state.PDFAnticipoNombre || false;
 
             const resultado = await this.orm.call(
                 "rastreo.detalle_cliente",
@@ -150,24 +156,25 @@ export class componente_detalle_cliente extends Component {
             );
 
             if (resultado.success) {
+                this.notification.add("Anticipo del cliente guardado correctamente", { type: "success" });
                 this.props.confirm({
                     cantidadAnticipo: Number(this.state.cantidadAnticipo),
                     precioDolar: Number(this.state.precioDolar),
                     fechaAnticipo: this.state.fechaAnticipo,
-                    PDFAnticipo: true,
+                    PDFAnticipo: Boolean(this.state.PDFAnticipo),
                     tipo: this.state.tipo,
                 });
                 this.props.close();
             } else {
                 this.notification.add(
-                    "Hubo un error " + (resultado.error || "desconocido"),
+                    "Hubo un error: " + (resultado.error || "desconocido"),
                     { type: "danger" }
                 );
             }
         } catch (e) {
             console.error(e);
             this.notification.add(
-                "Hubo un error " + (e.message || "desconocido"),
+                "Hubo un error: " + (e.message || "desconocido"),
                 { type: "danger" }
             );
         }

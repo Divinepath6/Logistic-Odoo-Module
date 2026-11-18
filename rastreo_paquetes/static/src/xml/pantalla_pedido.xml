@@ -46,6 +46,7 @@
                                         id="numero_contrato"
                                         class="odoo-input"
                                         t-model="state.numeroContrato"
+                                        readonly="1"
                                     />
                                 </div>
                             </div>
@@ -86,6 +87,18 @@
                                         t-on-change="(ev) => this.onVerificarForwarder(ev)" />
                                 </div>
                             </div>
+                            
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="contenedores">Cantidad de Contenedores</label>
+                                    <input type="number"
+                                        id="contenedores"
+                                        class="odoo-input"
+                                        step="1"
+                                        t-model="state.contenedores"
+                                    />
+                                </div>
+                            </div>
 
                             <div class="col-md-6">
                                 <div class="odoo-field">
@@ -96,6 +109,16 @@
                                         t-att-value="state.totalCliente"
                                         readonly="readonly"
                                     />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="clienteCostoDolar"> Costo del dolar cotizado a cliente:</label>
+                                        <input type="number" 
+                                        class="form-control" 
+                                        step="0.01" 
+                                        t-model="state.clienteCostoDolar"/>
                                 </div>
                             </div>
 
@@ -114,6 +137,30 @@
 
                             <div class="col-md-6">
                                 <div class="odoo-field">
+                                    <label class="odoo-label" for="total_proveedor">Total Proveedor</label>
+                                    <input type="number"
+                                        id="total_proveedor"
+                                        class="odoo-input"
+                                        step="1"
+                                        t-model="state.totalProveedor"
+                                        readonly="readonly"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <!-- 
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="total_cliente"> Costo del dolar acordado con proveedor:</label>
+                                        <input type="number" 
+                                        class="form-control" 
+                                        step="0.01" 
+                                        t-model="state.total_proveedor_costo_dolar"/>
+                                </div>
+                            </div>
+-->
+                            <div class="col-md-6">
+                                <div class="odoo-field">
                                     <label class="odoo-label" for="totalAnticiposProveedor">Total
                                         Anticipos al Proveedor:</label>
                                     <input type="text"
@@ -125,17 +172,8 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="total_proveedor">Total Proveedor</label>
-                                    <input type="number"
-                                        id="total_proveedor"
-                                        class="odoo-input"
-                                        step="1"
-                                        t-model="state.totalProveedor"
-                                    />
-                                </div>
-                            </div>
+
+
                             <div class="col-md-6">
                                 <div class="odoo-field">
                                     <label class="odoo-label" for="balanceCliente">Balance Cliente:</label>
@@ -251,14 +289,14 @@
                             <i class="fa fa-info-circle" /> Fechas limite de compromiso de Pago
                             cliente </div>
                         <div class="cc-card">
-                            <!-- 
-        <label class="odoo-label" for="fecha_compromiso_cliente_1">Fecha 1
-            (%): </label>
-        <input type="date"
-            id="fechaAnticipo1"
-            class="form-control"
-            t-model="state.fecha_compromiso_cliente_1" />
-            -->
+                         
+                            <label class="odoo-label" for="fecha_compromiso_cliente_1">Fecha 1
+                                (%): </label>
+                            <input type="date"
+                                id="fechaAnticipo1"
+                                class="form-control"
+                                t-model="state.fecha_compromiso_cliente_1" />
+
                             <label class="odoo-label" for="fecha_compromiso_cliente_2"> Anticipo 2
                                 (%): </label>
                             <input type="date"
@@ -318,9 +356,7 @@
                         </div>
                     </div>
 
-                    <!-- pagos de cliente -->
-                    <div
-                        class="odoo-card">
+                    <div class="odoo-card">
                         <div class="odoo-card-title">
                             <i class="fa fa-user" /> Cliente (Pagos registrados) </div>
 
@@ -329,26 +365,19 @@
                                 <thead>
                                     <tr>
                                         <th>Referencia</th>
-                                        <th>Factura</th>
-                                        <th>Diario</th>
                                         <th>Fecha</th>
-                                        <th class="text-end">Monto</th>
-                                        <th>Moneda</th>
+                                        <th class="text-end">Monto (USD)</th>
+                                        <th class="text-end">Precio Dólar</th>
                                         <th>Estado</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <t t-if="state.detalleCliente and state.detalleCliente.length">
                                         <tr t-foreach="state.detalleCliente" t-as="d"
-                                            t-key="d.paymentId">
+                                            t-key="d.anticipoId or d.paymentId or d_index">
                                             <td>
                                                 <t t-esc="d.referencia or ''" />
-                                            </td>
-                                            <td>
-                                                <t t-esc="d.factura or ''" />
-                                            </td>
-                                            <td>
-                                                <t t-esc="d.diario or ''" />
                                             </td>
                                             <td>
                                                 <t t-esc="d.fechaAnticipo or ''" />
@@ -356,8 +385,8 @@
                                             <td class="text-end">
                                                 <t t-esc="d.monto" />
                                             </td>
-                                            <td>
-                                                <t t-esc="d.moneda or ''" />
+                                            <td class="text-end">
+                                                $<t t-esc="d.precioDolar_fmt" />
                                             </td>
                                             <td>
                                                 <span t-if="d.pagado" class="text-success">
@@ -376,22 +405,21 @@
                                     </t>
                                     <t t-else="">
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">
+                                            <td colspan="9" class="text-center text-muted">
                                                 Sin pagos registrados
                                             </td>
                                         </tr>
                                     </t>
                                 </tbody>
-
-                                <div class="text-center">
-                                    <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
-                                        t-on-click="() => this.onEditarDetalleCliente()">
-                                        <i class="fa fa-plus" /> Agregar Nuevo Anticipo </button>
-                                </div>
                             </table>
                         </div>
-                    </div>
 
+                        <div class="text-center">
+                            <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                t-on-click="() => this.onEditarDetalleCliente()">
+                                <i class="fa fa-plus" /> Agregar Nuevo Anticipo </button>
+                        </div>
+                    </div>
 
                 </div>
 
@@ -568,6 +596,7 @@
                                 <thead>
                                     <tr>
                                         <th>Número</th>
+                                        <th>Referencia Odoo</th>
                                         <th>Fecha de Anticipo</th>
                                         <th class="text-end">Cantidad transferida</th>
                                         <th class="text-end">Precio dólar</th>
@@ -581,15 +610,16 @@
                                             <td>
                                                 <t t-esc="d.numero or ''" />
                                             </td>
+                                            <td><t t-esc="d.referencia"/></td>
                                             <td>
                                                 <t t-esc="d.fechaAnticipo or ''" />
                                             </td>
                                             <td class="text-end">
-                                                <t t-esc="d.cantidadAnticipo or 0" />
+                                                <t t-esc="d.cantidadAnticipo_fmt or 0" />
                                             </td>
                                             <td class="text-end">
-                                                <t t-esc="d.precioDolar or 0" />
-                                            </td>
+                                                <t t-esc="d.precioDolar_fmt or 0" />
+                                            </td> 
                                             <td class="text-end">
                                                 <t t-esc="d.PDFAnticipo or 'No cargado'" />
                                             </td>
@@ -620,6 +650,7 @@
                     </div>
 
                     <div class="odoo-card">
+
                         <div class="odoo-card-title">
                             <i class="fa fa-cubes" /> Detalle de Racks </div>
 

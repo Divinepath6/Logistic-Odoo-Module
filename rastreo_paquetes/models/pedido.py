@@ -29,9 +29,6 @@ class rastreo_paquetes(models.Model):
         ('entregado', 'Entregado'),
     ], string = 'Estado', default='fase_inicial')
 
-    aviso = fields.Char(
-        string= 'Aviso para el usuario'
-    )
     # FORWARDER ¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡
     forwarder = fields.Boolean(
         string="Forwarder conseguido", 
@@ -130,6 +127,18 @@ class rastreo_paquetes(models.Model):
         string = '4 Fecha acordada con el cliente'
     )    
 
+    pago_compromiso_cliente_1 = fields.Date(
+            string = 'Porcentaje de pago acordado con el cliente'
+        )
+    pago_compromiso_cliente_2 = fields.Date(
+            string = 'Porcentaje de pago acordado con el cliente'
+        )
+    pago_compromiso_cliente_3 = fields.Date(
+            string = 'Porcentaje de pago acordado con el cliente'
+        )
+    pago_compromiso_cliente_4 = fields.Date(
+            string = 'Porcentaje de pago acordado con el cliente'
+        )    
     fecha_termino_produccion = fields.Date(
         string = 'Fecha de termino de produccion'
     ) 
@@ -148,7 +157,9 @@ class rastreo_paquetes(models.Model):
     racks_acordados = fields.Integer(
         string = 'Total de rack acordados con el cliente'
     )
-
+    contenedores = fields.Integer(
+        string = 'Total de contenedores'
+    )
     
 
     ##LLave foranea para lo de clientes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -190,7 +201,11 @@ class rastreo_paquetes(models.Model):
         'pedido_id', 
         string='Términos de Pago'
     )
-    
+    aviso_ids = fields.One2many(
+        'rastreo.aviso',
+        'pedido_id',
+        string='Avisos Activos'
+    )
     # anticipo
     # =============================================================================================================
     # MÉTODOS CRUD
@@ -492,14 +507,15 @@ class rastreo_paquetes(models.Model):
         with self.env.cr.savepoint():
             pedido.write({
                 'numero_guia': datos.get('numero_guia') or '',
-                'total_proveedor': datos.get('total_proveedor') or 0,
                 'numero_contrato': datos.get('numero_contrato') or '',
                 'racks_acordados': datos.get('racks_acordados') or 0,
                 'forwarder': datos.get('forwarder') or False,
                 'total_cliente': datos.get('total_cliente'),
+                'contenedores': datos.get('contenedores') or 0,
 
+                'total_proveedor_costo_dolar': datos.get('total_proveedor_costo_dolar') or 0.0,
+                'total_cliente_costo_dolar':  datos.get('total_cliente_costo_dolar') or 0.0,
 
-                
                 'ETA': datos.get('ETA') or False,
                 'ETD': datos.get('ETD') or False,
                 'CRD': datos.get('CRD') or False,
@@ -574,37 +590,395 @@ class rastreo_paquetes(models.Model):
                     'color': color_id_val,
                     'pedido_id': pedido_id
                 })
-
+        self.crear_aviso(pedido.id)
         return {
             'success': True,
         }
 
+
+
+    @api.model
+    def crear_aviso(self, id):
+        pedido = self.browse(id)
+        if not pedido.exists():
+            return []
+
+        avisos_a_crear = []
+        INFO = 'info'     
+        MEDIA = 'media'     
+        URGENTE = 'urgente'
+        
+        hoy = fields.Date.today()
+        dias_restantes = 0
+
+        if pedido.estado == 'produccion':
+            if not pedido.numero_contrato:
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Número de contrato"})
+            
+            if not pedido.pdf_contrato_proveedor:
+                avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Contrato del proveedor"})
+            
+            if pedido.fecha_termino_produccion:
+                dias_restantes = (pedido.fecha_termino_produccion - hoy).days
+                
+                if not pedido.forwarder and dias_restantes <= 13:
+                    avisos_a_crear.append({
+                        'severidad': URGENTE,
+                        'mensaje': f"faltan {dias_restantes} días, conseguir Forwarder",
+                    })
+                
+                if dias_restantes > 0 and dias_restantes <= 20:
+                    avisos_a_crear.append({
+                        'severidad': INFO,
+                        'mensaje': f"Producción en curso, quedan {dias_restantes} días.",
+                    })
+
+        elif pedido.estado == 'puerto_origen':
+            if not pedido.ETD:
+                avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el ETD"}) 
+            
+            if pedido.ETD:
+                dias_restantes = (pedido.ETD - hoy).days
+                if 0 <= dias_restantes <= 3:
+                    avisos_a_crear.append({'severidad': MEDIA, 'mensaje': f"El contenedor sale del puerto en {dias_restantes} días"})
+            
+            if not pedido.CRD:
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Conseguir CRD (Cargo Ready Date)"})
+
+        elif pedido.estado == 'embarcado':
+            if not pedido.ETA:
+                avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el ETA"}) 
+            
+            if not pedido.pdf_BL:
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir BL (Bill of Lading)"}) 
+            
+            if not pedido.pdf_PL:
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir PL (Packing List)"}) 
+            
+            if not pedido.pdf_invoice:
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir Invoice"}) 
+            
+            if not pedido.pdf_prefactura:
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Pedir prefactura a proveedor de flete marítimo"}) 
+
+        elif pedido.estado == 'descargado':
+            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar Agente Aduanal"}) 
+            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar flete terrestre"}) 
+            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Aviso de arribo"}) 
+        
+        elif pedido.estado == 'aduana':  
+            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Informar a Agencia Aduanal"}) 
+            avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Despacho de aduana"}) 
+            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Revisión de documentación"}) 
+            
+        elif pedido.estado == 'entregado':  
+            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Realizar seguimiento a cliente"}) 
+            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Capturar entregado con evidencia"}) 
+
+
+        pedido.aviso_ids.unlink()
+        
+        nuevos_avisos = []
+        for av in avisos_a_crear:
+            nuevos_avisos.append((0, 0, {
+                'importancia': av['severidad'],
+                'texto': av['mensaje'],
+                'pedido_id': pedido.id
+            }))
+            
+        if nuevos_avisos:
+            pedido.write({'aviso_ids': nuevos_avisos})
+            
+        return [{'severidad': av['severidad'], 'mensaje': av['mensaje']} for av in avisos_a_crear]
+
+        
+    @api.model
+    def listar_pedidos(self, termino_busqueda=None):
+        domain = []
+        if termino_busqueda:
+            domain = [
+                '|', '|',
+                ('numero_guia', 'ilike', termino_busqueda),
+                ('cliente_id.name', 'ilike', termino_busqueda),
+                ('numero_contrato', 'ilike', termino_busqueda),
+            ]
+
+        pedidos = self.search(domain, limit=50)
+        lista = []
+
+        kpi_saldo_clientes_mxn = 0.0
+        kpi_saldo_clientes_usd = 0.0
+        kpi_saldo_proveedores_mxn = 0.0
+        kpi_saldo_proveedores_usd = 0.0
+
+        moneda_usd = self.env.ref('base.USD', raise_if_not_found=False)
+        company_currency = self.env.company.currency_id
+
+        def _obtener_tc(fecha):
+            if not moneda_usd:
+                return 1.0
+            rate = moneda_usd._get_conversion_rate(moneda_usd, company_currency, self.env.company, fecha or fields.Date.today())
+            if rate and rate < 1.0:
+                return 1.0 / rate
+            return rate or 1.0
+
+        for p in pedidos:
+            aviso = self.crear_aviso(p.id)
+            actualizacion = self.env['rastreo.pedido_actualizacion'].search_read(
+                [('pedido_id', '=', p.id)],
+                ['fecha_actualizacion', 'actualizacion_texto'],
+                order='fecha_actualizacion desc',
+                limit=1,
+            )
+            lista_avisos = [
+                {'id': av.id, 'importancia': av.importancia, 'texto': av.texto}
+                for av in p.aviso_ids
+            ]
+
+            cotizacion = p.sale_order_id
+            total_cotizacion = cotizacion.amount_total if cotizacion else 0.0
+            moneda_cotizacion = cotizacion.currency_id if cotizacion else company_currency
+            moneda_nombre = moneda_cotizacion.name
+
+            fecha_cot = cotizacion.date_order.date() if (cotizacion and cotizacion.date_order) else (p.fecha_creacion or fields.Date.today())
+            precio_dolar_cliente = p.total_cliente_costo_dolar or _obtener_tc(fecha_cot)
+
+            if moneda_nombre == 'USD':
+                total_cliente_usd = total_cotizacion
+                total_cliente_mxn = total_cotizacion * precio_dolar_cliente
+            else:
+                total_cliente_mxn = total_cotizacion
+                total_cliente_usd = (total_cotizacion / precio_dolar_cliente) if precio_dolar_cliente else 0.0
+
+            anticipos_cliente_mod = p.detalle_cliente_ids
+            total_pagos_cliente_usd = sum(a.monto_usd for a in anticipos_cliente_mod)
+            total_pagos_cliente_mxn = sum(a.monto_mxn for a in anticipos_cliente_mod)
+            count_pagos_cliente = len(anticipos_cliente_mod)
+            pagos_ya_vinculados = anticipos_cliente_mod.mapped('account_payment_id').ids
+
+            if cotizacion:
+                facturas = cotizacion.invoice_ids.filtered(
+                    lambda f: f.move_type == 'out_invoice' and f.state == 'posted'
+                )
+                pagos_factura = self.env['account.payment'].search([
+                    ('reconciled_invoice_ids', 'in', facturas.ids),
+                    ('id', 'not in', pagos_ya_vinculados),
+                ]) if facturas else self.env['account.payment']
+
+                domain_pagos = [
+                    ('partner_id', '=', cotizacion.partner_id.id),
+                    ('state', '=', 'posted'),
+                    ('payment_type', '=', 'inbound'),
+                    ('id', 'not in', pagos_ya_vinculados),
+                ]
+                if cotizacion.name:
+                    domain_pagos.extend([
+                        '|',
+                        ('memo', 'ilike', cotizacion.name),
+                        ('move_id.ref', 'ilike', cotizacion.name),
+                    ])
+
+                pagos_directos = self.env['account.payment'].search(domain_pagos) if cotizacion.partner_id else self.env['account.payment']
+                pagos_externos = pagos_factura | pagos_directos
+
+                for pago in pagos_externos:
+                    count_pagos_cliente += 1
+                    tc_pago = _obtener_tc(pago.date or fields.Date.today())
+                    if pago.currency_id.name == 'USD':
+                        total_pagos_cliente_usd += pago.amount
+                        total_pagos_cliente_mxn += pago.amount * tc_pago
+                    else:
+                        total_pagos_cliente_mxn += pago.amount
+                        total_pagos_cliente_usd += (pago.amount / tc_pago) if tc_pago else 0.0
+
+            saldo_cliente_usd = total_cliente_usd - total_pagos_cliente_usd
+            saldo_cliente_mxn = total_cliente_mxn - total_pagos_cliente_mxn
+
+            anticipos_proveedor = p.detalle_proveedor_ids
+            total_anticipos_proveedor_usd = sum(a.monto_usd for a in anticipos_proveedor)
+            total_anticipos_proveedor_mxn = sum(a.monto_mxn for a in anticipos_proveedor)
+            count_anticipos_proveedor = len(anticipos_proveedor)
+
+            total_racks = 0
+            total_detalle = 0.0
+            count_lineas_detalle = 0
+            if cotizacion:
+                for linea in cotizacion.order_line:
+                    count_lineas_detalle += 1
+                    total_racks += linea.product_uom_qty or 0
+                    total_detalle += linea.price_subtotal or 0.0
+
+            total_proveedor_usd = p.total_proveedor or 0.0
+            precio_dolar_proveedor = p.total_proveedor_costo_dolar or _obtener_tc(
+                p.create_date.date() if p.create_date else fields.Date.today()
+            )
+            if precio_dolar_proveedor and precio_dolar_proveedor < 1.0:
+                precio_dolar_proveedor = 1.0 / precio_dolar_proveedor
+
+            total_proveedor_mxn = total_proveedor_usd * precio_dolar_proveedor
+            saldo_proveedor_usd = total_proveedor_usd - total_anticipos_proveedor_usd
+            saldo_proveedor_mxn = total_proveedor_mxn - total_anticipos_proveedor_mxn
+
+            kpi_saldo_clientes_usd += saldo_cliente_usd
+            kpi_saldo_clientes_mxn += saldo_cliente_mxn
+            kpi_saldo_proveedores_usd += saldo_proveedor_usd
+            kpi_saldo_proveedores_mxn += saldo_proveedor_mxn
+
+            estados_dict = dict(p._fields['estado'].selection)
+
+            lista.append({
+                'id': p.id,
+                'cliente_nombre': p.cliente_id.name if p.cliente_id else '',
+                'estado': p.estado,
+                'invoice': p.numero_contrato or '',
+                'estado_nombre': estados_dict.get(p.estado, p.estado),
+                'numero_guia': p.numero_guia or '',
+                'bool_contrato_proveedor': bool(p.pdf_contrato_proveedor),
+                'avisos': lista_avisos,
+
+                'ultima_actualizacion': {
+                    'fecha': actualizacion[0]['fecha_actualizacion'] if actualizacion else '',
+                    'texto': actualizacion[0]['actualizacion_texto'] if actualizacion else '',
+                },
+
+                'cotizacion': {
+                    'id': cotizacion.id if cotizacion else False,
+                    'nombre': cotizacion.name if cotizacion else '',
+                    'total': total_cotizacion,
+                    'total_usd': total_cliente_usd,
+                    'total_mxn': total_cliente_mxn,
+                    'moneda': moneda_nombre,
+                },
+
+                'anticipos_cliente': {
+                    'count': count_pagos_cliente,
+                    'total': total_pagos_cliente_usd if moneda_nombre == 'USD' else total_pagos_cliente_mxn,
+                    'saldo_cliente': saldo_cliente_usd if moneda_nombre == 'USD' else saldo_cliente_mxn,
+                    'total_acordado': total_cotizacion,
+                    'total_usd': total_pagos_cliente_usd,
+                    'total_mxn': total_pagos_cliente_mxn,
+                    'saldo_cliente_usd': saldo_cliente_usd,
+                    'saldo_cliente_mxn': saldo_cliente_mxn,
+                    'total_acordado_usd': total_cliente_usd,
+                    'total_acordado_mxn': total_cliente_mxn,
+                    'precio_dolar': precio_dolar_cliente,
+                },
+
+                'anticipos_proveedor': {
+                    'count': count_anticipos_proveedor,
+                    'total_usd': total_anticipos_proveedor_usd,
+                    'total_mxn': total_anticipos_proveedor_mxn,
+                    'saldo_proveedor_usd': saldo_proveedor_usd,
+                    'saldo_proveedor_mxn': saldo_proveedor_mxn,
+                    'total_acordado_usd': total_proveedor_usd,
+                    'total_acordado_mxn': total_proveedor_mxn,
+                    'precio_dolar': precio_dolar_proveedor,
+                },
+
+                'detalle_cotizacion': {
+                    'count': count_lineas_detalle,
+                    'total_racks': total_racks,
+                    'total_costo': total_detalle,
+                },
+            })
+
+        return {
+            'success': True,
+            'lista': lista,
+            'kpi': {
+                'cliente': {
+                    'mxn': kpi_saldo_clientes_mxn,
+                    'usd': kpi_saldo_clientes_usd,
+                },
+                'proveedor': {
+                    'mxn': kpi_saldo_proveedores_mxn,
+                    'usd': kpi_saldo_proveedores_usd,
+                },
+            },
+        }
 
     @api.model
     def cargar_pedido(self, pedido_id):
         pedido = self.browse(pedido_id)
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
-        
+
         cotizacion = pedido.sale_order_id
 
         actualizaciones = self.env['rastreo.pedido_actualizacion'].search(
             [('pedido_id', '=', pedido_id)],
             order='fecha_actualizacion desc',
         )
-        lista_actualizaciones = []
-        for actualizacion in actualizaciones:
-            lista_actualizaciones.append({
+
+        lista_actualizaciones = [
+            {
                 'id': actualizacion.id,
                 'numero_actualizacion': actualizacion.numero_actualizacion,
                 'fecha': actualizacion.fecha_actualizacion,
                 'texto': actualizacion.actualizacion_texto or '',
                 'usuario_id': actualizacion.usuario_id.id or False,
                 'usuario': actualizacion.usuario_id.name or '',
-            })
+            }
+            for actualizacion in actualizaciones
+        ]
 
+        lista_avisos = [
+            {
+                'id': av.id,
+                'importancia': av.importancia,
+                'texto': av.texto,
+                'fecha_creacion': str(av.create_date) if av.create_date else '',
+            }
+            for av in pedido.aviso_ids
+        ]
 
         lista_pagos_cliente = []
+        anticipos_cliente_mod = self.env['rastreo.detalle_cliente'].search(
+            [('pedido_id', '=', pedido_id)],
+            order='numero desc',
+        )
+        pagos_ya_vinculados = []
+
+        for c in anticipos_cliente_mod:
+            referencia_odoo = ''
+            factura_origen = ''
+            diario = ''
+            estado = 'posted'
+
+            if c.account_payment_id:
+                pagos_ya_vinculados.append(c.account_payment_id.id)
+                referencia_odoo = c.account_payment_id.name or c.account_payment_id.memo or ''
+                diario = c.account_payment_id.journal_id.name or ''
+                estado = c.account_payment_id.state
+                if c.account_payment_id.reconciled_invoice_ids:
+                    factura_origen = ', '.join(c.account_payment_id.reconciled_invoice_ids.mapped('name'))
+            elif c.account_move_id:
+                referencia_odoo = c.account_move_id.name or c.account_move_id.ref or ''
+                factura_origen = c.account_move_id.name or ''
+                diario = c.account_move_id.journal_id.name or ''
+                estado = c.account_move_id.state
+
+            lista_pagos_cliente.append({
+                'detalle_id': c.id,
+                'anticipo_id': c.id,
+                'payment_id': c.account_payment_id.id if c.account_payment_id else False,
+                'move_id': c.account_move_id.id if c.account_move_id else False,
+                'numero': c.numero or 0,
+                'tipo_registro': c.tipo_registro,
+                'referencia': referencia_odoo or f"ANTICIPO-{c.numero}",
+                'monto': c.monto_usd or 0.0,
+                'monto_usd': c.monto_usd or 0.0,
+                'precio_dolar': c.precio_dolar or 0.0,
+                'monto_mxn': c.monto_mxn or 0.0,
+                'moneda': 'USD',
+                'fecha': str(c.fecha_anticipo) if c.fecha_anticipo else '',
+                'fecha_editado': str(c.fecha_editado or c.write_date or ''),
+                'estado': estado,
+                'diario': diario,
+                'factura': factura_origen or (cotizacion.name if cotizacion else ''),
+                'pdf_anticipo_cliente': bool(c.pdf_anticipo_cliente),
+            })
+
         if cotizacion and cotizacion.exists():
             facturas = cotizacion.invoice_ids
             facturas_origen = self.env['account.move'].search([
@@ -617,17 +991,23 @@ class rastreo_paquetes(models.Model):
             )
 
             pagos_factura = self.env['account.payment'].search([
-                ('reconciled_invoice_ids', 'in', facturas.ids)
+                ('reconciled_invoice_ids', 'in', facturas.ids),
+                ('id', 'not in', pagos_ya_vinculados),
             ]) if facturas else self.env['account.payment']
 
             pagos_anticipo = self.env['account.payment'].search([
                 ('partner_id', '=', cotizacion.partner_id.id),
                 ('payment_type', '=', 'inbound'),
                 ('state', '=', 'posted'),
-                ('move_id.ref', 'ilike', cotizacion.name),  
+                ('id', 'not in', pagos_ya_vinculados),
+                '|',
+                ('memo', 'ilike', cotizacion.name),
+                ('move_id.ref', 'ilike', cotizacion.name),
             ]) if cotizacion.partner_id else self.env['account.payment']
 
-            pagos_totales = pagos_factura | pagos_anticipo
+            pagos_totales = pagos_factura | pagos_directos_filtrados if False else (pagos_factura | pagos_anticipo)
+            moneda_usd = self.env.ref('base.USD', raise_if_not_found=False)
+            company_currency = self.env.company.currency_id
 
             for pago in pagos_totales:
                 if any(x['payment_id'] == pago.id for x in lista_pagos_cliente):
@@ -639,15 +1019,37 @@ class rastreo_paquetes(models.Model):
                 elif pago.reconciled_bill_ids:
                     factura_origen = ', '.join(pago.reconciled_bill_ids.mapped('name'))
 
+                rate = moneda_usd._get_conversion_rate(
+                    moneda_usd, company_currency, self.env.company, pago.date or fields.Date.today()
+                ) if moneda_usd else 1.0
+                tc_pago = (1.0 / rate) if (rate and rate < 1.0) else (rate or 1.0)
+
+                if pago.currency_id.name == 'USD':
+                    monto_usd = pago.amount
+                    monto_mxn = pago.amount * tc_pago
+                else:
+                    monto_mxn = pago.amount
+                    monto_usd = (pago.amount / tc_pago) if tc_pago else 0.0
+
                 lista_pagos_cliente.append({
+                    'detalle_id': 0,
+                    'anticipo_id': 0,
                     'payment_id': pago.id,
-                    'referencia': pago.name or '',
-                    'monto': pago.amount,
+                    'move_id': False,
+                    'numero': len(lista_pagos_cliente) + 1,
+                    'tipo_registro': 'pago',
+                    'referencia': pago.name or pago.memo or '',
+                    'monto': monto_usd,
+                    'monto_usd': monto_usd,
+                    'precio_dolar': tc_pago,
+                    'monto_mxn': monto_mxn,
                     'moneda': pago.currency_id.name or '',
                     'fecha': str(pago.date) if pago.date else '',
+                    'fecha_editado': '',
                     'estado': pago.state,
                     'diario': pago.journal_id.name or '',
                     'factura': factura_origen,
+                    'pdf_anticipo_cliente': False,
                 })
 
         anticipos_proveedor = self.env['rastreo.detalle_proveedor'].search(
@@ -657,18 +1059,23 @@ class rastreo_paquetes(models.Model):
 
         lista_anticipos_proveedor = []
         for a in anticipos_proveedor:
+            pago_asociado = self.env['account.payment'].search([
+                ('memo', 'ilike', pedido.numero_guia)
+            ], limit=1) if pedido.numero_guia else self.env['account.payment']
+
             lista_anticipos_proveedor.append({
                 'anticipo_id': a.id,
                 'numero': a.numero or 0,
-                'fecha_editado': a.fecha_editado or "",
-                'fecha_anticipo': a.fecha_anticipo or "",
-                'cantidad': a.cantidad or 0,
-                'precio_dolar': a.precio_dolar or 0,
+                'fecha_editado': str(a.write_date) if a.write_date else "",
+                'fecha_anticipo': str(a.fecha_anticipo) if a.fecha_anticipo else "",
+                'cantidad': a.monto_usd or 0.0,
+                'precio_dolar': a.precio_dolar or 0.0,
+                'monto_mxn': a.monto_mxn or 0.0,
+                'referencia': pago_asociado.name or f"ANTICIPO-{a.numero}",
                 'pdf_anticipo_proveedor': bool(a.pdf_anticipo_proveedor),
             })
- 
-        lista_cotizacion_detalle = []
 
+        lista_cotizacion_detalle = []
         detalles_guardados = self.env['rastreo.cotizacion_detalle'].search([('pedido_id', '=', pedido_id)])
         if detalles_guardados:
             for d in detalles_guardados:
@@ -703,16 +1110,16 @@ class rastreo_paquetes(models.Model):
                     'color_hex': '#cccccc',
                     'color_clave': '',
                 })
-        lista_terminos = []
-        termino_ids = self.env['rastreo.termino'].search([('pedido_id', '=', pedido_id)], order='numero asc')
-        if termino_ids:
-            for t in termino_ids:
-                lista_terminos.append({
-                    'numero': t.numero,
-                    'porcentaje': t.porcentaje,
-                    'texto': t.texto,
-                    'fecha_compromiso': t.fecha_compromiso,
-                })     
+
+        lista_terminos = [
+            {
+                'numero': t.numero,
+                'porcentaje': t.porcentaje,
+                'texto': t.texto,
+                'fecha_compromiso': t.fecha_compromiso,
+            }
+            for t in self.env['rastreo.termino'].search([('pedido_id', '=', pedido_id)], order='numero asc')
+        ]
 
         return {
             'success': True,
@@ -725,9 +1132,10 @@ class rastreo_paquetes(models.Model):
                 'total_cliente': cotizacion.amount_total or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
 
-                'total_proveedor_costo_dolar': pedido.total_cliente_costo_dolar or 0,
+                'total_proveedor_costo_dolar': pedido.total_proveedor_costo_dolar or 0,
                 'total_cliente_costo_dolar': pedido.total_cliente_costo_dolar or 0,
-
+                'contenedores': pedido.contenedores or 0,
+                'avisos': lista_avisos,
                 'numero_contrato': pedido.numero_contrato or '',
                 'fecha_creacion': pedido.fecha_creacion or '',
                 'CRD': pedido.CRD or '',
@@ -739,294 +1147,23 @@ class rastreo_paquetes(models.Model):
                 'fecha_compromiso_cliente_3': pedido.fecha_compromiso_cliente_3 or '',
                 'fecha_compromiso_cliente_4': pedido.fecha_compromiso_cliente_4 or '',
 
-                
-
-                'terminos' : lista_terminos,
-                'aviso': pedido.aviso,
+                'terminos': lista_terminos,
 
                 # booleanos
                 'forwarder': bool(pedido.forwarder),
                 'bool_contrato_proveedor': bool(pedido.pdf_contrato_proveedor),
                 'bool_factura_proveedor': bool(pedido.pdf_factura_proveedor),
-                'pdf_BL' : bool(pedido.pdf_BL),
-                'pdf_PL': bool(pedido.pdf_PL) ,
+                'pdf_BL': bool(pedido.pdf_BL),
+                'pdf_PL': bool(pedido.pdf_PL),
                 'pdf_invoice': bool(pedido.pdf_invoice),
                 'pdf_prefactura': bool(pedido.pdf_prefactura),
 
-                #listas
+                # listas
                 'lista_anticipos_proveedor': lista_anticipos_proveedor,
                 'lista_pagos_cliente': lista_pagos_cliente,
                 'actualizaciones': lista_actualizaciones,
-                'detalle_racks': lista_cotizacion_detalle
+                'detalle_racks': lista_cotizacion_detalle,
             }
-        }
-
-    def crear_aviso(self, id):
-        avisoDB = ""
-        aviso = []
-        INFO = 'info'     
-        MEDIA = 'media'     
-        URGENTE = 'urgente'
-        pedido = self.browse(id)
-        cotizacion = pedido.sale_order_id
-        hoy = fields.Date.today()
-
-        cotizacion = False 
-        total_cotizacion = cotizacion.amount_total if cotizacion else 0.0
-        moneda = cotizacion.currency_id.name if cotizacion else ''
-        total_pagos_cliente = 0.0
-        count_pagos_cliente = 0
-
-        if cotizacion:
-            facturas = cotizacion.invoice_ids.filtered(
-                lambda f: f.move_type == 'out_invoice' and f.state == 'posted'
-            )
-                
-            domain_pagos = [
-                ('partner_id', '=', cotizacion.partner_id.id),
-                ('state', 'in', ['paid', 'in_process']), 
-                ('payment_type', '=', 'inbound'), 
-            ]
-            pagos_directos = self.env['account.payment'].search(domain_pagos)
-            pagos_totales = facturas.mapped('payment_ids') | pagos_directos
-
-        count_proveedor = self.env['rastreo.detalle_proveedor'].search_count(
-            [('pedido_id', '=', id)],
-        )
-        
-        if pedido.estado == 'produccion':
-            if not pedido.numero_contrato:
-                aviso.append({'severidad': MEDIA, 'mensaje': "Número de contrato"})
-            else:
-                fecha_termino_produccion = pedido.fecha_termino_produccion
-                if not fecha_termino_produccion:
-                    aviso.append({'severidad': MEDIA, 'mensaje': "Fecha de Término de Producción"})
-                else:
-                    dias_restantes = (fecha_termino_produccion - hoy).days
-                    if not pedido.forwarder and dias_restantes <= 13:
-                            aviso.append({
-                                'severidad': URGENTE,
-                                'mensaje': f"Forwarder faltan: {dias_restantes} días",
-                            })
-            if not pedido.pdf_contrato_proveedor:
-                aviso.append({'severidad': URGENTE, 'mensaje': "Contrato del proveedor"})
-            
-
-        elif pedido.estado == 'puerto_origen':
-
-
-            if not pedido.ETA:
-                aviso.append({ MEDIA , "Conseguir ETA "}) 
-            if not pedido.ETD:
-                aviso.append({ URGENTE , "Conseguir ETD "}) 
-
-            else:
-                hoy = fields.Date.today()           
-                diferencia = pedido.ETD - hoy  
-                dias_restantes = diferencia.days
-                if not pedido.forwarder and dias_restantes <= 3:
-                    aviso.append({'severidad': INFO, 'mensaje': f"Apunto de salir de puerto: {dias_restantes} "})
-            
-        elif pedido.estado == 'Embarcado':
-            if not pedido.ETA:
-                aviso.append({ URGENTE , "Conseguir ETA "}) 
-            if not pedido.pdf_BL:
-                aviso.append({ MEDIA , "Subir BL"}) 
-            if not pedido.pdf_PL:
-                aviso.append({ MEDIA , "Subir PL"}) 
-            if not pedido.ETA:
-                aviso.append({ MEDIA , "Conseguir ETA"}) 
-
-        elif pedido.estado == 'Descargado':
-            if pedido.numero_contrato:
-                aviso.append({ MEDIA , "Cotizar A.A"}) 
-            if pedido.numero_contrato:
-                aviso.append({ MEDIA , "Pedir flete terreste"}) 
-                aviso.append({ MEDIA , "Aviso de arribo"}) 
-        
-        elif pedido.estado == 'Aduana':  
-            pass
-
-        ## Avisos de Pagos
-
-        pagado = 0.0
-        a = """
-        if pagado < pedido.termino_1:
-            if pedido.fecha_compromiso_proveedor_1:
-                dias_restantes = (pedido.fecha_compromiso_proveedor_1 - hoy).days
-                if dias_restantes <= 1:
-                    aviso.append({ URGENTE , "Anticipo de proveedor 1"}) 
-                else:
-                    aviso.append({ MEDIA , "Anticipo de proveedor 1"}) 
-
-        if pagado < pedido.termino_2:
-            if pedido.fecha_compromiso_proveedor_3:
-                dias_restantes = (pedido.fecha_compromiso_proveedor_3 - hoy).days
-                if dias_restantes <= 5:
-                    if dias_restantes <= 1:
-                        aviso.append({ URGENTE , "Anticipo de proveedor 3"}) 
-                    else:
-                        aviso.append({ MEDIA , "Anticipo de proveedor 3"}) 
-
-
-        if pagado < pedido.termino_3:
-            if pedido.fecha_compromiso_cliente_3:
-                dias_restantes = (pedido.fecha_compromiso_cliente_3 - hoy).days
-                if dias_restantes <= 5:
-                    if dias_restantes <= 1:
-                        aviso.append({ URGENTE , "Anticipo de cliente 3"}) 
-                    else:
-                        aviso.append({ MEDIA , "Anticipo de cliente 3"}) 
-
-        """
-        pedido.write({
-            'aviso' : aviso
-        })
-        return (aviso)
-
-        
-    @api.model
-    def listar_pedidos(self, termino_busqueda=None):
-        domain = []
-        if termino_busqueda:
-            domain = [
-                '|', '|',
-                ('numero_guia', 'ilike', termino_busqueda),
-                ('cliente_id.name', 'ilike', termino_busqueda),
-                ('numero_contrato', 'ilike', termino_busqueda),
-            ]
-
-        pedidos = self.search(domain, limit=50)
-        lista = []
-        kpi_saldo_clientes = 0
-        kpi_saldo_proveedores = 0
-
-        moneda_usd = self.env.ref('base.USD', raise_if_not_found=False)
-
-        for p in pedidos:
-            aviso = self.crear_aviso(p.id)
-            actualizacion = self.env['rastreo.pedido_actualizacion'].search_read(
-                [('pedido_id', '=', p.id)],
-                ['fecha_actualizacion', 'actualizacion_texto'],
-                order='fecha_actualizacion desc',
-                limit=1,
-            )
-
-            cotizacion = p.sale_order_id
-            total_cotizacion = cotizacion.amount_total if cotizacion else 0.0
-            moneda = cotizacion.currency_id.name if cotizacion else ''
-
-            total_pagos_cliente = 0.0
-            count_pagos_cliente = 0
-            if cotizacion:
-                # 1. Facturas publicadas de la venta
-                facturas = cotizacion.invoice_ids.filtered(
-                    lambda f: f.move_type == 'out_invoice' and f.state == 'posted'
-                )
-
-                # 2. Buscar pagos relacionados directamente mediante las facturas
-                pagos_factura = self.env['account.payment'].search([
-                    ('reconciled_invoice_ids', 'in', facturas.ids)
-                ]) if facturas else self.env['account.payment']
-
-                # 3. Buscar pagos/anticipos directos utilizando la referencia del asiento contable (move_id.ref)
-                domain_pagos = [
-                    ('partner_id', '=', cotizacion.partner_id.id),
-                    ('state', '=', 'posted'),  # Estado correcto para pagos confirmados
-                    ('payment_type', '=', 'inbound'),
-                ]
-                
-                if cotizacion.name:
-                    domain_pagos.extend([
-                        '|',
-                        ('move_id.ref', 'ilike', cotizacion.name),
-                        ('move_id.ref', 'ilike', 'INV'),
-                    ])
-
-                pagos_directos = self.env['account.payment'].search(domain_pagos) if cotizacion.partner_id else self.env['account.payment']
-                
-                # Unir pagos de factura y pagos directos sin duplicados
-                pagos_totales = pagos_factura | pagos_directos
-                
-                for pago in pagos_totales:
-                    count_pagos_cliente += 1
-                    total_pagos_cliente += pago.currency_id._convert(
-                        pago.amount,
-                        self.env.company.currency_id,
-                        self.env.company,
-                        pago.date or fields.Date.today(),
-                    )
-
-            anticipos_proveedor = p.detalle_proveedor_ids
-            total_anticipos_proveedor = sum(a.cantidad or 0.0 for a in anticipos_proveedor)
-            count_anticipos_proveedor = len(anticipos_proveedor)
-
-            total_racks = 0
-            total_detalle = 0.0
-            count_lineas_detalle = 0
-            if cotizacion:
-                for linea in cotizacion.order_line:
-                    count_lineas_detalle += 1
-                    total_racks += linea.product_uom_qty or 0
-                    total_detalle += linea.price_subtotal or 0.0
-
-            saldo_cliente = (total_cotizacion or 0.0) - total_pagos_cliente
-            saldo_proveedor = (p.total_proveedor or 0.0) - total_anticipos_proveedor
-
-            kpi_saldo_clientes += saldo_cliente
-            kpi_saldo_proveedores += saldo_proveedor
-            estados_dict = dict(p._fields['estado'].selection)
-
-            lista.append({
-                'id': p.id,
-                'cliente_nombre': p.cliente_id.name if p.cliente_id else '',
-                'estado': p.estado,
-                'invoice': p.numero_contrato or '',
-                'estado_nombre': estados_dict.get(p.estado, p.estado),
-                'numero_guia': p.numero_guia or '',
-                'bool_contrato_proveedor': bool(p.pdf_contrato_proveedor),
-                'aviso': aviso or {},
-
-                'ultima_actualizacion': {
-                    'fecha': actualizacion[0]['fecha_actualizacion'] if actualizacion else '',
-                    'texto': actualizacion[0]['actualizacion_texto'] if actualizacion else '',
-                },
-
-                'cotizacion': {
-                    'id': cotizacion.id if cotizacion else False,
-                    'nombre': cotizacion.name if cotizacion else '',
-                    'total': total_cotizacion,
-                    'moneda': moneda,
-                },
-
-                'anticipos_cliente': {
-                    'count': count_pagos_cliente,
-                    'total': total_pagos_cliente,
-                    'saldo_cliente': saldo_cliente,
-                    'total_acordado': p.total_cliente or 0.0,
-                },
-
-                'anticipos_proveedor': {
-                    'count': count_anticipos_proveedor,
-                    'total': total_anticipos_proveedor,
-                    'saldo_proveedor': saldo_proveedor,
-                    'total_acordado': p.total_proveedor or 0.0,
-                },
-
-                'detalle_cotizacion': {
-                    'count': count_lineas_detalle,
-                    'total_racks': total_racks,
-                    'total_costo': total_detalle,
-                },
-            })
-
-        return {
-            'success': True,
-            'lista': lista,
-            'kpi': {
-                'cliente': kpi_saldo_clientes,
-                'proveedor': kpi_saldo_proveedores,
-            },
         }
 
     @api.model

@@ -36,8 +36,8 @@ export class PantallaPrincipal extends Component {
             pedidos: [],
             modoTablero: true,
             cargando: false,
-            kpiClientes: 0,
-            kpiProveedor: 0,
+            kpiClientes: { mxn: 0, usd: 0 },
+            kpiProveedor: { mxn: 0, usd: 0 },
             columns: [],
             headers : [
                 { label: "Estado" },
@@ -306,7 +306,7 @@ export class PantallaPrincipal extends Component {
                 const ap    = p.anticipos_proveedor  || {};
                 const det   = p.detalle_cotizacion   || {};
                 const ult   = p.ultima_actualizacion || {};
-                const aviso = p.aviso        || {};
+                const aviso = p.avisos        || [];
 
                 return {
                     id: p.id,
@@ -318,9 +318,11 @@ export class PantallaPrincipal extends Component {
                     bool_contrato_proveedor: !!p.bool_contrato_proveedor,
 
                     aviso: aviso,
-                    aviso_texto: aviso.texto || aviso.message || '',
+                    aviso_texto: aviso.length > 0 ? aviso.map(a => a.texto).join(' | ') : '',
                     ultima_fecha: ult.fecha || '',
                     ultima_texto: ult.texto || '',
+
+
 
                     cotizacion_id: cot.id || false,
                     cotizacion_nombre: cot.nombre || '',
@@ -342,16 +344,23 @@ export class PantallaPrincipal extends Component {
                     cliente_pagado: toNum(ac.saldo_cliente) <= 0,
 
                     // ---- Anticipos proveedor ----
-                    proveedor_count_raw: toNum(ap.count),
                     proveedor_total_raw: toNum(ap.total),
                     proveedor_saldo_raw: toNum(ap.saldo_proveedor),
                     proveedor_acordado_raw: toNum(ap.total_acordado),
 
+                    proveedor_count_raw: toNum(ap.count),
+                    proveedor_total_usd: fmt(ap.total_usd),
+                    proveedor_total_mxn: fmt(ap.total_mxn),
+                    proveedor_saldo_usd: fmt(ap.saldo_proveedor_usd),
+                    proveedor_saldo_mxn: fmt(ap.saldo_proveedor_mxn),
+                    proveedor_acordado_usd: fmt(ap.total_acordado_usd),
+                    proveedor_acordado_mxn: fmt(ap.total_acordado_mxn),
+
                     proveedor_count:    String(toNum(ap.count)),
-                    proveedor_total:    fmt(ap.total),
-                    proveedor_saldo:    fmt(ap.saldo_proveedor),
-                    proveedor_acordado: fmt(ap.total_acordado),
-                    proveedor_pagado: toNum(ap.saldo_proveedor) <= 0,
+                    proveedor_total:    fmt(ap.total_usd),
+                    proveedor_saldo:    fmt(ap.saldo_proveedor_usd),
+                    proveedor_acordado: fmt(ap.total_acordado_usd),
+                    proveedor_pagado: toNum(ap.saldo_proveedor_mxn) <= 0,
 
                     // ---- Detalle cotización ----
                     detalle_count_raw: toNum(det.count),
@@ -366,20 +375,16 @@ export class PantallaPrincipal extends Component {
                 };
             });
 
-            this.state.kpiClientes  = fmt(resultado.kpi.cliente);
-            this.state.kpiProveedor = fmt(resultado.kpi.proveedor);
-
-            this.state.kpiClientesRaw  = toNum(resultado.kpi.cliente);
-            this.state.kpiProveedorRaw = toNum(resultado.kpi.proveedor);
+            this.state.kpiClientes = {
+                mxn: fmt(resultado.kpi.cliente.mxn),
+                usd: fmt(resultado.kpi.cliente.usd)
+            };
+            this.state.kpiProveedor = {
+                mxn: fmt(resultado.kpi.proveedor.mxn),
+                usd: fmt(resultado.kpi.proveedor.usd)
+            };
 
             this.asignarColumnas();
-
-            console.log("Pedidos formateados:", this.state.pedidos);
-            console.log("KPIs:", {
-                clientes: this.state.kpiClientes,
-                proveedor: this.state.kpiProveedor,
-            });
-
         } catch (e) {
             console.error("Error al cargar pedidos:", e);
             this.state.pedidos = [];

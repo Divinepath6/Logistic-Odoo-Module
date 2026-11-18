@@ -11,34 +11,44 @@
                         placeholder="Buscar por nombre de cliente o cotización..."
                         t-on-input="onBusqueda" />
                 </div>
-                
+
                 <div class="odoo-header-actions">
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onCargarCotizacion">
-                    <i class="fa fa-external-link-square" /> Cargar </button>
+                        <i class="fa fa-external-link-square" /> Cargar </button>
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onClickCrearPedido">
-                    <i class="fa fa-plus-circle" /> Crear </button>
+                        <i class="fa fa-plus-circle" /> Crear </button>
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onclickEditarRacks">
-                    <i class="fa fa-list" /> Racks </button>
+                        <i class="fa fa-list" /> Racks </button>
 
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onCambiarModo">
-                    <i class="fa fa-random"></i> Cambiar </button>
-                    
+                        <i class="fa fa-random"></i> Cambiar </button>
+
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onEditarColores">
-                    <i class="fa fa-paint-brush"></i> Colores </button>
+                        <i class="fa fa-paint-brush"></i> Colores </button>
 
                     <div class="odoo-header-kpis">
                         <div class="odoo-kpi-card">
                             <span class="odoo-kpi-label">Saldo Clientes</span>
-                            <span class="odoo-kpi-value">$<t t-esc="state.kpiClientes || '0.00'" /></span>
+                            <div class="d-flex flex-column">
+                                <small class="text-muted">MXN: $<t
+                                        t-esc="state.kpiClientes.mxn || '0.00'" /></small>
+                                <small class="text-muted">USD: $<t
+                                        t-esc="state.kpiClientes.usd || '0.00'" /></small>
+                            </div>
                         </div>
                         <div class="odoo-kpi-card odoo-kpi-card-danger">
                             <span class="odoo-kpi-label">Saldo Proveedores</span>
-                            <span class="odoo-kpi-value">$<t t-esc="state.kpiProveedor || '0.00'" /></span>
+                            <div class="d-flex flex-column">
+                                <small class="text-muted">MXN: $<t
+                                        t-esc="state.kpiProveedor.mxn || '0.00'" /></small>
+                                <small class="text-muted">USD: $<t
+                                        t-esc="state.kpiProveedor.usd || '0.00'" /></small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -112,8 +122,9 @@
                                             <div class="aviso-lista">
                                                 <t t-if="p.aviso and p.aviso.length">
                                                     <t t-foreach="p.aviso" t-as="a" t-key="a_index">
-                                                        <span t-attf-class="odoo-badge aviso-badge aviso-#{a.severidad}">
-                                                            <t t-esc="a.mensaje"/>
+                                                        <span
+                                                            t-attf-class="odoo-badge aviso-badge aviso-#{a.importancia}">
+                                                            <t t-esc="a.texto" />
                                                         </span>
                                                     </t>
                                                 </t>
@@ -131,10 +142,12 @@
                                                 <t t-esc="p.cotizacion_total" />
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <t t-esc="p.proveedor_saldo" />
+                                                <div>USD: <t t-esc="p.proveedor_saldo_usd" /></div>
+                                   
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <t t-esc="p.proveedor_acordado" />
+                                                <div>USD: <t t-esc="p.proveedor_acordado_usd" /></div>
+                      
                                             </div>
                                         </t>
                                         <t t-else="">
@@ -193,8 +206,9 @@
                                             <div class="aviso-lista">
                                                 <t t-if="p.aviso and p.aviso.length">
                                                     <t t-foreach="p.aviso" t-as="a" t-key="a_index">
-                                                        <span t-attf-class="odoo-badge aviso-badge aviso-#{a.severidad}">
-                                                            <t t-esc="a.mensaje"/>
+                                                        <span
+                                                            t-attf-class="odoo-badge aviso-badge aviso-#{a.importancia}">
+                                                            <t t-esc="a.texto" />
                                                         </span>
                                                     </t>
                                                 </t>
@@ -205,8 +219,14 @@
 
                                             <div>Saldo cliente: <span t-esc="p.cliente_saldo" /></div>
                                             <div>Total cliente: <span t-esc="p.cliente_acordado" /></div>
-                                            <div>Saldo proveedor: <span t-esc="p.proveedor_saldo" /></div>
-                                            <div>Total proveedor: <span t-esc="p.proveedor_acordado" /></div>
+                                            <div>Saldo proveedor (USD): <span
+                                                    t-esc="p.proveedor_saldo_usd" /></div>
+                                            <div>Saldo proveedor (MXN): <span
+                                                    t-esc="p.proveedor_saldo_mxn" /></div>
+                                            <div>Total proveedor (USD): <span
+                                                    t-esc="p.proveedor_acordado_usd" /></div>
+                                            <div>Total proveedor (MXN): <span
+                                                    t-esc="p.proveedor_acordado_mxn" /></div>
                                             <div>Racks: <span t-esc="p.detalle_racks" /></div>
                                             <div>Actualización: <span t-esc="p.ultima_fecha || ''" /></div>
                                         </div>
