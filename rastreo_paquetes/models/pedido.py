@@ -23,9 +23,8 @@ class rastreo_paquetes(models.Model):
         ('fase_inicial', 'Fase inicial'),
         ('produccion', 'En Producción'),
         ('puerto_origen', 'En el puerto de origen'),
-        ('embarcado', 'Embarcado'),
-        ('descargado', 'Descargado'),
-        ('aduana', 'En Aduana'),
+        ('agua', 'En el Agua'),
+        ('puerto_destino', 'Puerto de Destino'),
         ('entregado', 'Entregado'),
     ], string = 'Estado', default='fase_inicial')
 
@@ -56,8 +55,39 @@ class rastreo_paquetes(models.Model):
         string='Nombre de PDF'
     )
 
+   
 
+    pdf_flete= fields.Binary(
+        string='Documento flete',
+        attachment=True
+    )
+    pdf_flete_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
 
+    pdf_evidencia_entregado = fields.Binary(
+        string='Documento evidencia de entregado',
+        attachment=True
+    )
+    pdf_evidencia_entregado_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
+    # ADUANA ¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡
+    pdf_aviso = fields.Binary(
+        string='Documento Aviso de arribo',
+        attachment=True
+    )
+    pdf_aviso_nombre = fields.Char(
+        string='Nombre de PDF'
+    )
+    cotizacion_aduana = fields.Monetary(
+        string='Documento Aviso de arribo',
+    )
+    salida_aduana= fields.Boolean(
+        string="Forwarder conseguido", 
+        default=False
+    )
+    
     currency_id = fields.Many2one(
         'res.currency', 
         string='Moneda', 
@@ -127,18 +157,28 @@ class rastreo_paquetes(models.Model):
         string = '4 Fecha acordada con el cliente'
     )    
 
-    pago_compromiso_cliente_1 = fields.Date(
-            string = 'Porcentaje de pago acordado con el cliente'
-        )
-    pago_compromiso_cliente_2 = fields.Date(
-            string = 'Porcentaje de pago acordado con el cliente'
-        )
-    pago_compromiso_cliente_3 = fields.Date(
-            string = 'Porcentaje de pago acordado con el cliente'
-        )
-    pago_compromiso_cliente_4 = fields.Date(
-            string = 'Porcentaje de pago acordado con el cliente'
-        )    
+    pago_compromiso_cliente_1 = fields.Float(
+        string= 'Porcentaje de pago acordado con el cliente',
+        digits=(5, 2),
+        required=True
+    )
+            
+    pago_compromiso_cliente_2 = fields.Float(
+        string= 'Porcentaje de pago acordado con el cliente',
+        digits=(5, 2),
+        required=True
+    )
+    pago_compromiso_cliente_3 = fields.Float(
+        string= 'Porcentaje de pago acordado con el cliente',
+        digits=(5, 2),
+        required=True
+    )
+    pago_compromiso_cliente_4 = fields.Float(
+        string= 'Porcentaje de pago acordado con el cliente',
+        digits=(5, 2),
+        required=True
+    )
+        
     fecha_termino_produccion = fields.Date(
         string = 'Fecha de termino de produccion'
     ) 
@@ -206,6 +246,27 @@ class rastreo_paquetes(models.Model):
         'pedido_id',
         string='Avisos Activos'
     )
+    eta_ids = fields.One2many(
+        'rastreo.etas',
+        'pedido_id',
+        string='Historial de ETAs'
+    )
+
+    ETA = fields.Date(
+        string='Fecha de la Estimated Time of Arrival (Más reciente)',
+        compute='_compute_eta_actual',
+        store=True
+    )
+    @api.depends('eta_ids', 'eta_ids.fecha', 'eta_ids.numero')
+    def _compute_eta_actual(self):
+        for record in self:
+            if record.eta_ids:
+                # Obtiene el ETA con el número más alto
+                ultimo_eta = record.eta_ids.sorted(key=lambda e: e.numero, reverse=True)[0]
+                record.ETA = ultimo_eta.fecha
+            else:
+                record.ETA = False
+
     # anticipo
     # =============================================================================================================
     # MÉTODOS CRUD
@@ -355,6 +416,9 @@ class rastreo_paquetes(models.Model):
             'pdf_PL',
             'pdf_invoice',
             'pdf_prefactura',
+            'pdf_aviso',
+            'pdf_flete',
+            'pdf_evidencia_entregado',
         ]
         #verificacion de campos aaa
         if not pedido_id:
@@ -412,6 +476,9 @@ class rastreo_paquetes(models.Model):
             'pdf_PL',
             'pdf_invoice',
             'pdf_prefactura',
+            'pdf_aviso',
+            'pdf_flete',
+            'pdf_evidencia_entregado',
         ]
         if not pedido_id:
             return {'success': False, 'error': 'Necesita un Id de pedido'}
@@ -442,7 +509,7 @@ class rastreo_paquetes(models.Model):
         }
     
     @api.model
-    def guardar_terminos(self, tipo_documento, pdf, pedido_id, nombre_archivo, terminos, totalProveedor):
+    def guardar_terminos(self, tipo_documento, pdf, pedido_id, nombre_archivo, terminos, totalProveedor,invoice):
         if not pedido_id:
             return {'success': False, 'error': "Debes indicar un pedido"}
         
@@ -467,7 +534,8 @@ class rastreo_paquetes(models.Model):
                     #proveedor_total_num = 0.0
 
         pedido.write({
-                    'total_proveedor': proveedor_total_num or 0.0
+                    'total_proveedor': proveedor_total_num or 0.0,
+                    'numero_contrato': invoice, 
                 })
         if hasattr(pedido, 'termino_ids'):
                     pedido.termino_ids.unlink()
@@ -506,8 +574,6 @@ class rastreo_paquetes(models.Model):
         
         with self.env.cr.savepoint():
             pedido.write({
-                'numero_guia': datos.get('numero_guia') or '',
-                'numero_contrato': datos.get('numero_contrato') or '',
                 'racks_acordados': datos.get('racks_acordados') or 0,
                 'forwarder': datos.get('forwarder') or False,
                 'total_cliente': datos.get('total_cliente'),
@@ -516,7 +582,6 @@ class rastreo_paquetes(models.Model):
                 'total_proveedor_costo_dolar': datos.get('total_proveedor_costo_dolar') or 0.0,
                 'total_cliente_costo_dolar':  datos.get('total_cliente_costo_dolar') or 0.0,
 
-                'ETA': datos.get('ETA') or False,
                 'ETD': datos.get('ETD') or False,
                 'CRD': datos.get('CRD') or False,
 
@@ -528,6 +593,32 @@ class rastreo_paquetes(models.Model):
                 'fecha_compromiso_cliente_3': datos.get('fecha_compromiso_cliente_3') or False,
                 'fecha_compromiso_cliente_4': datos.get('fecha_compromiso_cliente_4') or False,
             })
+
+            if 'etas' in datos:
+                etas_data = datos.get('etas') or []
+                pedido.eta_ids.unlink()
+                
+                nuevas_etas_vals = []
+                for index, eta_item in enumerate(etas_data, start=1):
+                    fecha_eta = eta_item.get('fecha')
+                    if not fecha_eta:
+                        continue
+                    nuevas_etas_vals.append({
+                        'pedido_id': pedido.id,
+                        'numero': int(eta_item.get('numero') or index),
+                        'texto': eta_item.get('texto') or f'ETA #{index}',
+                        'fecha': fecha_eta,
+                    })
+                
+                if nuevas_etas_vals:
+                    self.env['rastreo.etas'].create(nuevas_etas_vals)
+            elif datos.get('ETA') and not pedido.eta_ids:
+                self.env['rastreo.etas'].create({
+                    'pedido_id': pedido.id,
+                    'numero': 1,
+                    'texto': 'ETA Inicial',
+                    'fecha': datos.get('ETA'),
+                })
 
             terminos_data = datos.get('terminos', [])
             for t in terminos_data:
@@ -917,11 +1008,20 @@ class rastreo_paquetes(models.Model):
                 'fecha': actualizacion.fecha_actualizacion,
                 'texto': actualizacion.actualizacion_texto or '',
                 'usuario_id': actualizacion.usuario_id.id or False,
-                'usuario': actualizacion.usuario_id.name or '',
+                'usuario': actualizacion.usuario_id.sudo().name or '',
             }
             for actualizacion in actualizaciones
         ]
 
+        lista_etas = [
+            {
+                'id': e.id,
+                'numero': e.numero,
+                'texto': e.texto or '',
+                'fecha': str(e.fecha) if e.fecha else '',
+            }
+            for e in self.env['rastreo.etas'].search([('pedido_id', '=', pedido_id)], order='numero asc')
+        ]
         lista_avisos = [
             {
                 'id': av.id,
@@ -1129,25 +1229,33 @@ class rastreo_paquetes(models.Model):
                 'numero_guia': pedido.numero_guia or '',
                 'cliente_id': pedido.cliente_id.id if pedido.cliente_id else None,
                 'cliente_nombre': pedido.cliente_id.name if pedido.cliente_id else '',
+
                 'total_cliente': cotizacion.amount_total or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
-
                 'total_proveedor_costo_dolar': pedido.total_proveedor_costo_dolar or 0,
                 'total_cliente_costo_dolar': pedido.total_cliente_costo_dolar or 0,
                 'contenedores': pedido.contenedores or 0,
+                'cotizacion_aduana': pedido.cotizacion_aduana or 0,
                 'avisos': lista_avisos,
                 'numero_contrato': pedido.numero_contrato or '',
                 'fecha_creacion': pedido.fecha_creacion or '',
+
+                'ETA':pedido.ETA or '',
                 'CRD': pedido.CRD or '',
-                'ETD': pedido.ETD or '',
-                'ETA': pedido.ETA or '',
+                'ETD': pedido.ETD or '',               
                 'fecha_termino_produccion': pedido.fecha_termino_produccion or '',
+
                 'fecha_compromiso_cliente_1': pedido.fecha_compromiso_cliente_1 or '',
                 'fecha_compromiso_cliente_2': pedido.fecha_compromiso_cliente_2 or '',
                 'fecha_compromiso_cliente_3': pedido.fecha_compromiso_cliente_3 or '',
                 'fecha_compromiso_cliente_4': pedido.fecha_compromiso_cliente_4 or '',
-
+                'pago_compromiso_cliente_1': pedido.pago_compromiso_cliente_1 or 0.0,
+                'pago_compromiso_cliente_2': pedido.pago_compromiso_cliente_2 or 0.0,
+                'pago_compromiso_cliente_3': pedido.pago_compromiso_cliente_3 or 0.0,
+                'pago_compromiso_cliente_4': pedido.pago_compromiso_cliente_4 or 0.0,
                 'terminos': lista_terminos,
+
+                
 
                 # booleanos
                 'forwarder': bool(pedido.forwarder),
@@ -1157,8 +1265,13 @@ class rastreo_paquetes(models.Model):
                 'pdf_PL': bool(pedido.pdf_PL),
                 'pdf_invoice': bool(pedido.pdf_invoice),
                 'pdf_prefactura': bool(pedido.pdf_prefactura),
-
+                'pdf_aviso': bool(pedido.pdf_aviso),
+                'pdf_flete': bool(pedido.pdf_flete),
+                'pdf_evidencia_entregado':bool(pedido.pdf_evidencia_entregado),
+                'salida_aduana': bool(pedido.salida_aduana),
+    
                 # listas
+                'lista_etas': lista_etas,
                 'lista_anticipos_proveedor': lista_anticipos_proveedor,
                 'lista_pagos_cliente': lista_pagos_cliente,
                 'actualizaciones': lista_actualizaciones,
@@ -1166,6 +1279,100 @@ class rastreo_paquetes(models.Model):
             }
         }
 
+
+    @api.model
+    def guardar_terminos_cliente(self, pedido_id, terminos, totalCliente):
+        if not pedido_id:
+            return {'success': False, 'error': "Debes indicar un pedido"}
+
+        pedido = self.browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False, 'error': "El pedido indicado no existe."}
+
+        if not terminos or len(terminos) == 0:
+            return {
+                'success': False,
+                'error': "Debe haber al menos un término de pago"
+            }
+
+        try:
+            with self.env.cr.savepoint():
+                try:
+                    total_cliente_num = float(totalCliente) if totalCliente else 0.0
+                except (ValueError, TypeError):
+                    total_cliente_num = 0.0
+
+                valores = {
+                    'total_cliente': total_cliente_num,
+                    'pago_compromiso_cliente_1': 0.0,
+                    'pago_compromiso_cliente_2': 0.0,
+                    'pago_compromiso_cliente_3': 0.0,
+                    'pago_compromiso_cliente_4': 0.0,
+                }
+
+                for index, t in enumerate(terminos[:4], start=1):
+                    try:
+                        porcentaje_val = float(t.get('porcentaje', 0.0) or 0.0)
+                    except (ValueError, TypeError):
+                        porcentaje_val = 0.0
+                    valores[f'pago_compromiso_cliente_{index}'] = porcentaje_val
+
+                pedido.write(valores)
+
+            return {'success': True}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+        
+
+    @api.model
+    def agregar_eta(self, pedido_id, fecha, texto=''):
+        pedido = self.browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False, 'error': 'Pedido no encontrado'}
+        if not fecha:
+            return {'success': False, 'error': 'La fecha del ETA es obligatoria'}
+
+        ultimo = self.env['rastreo.etas'].search(
+            [('pedido_id', '=', pedido_id)],
+            order='numero desc',
+            limit=1
+        )
+        siguiente_numero = (ultimo.numero or 0) + 1
+
+        nueva_eta = self.env['rastreo.etas'].create({
+            'pedido_id': pedido.id,
+            'numero': siguiente_numero,
+            'texto': texto or f'ETA #{siguiente_numero}',
+            'fecha': fecha,
+        })
+
+        # Registrar en el historial de actualizaciones
+        ultima_act = self.env['rastreo.pedido_actualizacion'].search(
+            [('pedido_id', '=', pedido_id)],
+            order='numero_actualizacion desc',
+            limit=1
+        )
+        num_act = (ultima_act.numero_actualizacion or 0) + 1
+        self.env['rastreo.pedido_actualizacion'].create({
+            'pedido_id': pedido.id,
+            'numero_actualizacion': num_act,
+            'fecha_actualizacion': datetime.now(),
+            'actualizacion_texto': f'Nueva ETA #{siguiente_numero} ({texto or "Sin observaciones"})',
+            'usuario_id': self.env.user.id,
+        })
+
+        self.crear_aviso(pedido.id)
+        return {
+            'success': True,
+            'eta': {
+                'id': nueva_eta.id,
+                'numero': nueva_eta.numero,
+                'texto': nueva_eta.texto,
+                'fecha': str(nueva_eta.fecha),
+            }
+        }
+
+    
     @api.model
     def guardar_detalle_cotizacion(self, pedido_id):
         pedido = self.browse(pedido_id)

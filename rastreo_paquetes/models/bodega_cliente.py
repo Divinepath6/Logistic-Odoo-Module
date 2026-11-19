@@ -23,7 +23,7 @@ class rastreo_bodega_cliente(models.Model):
     )
 
     @api.model
-    def guardar_bodega(self, pedido_id, ubicacion, bodegas, guardar_cotizacion):
+    def guardar_bodega(self, pedido_id, ubicacion, bodegas, guardar_cotizacion, en_dolares=True, con_iva=True):
         if not pedido_id:
             raise UserError("Bodega: Debes indicar un pedido")
 
@@ -37,9 +37,35 @@ class rastreo_bodega_cliente(models.Model):
         if not pedido.sale_order_id:
             raise UserError("El pedido no tiene una cotización de Odoo vinculada.")
 
-        bodega_cliente = self.search([('pedido_id', '=', pedido_id)], limit=1)
+        codigo_moneda = 'USD' if en_dolares else 'MXN'
+        moneda_activa = self.env['res.currency'].search([('name', '=', codigo_moneda)], limit=1)
+        if not moneda_activa:
+            raise UserError(f"No se encontró la moneda {codigo_moneda} activa en Odoo.")
+
+        Pricelist = self.env['product.pricelist']
+        domain_pricelist = [('currency_id', '=', moneda_activa.id)]
         
-        usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
+        if con_iva:
+            pricelist = Pricelist.search(domain_pricelist + [('name', 'ilike', 'IVA')], limit=1)
+            if not pricelist:
+                pricelist = Pricelist.search(domain_pricelist, limit=1)
+        else:
+            pricelist = Pricelist.search(domain_pricelist + [('name', 'not ilike', 'IVA')], limit=1)
+            if not pricelist:
+                pricelist = Pricelist.search(domain_pricelist, limit=1)
+
+        if not pricelist:
+            raise UserError(f"No existe una Lista de Precios configurada para la moneda {codigo_moneda}.")
+
+        Tax = self.env['account.tax']
+        impuesto_iva = Tax.search([
+            ('type_tax_use', '=', 'sale'),
+            ('amount', '=', 16.0),
+            ('price_include', '=', bool(con_iva)),
+            ('company_id', '=', pedido.sale_order_id.company_id.id)
+        ], limit=1)
+
+        bodega_cliente = self.search([('pedido_id', '=', pedido_id)], limit=1)
         
         with self.env.cr.savepoint():
             if bodega_cliente:
@@ -55,11 +81,9 @@ class rastreo_bodega_cliente(models.Model):
             racks_info = []
             for b in bodegas:
                 rack_id = int(b.get('rack_id')) if b.get('rack_id') else False
-                
                 if not rack_id:
                     raise UserError("Cada bodega debe tener un rack asociado.")
 
-                
                 rack = self.env['rastreo.rack_detalle'].browse(rack_id)
                 if not rack.exists() or not rack.producto_id:
                     raise UserError(
@@ -90,7 +114,7 @@ class rastreo_bodega_cliente(models.Model):
                     'cantidad': int(b.get('racks_ocupados') or 0),
                     'rack_id': rack.id, 
                     'numero': b.get('numero_bodega') or '',
-                    'color' : b.get('color_id'),
+                    'color': b.get('color_id'),
                 })
 
                 bodega_adicional = self.env['rastreo.bodega_adicional']
@@ -102,9 +126,7 @@ class rastreo_bodega_cliente(models.Model):
                     
                     producto_ = self.env['product.product'].browse(producto_id)
                     if not producto_.exists():
-                        raise UserError(
-                            f"El {producto_} no existe"
-                        )
+                        raise UserError(f"El {producto_} no existe")
                     
                     bodega_adicional.create({
                         'numero': float(d.get('numero') or 0.0),
@@ -114,7 +136,7 @@ class rastreo_bodega_cliente(models.Model):
                         'color': d.get('color_id') or False,
                         'producto_id': producto_.id,
                         'bodega_adicional_id': bodega_creada.id,
-                        'currency_id': usd_currency.id,
+                        'currency_id': moneda_activa.id, # <-- Dinámico según en_dolares
                     })
                     racks_info.append({
                         'producto_': producto_,
@@ -122,18 +144,19 @@ class rastreo_bodega_cliente(models.Model):
                         'rack_id': rack.id, 
                         'cantidad': int(d.get('racks_ocupados') or 0),
                         'numero': d.get('numero') or '',
-                        'color' : d.get('color_id') or False,
+                        'color': d.get('color_id') or False,
                     })
+
             if not guardar_cotizacion:
-                return {'success': True,'id': pedido.id}
+                return {'success': True, 'id': pedido.id}
             
             sale = pedido.sale_order_id
             if not sale.exists():
-                return {'success': False, 'error' : "No existe la Cotización"}
+                return {'success': False, 'error': "No existe la Cotización"}
             
             lineas_vals = []
             for info in racks_info:
-                lineas_vals.append((0, 0, {
+                linea_dict = {
                     'product_id': info['producto_'].id,
                     'product_uom_qty': info['cantidad'] or 1,
                     'price_unit': info['costo'],
@@ -141,11 +164,16 @@ class rastreo_bodega_cliente(models.Model):
                     'rastreo_rack_id': info['rack_id'] or False,
                     'rastreo_color_id': info['color'] or False,
                     'rastreo_numero': info['numero'] or '',
-                }))
+                }
+                if impuesto_iva:
+                    linea_dict['tax_id'] = [(6, 0, [impuesto_iva.id])]
+
+                lineas_vals.append((0, 0, linea_dict))
 
             sale.write({
-                'order_line': [(5, 0, 0)] + lineas_vals,
                 'partner_id': pedido.cliente_id.id,
+                'pricelist_id': pricelist.id,
+                'order_line': [(5, 0, 0)] + lineas_vals,
             })
 
             detalle = self.env['rastreo.cotizacion_detalle']
@@ -162,7 +190,7 @@ class rastreo_bodega_cliente(models.Model):
                     'product_id': linea.product_id.id,
                     'rack_id': linea.rastreo_rack_id.id or False,
                     'color': linea.rastreo_color_id.id or False,
-                    'currency_id': usd_currency.id,
+                    'currency_id': moneda_activa.id, # <-- Dinámico según en_dolares
                     'cantidad_racks': int(linea.product_uom_qty),
                     'pedido_id': pedido_id,
                     'sale_order_line_id': linea.id,
@@ -175,6 +203,8 @@ class rastreo_bodega_cliente(models.Model):
             'bodega_cliente_id': bodega_cliente.id,
             'sale_order_id': pedido.sale_order_id.id,
             'sale_order_name': pedido.sale_order_id.name,
+            'currency': moneda_activa.name,
+            'pricelist_id': pricelist.id,
         }
 
 

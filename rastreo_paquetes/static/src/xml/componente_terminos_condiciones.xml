@@ -13,6 +13,11 @@
                                placeholder="0.00"
                                t-model.number="state.totalProveedor"
                                t-on-input="recalcularMontos"/>
+                        
+                               <label class="form-label fw-bold">Invoice :</label>
+                            <input type="text"
+                               class="form-control"
+                               t-model="state.invoice"/>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-2">

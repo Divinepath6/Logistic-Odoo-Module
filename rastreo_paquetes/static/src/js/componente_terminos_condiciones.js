@@ -17,6 +17,7 @@ export class componente_terminos_condiciones extends Component {
         
         this.state = useState({
             pedidoId: 0,
+            invoice: "",
             PDF: "",   
             PDFNombre: "", 
             documentoNombre: "", 
@@ -157,6 +158,16 @@ export class componente_terminos_condiciones extends Component {
             });
         });
     }
+    onConfirmarInvoice() {
+        return new Promise((resolve) => {
+            this.dialogService.add(ConfirmationDialog, {
+                title: _t("Esta Acción no se podre deshacer"),
+                body: _t("¿Este es el Invoice Correcto?" + this.state.invoice),
+                confirm: () => resolve(true),
+                cancel: () => resolve(false),
+            });
+        });
+    }
 
     async onConfirmar() {
         if (!this.state.pedidoId) {
@@ -179,9 +190,15 @@ export class componente_terminos_condiciones extends Component {
             this.notification.add("Por favor colocar un total de proveedor", { type: "warning" });
             return;
         }
+        if (this.state.invoice == "") {
+            this.notification.add("Por favor coloca el Invoice", { type: "warning" });
+            return;
+        }
         let seguir = true;
         if(this.state.editado && !this.state.nuevo){
             seguir = await this.onConfirmarCambios();
+        }else{
+            seguir = await this.onConfirmarInvoice();
         }
         if(seguir == false){
             return
@@ -198,6 +215,7 @@ export class componente_terminos_condiciones extends Component {
                     this.state.PDFNombre,
                     this.state.terminos,
                     total,
+                    this.state.invoice,
                 ]
             );
             if (resultado && resultado.success){

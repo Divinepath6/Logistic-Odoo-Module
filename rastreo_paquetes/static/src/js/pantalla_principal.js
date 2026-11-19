@@ -399,8 +399,8 @@ export class PantallaPrincipal extends Component {
             ["fase_inicial", "Fase Inicial"], 
             ["produccion", "En Producción"], 
             ["puerto_origen", 'En el puerto de origen'], 
-            ["embarcado", "En Mar"],
-            ["aduana", "Aduana"],
+            ["agua", "En Mar"],
+            ["puerto_destino", "Puerto de Destino"],
             ["Entregado", "Entregado"]
         ];
         this.state.columns = estados.map(estado => ({
@@ -408,7 +408,6 @@ export class PantallaPrincipal extends Component {
             packages: this.state.pedidos.filter(p => p.estado === estado[0]),
         }));
     }
- 
 }
 
 PantallaPrincipal.template = "rastreo_paquetes.pantalla_principal";

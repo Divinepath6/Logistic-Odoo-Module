@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="rastreo_paquetes.componente_detalle_eta">
+        <Dialog title="props.title or 'Registro de ETA'" size="'md'">
+            <div class="p-2">
+                <div class="mb-3">
+                    <label class="odoo-label" for="eta_numero">Número de ETA</label>
+                    <input type="number"
+                        id="eta_numero"
+                        class="form-control"
+                        t-att-value="state.numero"
+                        readonly="readonly" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="odoo-label" for="eta_fecha">Fecha acordada (ETA) *</label>
+                    <input type="date"
+                        id="eta_fecha"
+                        class="form-control"
+                        t-model="state.fecha" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="odoo-label" for="eta_texto">Motivo / Observaciones</label>
+                    <input type="text"
+                        id="eta_texto"
+                        class="form-control"
+                        placeholder="Ej. ETA inicial, Retraso en puerto, Cambio de naviera..."
+                        t-model="state.texto" />
+                </div>
+            </div>
+
+            <t t-set-slot="footer">
+                <button type="button"
+                    class="odoo-btn odoo-btn-secondary"
+                    t-on-click="onCancelar"
+                    t-att-disabled="state.guardando">
+                    Cancelar
+                </button>
+                <button type="button"
+                    class="odoo-btn odoo-btn-primary"
+                    t-on-click="onConfirmar"
+                    t-att-disabled="state.guardando">
+                    <i class="fa fa-save" /> Guardar ETA
+                </button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

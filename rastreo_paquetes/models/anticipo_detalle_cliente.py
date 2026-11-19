@@ -148,7 +148,7 @@ class rastreo_anticipo_detalle_cliente(models.Model):
             'ref': ref,
             'journal_id': journal.id,
             'invoice_line_ids': [(0, 0, {
-                'name': f'Anticipo / Factura asociada a {sale_order.name}',
+                'name': f'Asociado a {sale_order.name}',
                 'quantity': 1.0,
                 'price_unit': monto_usd,
             })],
@@ -197,7 +197,6 @@ class rastreo_anticipo_detalle_cliente(models.Model):
                 usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1) or self.env.company.currency_id
                 numero = self.search_count([('pedido_id', '=', pedido_id)]) + 1
 
-                # Referencia ligada directamente a la cotización (y al invoice si existe)
                 ref = f"Anticipo {sale_order.name}"
                 if pedido.numero_contrato:
                     ref = f"Anticipo {sale_order.name} / {pedido.numero_contrato}"
@@ -245,7 +244,7 @@ class rastreo_anticipo_detalle_cliente(models.Model):
             'id': self.id,
             'numero_anticipo': self.numero,
             'cotizacion': self.pedido_id.sale_order_id.name if self.pedido_id.sale_order_id else 'Sin Cotización',
-            'referencia_odoo': referencia_odoo or f"ANTICIPO-{self.numero}",
+            'referencia_odoo': referencia_odoo or f"{self.numero}",
             'tipo_registro': self.tipo_registro,
             'fecha_anticipo': self.fecha_anticipo,
             'monto_usd': self.monto_usd,

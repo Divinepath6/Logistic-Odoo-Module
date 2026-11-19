@@ -6,7 +6,7 @@
     visualizar y recibir notificaciones de paquetes
     """,
     'author': "Jesus Cervantes",
-    'website': "https://www.yourcompany.com",
+    'website': "",
     'license': 'LGPL-3',
     'category': 'Extra Tools',
     'version': '0.1',
@@ -75,6 +75,12 @@
             
             'rastreo_paquetes/static/src/js/componente_confimacion_dolar.js',
             'rastreo_paquetes/static/src/xml/componente_confimacion_dolar.xml',
+
+            'rastreo_paquetes/static/src/js/componente_detalle_eta.js',
+            'rastreo_paquetes/static/src/xml/componente_detalle_eta.xml',
+
+            'rastreo_paquetes/static/src/js/componente_terminos_cliente.js',
+            'rastreo_paquetes/static/src/xml/componente_terminos_cliente.xml',
         ],
     },
     'installable': True,

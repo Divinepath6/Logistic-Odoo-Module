@@ -11,6 +11,8 @@ import { componente_detalle_cliente } from "./componente_detalle_cliente"
 import { componente_subir_pdf } from "./componente_subir_pdf";
 import { componente_rack_colores_escoger } from "./componente_rack_colores_escoger"; 
 import { componente_terminos_condiciones} from "./componente_terminos_condiciones";
+import { componente_detalle_eta } from "./componente_detalle_eta";
+import { componente_terminos_cliente } from "./componente_terminos_cliente";
 
 export class PantallaPedido extends Component {
     static components = { 
@@ -20,6 +22,8 @@ export class PantallaPedido extends Component {
         componente_subir_pdf,
         componente_rack_colores_escoger,
         componente_terminos_condiciones,
+        componente_detalle_eta,
+        componente_terminos_cliente,
     };
     setup() {
         this.action = useService("action");
@@ -43,6 +47,8 @@ export class PantallaPedido extends Component {
             detalleProveedor: [],
             actualizaciones: [],
             terminos: [],
+            listaEtas: [],
+            terminosCliente: [],
 
             contenedores : 0,
             //bool de PDF
@@ -54,14 +60,16 @@ export class PantallaPedido extends Component {
             pdfFacturaProveedor: false,
             PDFETA: false,
             PDFETD: false,
-            pdf_prefactura: false,
-
+            pdfPrefactura: false,
+            pdfAviso:false,
+            salidaAduana: false,
             // Monedas
             totalProveedor: 0,
             totalCliente: 0,
             totalAnticiposCliente: 0,
             totalAnticiposProveedor: 0,
-
+            cotizacionAduana:0,
+    
             proveedorCostoDolar: 0,
             clienteCostoDolar: 0,
 
@@ -132,10 +140,12 @@ export class PantallaPedido extends Component {
             this.state.clienteNombre = p.cliente_nombre || '';
             this.state.numeroContrato = p.numero_contrato || '';
 
+            this.state.cotizacionAduana = toNum(p.cotizacion_aduana);
+            this.state.salidaAduana = !!p.salida_aduana;
+  
             
-            
-            this.state.totalProveedor = toNum(p.total_proveedor);
-            this.state.totalCliente = toNum(p.total_cliente);
+            this.state.totalProveedor = toNum(p.total_proveedor).toFixed(2);
+            this.state.totalCliente = toNum(p.total_cliente).toFixed(2);
 
             this.state.proveedorCostoDolar =toNum(p.total_proveedor_costo_dolar);
             this.state.clienteCostoDolar = toNum(p.total_cliente_costo_dolar);     
@@ -147,7 +157,12 @@ export class PantallaPedido extends Component {
             this.state.pdfBL = !!p.pdf_BL;
             this.state.pdfPL = !!p.pdf_PL;
             this.state.pdfInvoice = !!p.pdf_invoice;
-            this.state.pdf_prefactura = !!p.pdf_prefactura;
+            this.state.pdfPrefactura = !!p.pdf_prefactura;
+            
+            this.state.pdfAviso = !!p.pdf_aviso;
+            this.state.pdfFlete = !!p.pdf_flete;
+            this.state.pdfEvidenciaEntregado = !!p.pdf_evidencia_entregado;
+
             this.state.actualizaciones = (p.actualizaciones || []).map((a) => ({
                 id: a.id,
                 numero_actualizacion: a.numero_actualizacion,
@@ -155,12 +170,10 @@ export class PantallaPedido extends Component {
                 texto: a.texto || '',
             }));
 
-            let totalClienteCalculado = 0;
             this.state.detalleRacks = (p.detalle_racks || []).map((d, i) => {
                 const costo = toNum(d.precio);
                 const cantidad = toNum(d.cantidad);
                 const subtotal = costo * cantidad;
-                totalClienteCalculado += subtotal;
                 return {
                     id: d.id,
                     colorId: d.color_id,
@@ -176,7 +189,6 @@ export class PantallaPedido extends Component {
                     subtotal: fmt(subtotal),
                 };
             });
-            this.state.totalCliente = totalClienteCalculado;
 
             const pagos = p.lista_pagos_cliente || [];
             let totalAnticiposCliente = 0;
@@ -206,6 +218,7 @@ export class PantallaPedido extends Component {
                     precioDolar_fmt: fmt(precioDolar),
                     montoMxn_raw: montoMxn,
                     montoMxn: fmt(montoMxn),
+                    PDFAnticipo: !!d.pdf_anticipo_cliente,
                 };
             });
 
@@ -274,8 +287,62 @@ export class PantallaPedido extends Component {
             this.state.fecha_compromiso_cliente_3 = p.fecha_compromiso_cliente_3 || '';
             this.state.fecha_compromiso_cliente_4 = p.fecha_compromiso_cliente_4 || '';
 
+            this.state.listaEtas = (p.lista_etas || []).map((e, index) => ({
+                id: e.id || 0,
+                numero: e.numero || (index + 1),
+                fecha: e.fecha || '',
+                texto: e.texto || '',
+            }));
 
             this.state.aviso = p.aviso || [];
+
+            const totalCliNum = toNum(this.state.totalCliente);
+            const definicionesCliente = [
+                {
+                    numero: 1,
+                    nombreDefecto: "Fecha 1",
+                    porcentaje: toNum(p.pago_compromiso_cliente_1),
+                    fecha: p.fecha_compromiso_cliente_1 || '',
+                    campoFecha: 'fecha_compromiso_cliente_1',
+                },
+                {
+                    numero: 2,
+                    nombreDefecto: "Anticipo 2",
+                    porcentaje: toNum(p.pago_compromiso_cliente_2),
+                    fecha: p.fecha_compromiso_cliente_2 || '',
+                    campoFecha: 'fecha_compromiso_cliente_2',
+                },
+                {
+                    numero: 3,
+                    nombreDefecto: "Anticipo 3",
+                    porcentaje: toNum(p.pago_compromiso_cliente_3),
+                    fecha: p.fecha_compromiso_cliente_3 || '',
+                    campoFecha: 'fecha_compromiso_cliente_3',
+                },
+                {
+                    numero: 4,
+                    nombreDefecto: "Balance",
+                    porcentaje: toNum(p.pago_compromiso_cliente_4),
+                    fecha: p.fecha_compromiso_cliente_4 || '',
+                    campoFecha: 'fecha_compromiso_cliente_4',
+                },
+            ];
+
+            this.state.terminosCliente = definicionesCliente
+                .filter((item) => item.porcentaje > 0 || item.fecha)
+                .map((item) => {
+                    const cantidadMonto = totalCliNum !== 0
+                        ? parseFloat(((totalCliNum / 100) * item.porcentaje).toFixed(2))
+                        : 0;
+                    return {
+                        numero: item.numero,
+                        nombre: item.nombreDefecto,
+                        porcentaje: item.porcentaje,
+                        cantidad: cantidadMonto,
+                        fecha_compromiso: item.fecha,
+                        campoFecha: item.campoFecha,
+                    };
+                });
 
         } catch (e) {
             this.notification.add("Error al cargar el pedido", { type: "danger" });
@@ -431,6 +498,47 @@ export class PantallaPedido extends Component {
                 cancel: () => {
                 }
         });
+    }
+    async onEditarDetalleEta(eta) {
+        const esCrear = !eta;
+        const objetoModal = esCrear
+            ? {
+                crearEditar: "Crear",
+                id: 0,
+                pedidoId: this.state.pedidoId,
+                numero: this.state.listaEtas.length + 1,
+                fecha: "",
+                texto: "",
+            }
+            : {
+                ...eta,
+                crearEditar: "Editar",
+                pedidoId: this.state.pedidoId,
+            };
+
+        this.dialogService.add(componente_detalle_eta, {
+            title: esCrear ? _t("Agregar Nueva ETA") : _t("Editar ETA"),
+            objeto: objetoModal,
+            confirm: async (etaGuardada) => {
+                if (esCrear) {
+                    await this.cargarPedido();
+                } else {
+                    const idx = this.state.listaEtas.findIndex(
+                        (item) => item.numero === etaGuardada.numero
+                    );
+                    if (idx !== -1) {
+                        this.state.listaEtas[idx] = {
+                            ...this.state.listaEtas[idx],
+                            fecha: etaGuardada.fecha,
+                            texto: etaGuardada.texto,
+                        };
+                        this.state.listaEtas = [...this.state.listaEtas];
+                    }
+                    await this.onGuardarDetalleGeneral();
+                }
+            },
+            cancel: () => {},
+        });
     }   
 
     async onVerificarForwarder(ev) {
@@ -446,6 +554,21 @@ export class PantallaPedido extends Component {
             },
         });
         ev.target.checked = this.state.forwarder;
+    }
+
+    async onVerificarSalidaAduana(ev) {
+        const nuevoValor = ev.target.checked; 
+        this.dialogService.add(ConfirmationDialog, {
+            title: _t("¿Estás seguro?"),
+            body: _t("¿Ya consiguió el forwarder?"),
+            confirm: async () => {
+                this.state.salidaAduana = true;
+            },
+            cancel: () => {
+                this.state.salidaAduana = false;
+            },
+        });
+        ev.target.checked = this.state.salidaAduana;
     }
 
 
@@ -561,13 +684,12 @@ export class PantallaPedido extends Component {
             total_proveedor_costo_dolar:this.state.proveedorCostoDolar,
             total_cliente_costo_dolar: this.state.clienteCostoDolar,
 
-
             contenedores : this.state.contenedores,
             racks_acordados: 0,
             CRD: this.state.CRD,
             fecha_creacion : this.state.fecha_creacion,
             ETD : this.state.ETD,
-            ETA : this.state.ETA,
+            etas: this.state.listaEtas,
             fecha_termino_produccion: this.state.fecha_termino_produccion,
            
             fecha_compromiso_cliente_1:this.state.fecha_compromiso_cliente_1,
@@ -639,36 +761,77 @@ export class PantallaPedido extends Component {
             objeto: objeto,
             confirm: async (documento) => {
                 await this.cargarPedido();
-                if(documento.editado){
-                    // documento.documentoNombre <- tiene el nombre del documento
-                }
             },
             cancel: () => {
             }
         });
     }
-
-    async onVerificarFechaTermino(index, ev) {
-    const nuevoValor = ev.target.value;
-    const termino = this.state.terminos[index];
-    const valorAnterior = termino.fecha_compromiso || "";
-
-    if (nuevoValor === valorAnterior) {
-        return;
+    async terminosCondicionesCliente(){
+        const objeto = {
+            pedidoId: this.state.pedidoId,
+            totalCliente: this.state.totalCliente,
+            terminos: this.state.terminosCliente || [], 
+        }
+        this.dialogService.add(componente_terminos_cliente, {
+            title: "Términos de Pago Cliente",
+            objeto: objeto,
+            confirm: async () => {
+                await this.cargarPedido();
+            },
+            cancel: () => {}
+        });
     }
 
-    this.dialogService.add(ConfirmationDialog, {
-        title: _t("¿Estás seguro?"),
-        body: _t("¿Estás seguro de cambiar la fecha de este término? La fecha anterior es: ") + (valorAnterior || "Ninguna"),
-        confirm: async () => {
-            termino.fecha_compromiso = nuevoValor;
-            await this.onGuardarDetalleGeneral();
-        },
-        cancel: () => {
-            ev.target.value = valorAnterior;
-        },
-    });
-}
+    async onVerificarFechaTermino(index, ev) {
+        const nuevoValor = ev.target.value;
+        const termino = this.state.terminos[index];
+        const valorAnterior = termino.fecha_compromiso || "";
+
+        if (nuevoValor === valorAnterior) {
+            return;
+        }
+        
+        this.dialogService.add(ConfirmationDialog, {
+            title: _t("¿Estás seguro?"),
+            body: _t("¿Estás seguro de cambiar la fecha de este término? La fecha anterior es: ") + (valorAnterior || "Ninguna"),
+            confirm: async () => {
+                termino.fecha_compromiso = nuevoValor;
+                await this.onGuardarDetalleGeneral();
+            },
+            cancel: () => {
+                ev.target.value = valorAnterior;
+            },
+        });
+    }
+
+
+    async onVerificarFechaTerminoCliente(index, ev) {
+        const nuevoValor = ev.target.value;
+        const termino = this.state.terminosCliente[index];
+        if (!termino) {
+            return;
+        }
+        const valorAnterior = termino.fecha_compromiso || "";
+
+        if (nuevoValor === valorAnterior) {
+            return;
+        }
+
+        this.dialogService.add(ConfirmationDialog, {
+            title: _t("¿Estás seguro?"),
+            body: _t("¿Estás seguro de cambiar la fecha de este término? La fecha anterior es: ") + (valorAnterior || "Ninguna"),
+            confirm: async () => {
+                termino.fecha_compromiso = nuevoValor;
+                if (termino.campoFecha) {
+                    this.state[termino.campoFecha] = nuevoValor;
+                }
+                await this.onGuardarDetalleGeneral();
+            },
+            cancel: () => {
+                ev.target.value = valorAnterior;
+            },
+        });
+    }
 }
 
 PantallaPedido.template = "rastreo_paquetes.pantalla_pedido";

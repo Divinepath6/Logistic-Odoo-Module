@@ -37,6 +37,10 @@ export class PantallaCroquis extends Component {
             clienteNombre: "",
             ubicacion: "",
             bodegaNombre: "",
+
+            enDolares: false, 
+            conIva: true,
+
             // Detalle adicional
             detalleRacks: [],
             // Valores "de la bodega"
@@ -672,7 +676,9 @@ export class PantallaCroquis extends Component {
                 this.state.pedidoId, 
                 this.state.ubicacion, 
                 bodegas,
-                cotizacion
+                cotizacion,
+                this.state.enDolares, 
+                this.state.conIva,
             ]
         );
         if(r.id != 0){

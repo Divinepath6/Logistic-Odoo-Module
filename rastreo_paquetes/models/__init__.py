@@ -12,3 +12,4 @@ from . import rack_color
 from . import sale_order_line
 from . import terminos
 from . import aviso
+from . import ETAs
