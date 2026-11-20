@@ -34,8 +34,8 @@ export class componente_terminos_condiciones extends Component {
                 this.state.documentoNombre = d.documentoNombre || "";
                 this.state.totalProveedor = d.totalProveedor || 0.0;
                 this.state.terminos = d.terminos ? JSON.parse(JSON.stringify(d.terminos)) : [];
-                
-                if (d.pdfContratoProveedor) {
+                this.state.invoice = d.numeroContrato || "";
+                 if (d.pdfContratoProveedor) {
                     this.state.nuevo = false;
                     await this.obtenerPDF();
                 } else {
@@ -198,11 +198,14 @@ export class componente_terminos_condiciones extends Component {
         if(this.state.editado && !this.state.nuevo){
             seguir = await this.onConfirmarCambios();
         }else{
-            seguir = await this.onConfirmarInvoice();
+            if(this.state.nuevo){
+                seguir = await this.onConfirmarInvoice();
+            }
         }
         if(seguir == false){
             return
         }
+        
         const total = Number(this.state.totalProveedor) || 0.0;
         try{
             const resultado = await this.orm.call(
@@ -216,6 +219,7 @@ export class componente_terminos_condiciones extends Component {
                     this.state.terminos,
                     total,
                     this.state.invoice,
+                    this.state.nuevo,
                 ]
             );
             if (resultado && resultado.success){

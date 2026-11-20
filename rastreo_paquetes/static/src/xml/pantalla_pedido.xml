@@ -80,6 +80,23 @@
 
                             <div class="col-md-6">
                                 <div class="odoo-field">
+                                    <label class="odoo-label">Proveedor</label>
+                                    <div class="d-flex gap-2">
+                                        <input type="text"
+                                            class="odoo-input"
+                                            t-att-value="state.proveedorNombre or 'Sin proveedor asignado'"
+                                            readonly="readonly" />
+                                        <button type="button"
+                                            class="odoo-btn odoo-btn-sm odoo-btn-primary"
+                                            t-on-click="() => this.onEscogerProveedor()">
+                                            <i class="fa fa-search" /> Escoger
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="odoo-field">
                                     <label class="odoo-label" for="forwarder">Forwarder</label>
                                     <input type="checkbox"
                                         id="forwarder"
@@ -153,7 +170,6 @@
                                     <input type="number"
                                         id="total_proveedor"
                                         class="odoo-input"
-                                        step="1"
                                         t-model="state.totalProveedor"
                                         readonly="readonly"
                                     />
@@ -233,8 +249,20 @@
                                     />
                                 </div>
                             </div>
-                        </div>
 
+                             <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="cotizacionAduana">Cotizacion de Aduana:
+                                    </label>
+                                    <input type="text"
+                                        id="cotizacionAduana"
+                                        class="odoo-input"
+                                        t-att-value="state.cotizacionAduana"
+                                        step="1"
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
 
@@ -438,40 +466,34 @@
 
                 <div class="odoo-col-right">
 
-                    <!-- ESTADO DEL PEDIDO  -->
                     <div class="odoo-card">
-                        <!-- 
-
                         <div class="odoo-card-title">
-                            <i class="fa fa-flag" /> Aviso: </div>
-                        <span class="odoo-result-value">
-                            <div class="aviso-lista">
-                                <t t-if="state.aviso and state.aviso.length">
-                                    <t t-foreach="state.aviso" t-as="a" t-key="a_index">
-                                        <span
-                                            t-attf-class="odoo-badge aviso-badge aviso-#{a.severidad}">
-                                            <t t-esc="a.mensaje" />
-                                        </span>
-                                    </t>
-                                </t>
-                                <t t-else="">
-                                    <span class="odoo-text-muted">Sin Pendiente</span>
-                                </t>
-                            </div>
-                        </span>
-                         -->
+                            <i class="fa fa-flag" /> Estado del pedido
+                        </div>
 
-                        <div class="odoo-card-title">
-                            <i class="fa fa-flag" /> Estado del pedido </div>
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Estado actual</span>
-                            <span class="odoo-result-value">
-                                <t t-esc="state.estado or 'Sin estado'" />
-                            </span>
+                        <t t-set="estados_pedido" t-value="[
+                            ['fase_inicial', 'Fase inicial'],
+                            ['produccion', 'En Producción'],
+                            ['puerto_origen', 'Puerto de origen'],
+                            ['agua', 'En el Agua'],
+                            ['puerto_destino', 'Puerto de Destino'],
+                            ['entregado', 'Entregado']
+                        ]" />
+                        <t t-set="indice_actual" t-value="estados_pedido.findIndex(e => e[0] === state.estado)" />
+
+                        <div class="odoo-statusbar">
+                            <t t-foreach="estados_pedido" t-as="item" t-key="item[0]">
+                                <t t-set="is_active" t-value="item[0] === state.estado" />
+                                <t t-set="is_done" t-value="indice_actual !== -1 and item_index &lt; indice_actual" />
+                                
+                                <div t-attf-class="odoo-statusbar-step {{ is_active ? 'is-active' : '' }} {{ is_done ? 'is-done' : '' }}"
+                                    t-att-title="item[1]">
+                                    <i t-if="is_done" class="fa fa-check odoo-step-icon" />
+                                    <span class="odoo-step-text"><t t-esc="item[1]" /></span>
+                                </div>
+                            </t>
                         </div>
                     </div>
-
-                    <!--  DOCUMENTOS DEL SISTEMA  -->
                     <div class="odoo-card">
                         <div class="odoo-card-title">
                             <i class="fa fa-folder-open" /> Documentos del sistema </div>

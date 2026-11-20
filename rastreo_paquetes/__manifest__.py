@@ -14,6 +14,7 @@
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
+        'data/ir_cron_data.xml',
         'reportes/creacion_croquis_reporte.xml',
     ],
     'assets': {
@@ -81,6 +82,9 @@
 
             'rastreo_paquetes/static/src/js/componente_terminos_cliente.js',
             'rastreo_paquetes/static/src/xml/componente_terminos_cliente.xml',
+
+             'rastreo_paquetes/static/src/js/componente_escoger_proveedor.js',
+            'rastreo_paquetes/static/src/xml/componente_escoger_proveedor.xml',
         ],
     },
     'installable': True,

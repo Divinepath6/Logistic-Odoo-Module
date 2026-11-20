@@ -83,12 +83,6 @@
                                                 t-on-click="() => this.onClickEditarPedido(p)">
                                                 <i class="fa fa-pencil" />
                                             </button>
-                                            <button type="button"
-                                                class="odoo-btn-icon odoo-text-danger"
-                                                title="Eliminar"
-                                                t-on-click="() => this.onClickEliminarPedido(p)">
-                                                <i class="fa fa-close" />
-                                            </button>
                                         </div>
 
                                         <div class="odoo-td truncate" t-att-title="p.estado_nombre">
@@ -236,10 +230,6 @@
                                                 class="odoo-btn odoo-btn-ghost odoo-btn-sm"
                                                 t-on-click="() => this.onClickEditarPedido(p)">
                                                 <i class="fa fa-pencil" /> Editar </button>
-                                            <button type="button"
-                                                class="odoo-btn odoo-btn-ghost odoo-btn-sm odoo-text-danger"
-                                                t-on-click="() => this.onClickEliminarPedido(p)">
-                                                <i class="fa fa-close" /> Eliminar </button>
                                         </div>
 
                                     </div>

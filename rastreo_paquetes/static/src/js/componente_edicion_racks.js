@@ -69,8 +69,6 @@ export class componente_edicion_racks extends Component{
         });
     }
    
-
-
     async guadarRack() {
         const datos = {
             id: this.state.rackSeleccionadoId,

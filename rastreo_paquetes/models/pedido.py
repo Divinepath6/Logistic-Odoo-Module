@@ -95,6 +95,11 @@ class rastreo_paquetes(models.Model):
     )
 
     ## Proveedor ----------------------------------------------------------------------------
+    proveedor_id = fields.Many2one(
+        'res.partner',
+        string='Proveedor',
+        domain="[('supplier_rank', '>', 0)]",
+    )
     pdf_contrato_proveedor = fields.Binary(
         string='Contrato con el proveedor',
         attachment=True
@@ -182,9 +187,7 @@ class rastreo_paquetes(models.Model):
     fecha_termino_produccion = fields.Date(
         string = 'Fecha de termino de produccion'
     ) 
-
-    
-    ## Cliente ///////////////////////////////////////////////////////////////////////////////
+       ## Cliente ///////////////////////////////////////////////////////////////////////////////
     total_cliente = fields.Monetary(
         string= 'Total acordado con el cliente',
         currency_field='currency_id' 
@@ -509,7 +512,7 @@ class rastreo_paquetes(models.Model):
         }
     
     @api.model
-    def guardar_terminos(self, tipo_documento, pdf, pedido_id, nombre_archivo, terminos, totalProveedor,invoice):
+    def guardar_terminos(self, tipo_documento, pdf, pedido_id, nombre_archivo, terminos, totalProveedor,invoice, cambio):
         if not pedido_id:
             return {'success': False, 'error': "Debes indicar un pedido"}
         
@@ -532,11 +535,11 @@ class rastreo_paquetes(models.Model):
         proveedor_total_num = float(totalProveedor) if totalProveedor else 0.0
                 ##except (ValueError, TypeError):
                     #proveedor_total_num = 0.0
-
-        pedido.write({
-                    'total_proveedor': proveedor_total_num or 0.0,
-                    'numero_contrato': invoice, 
-                })
+        if cambio == True:
+            pedido.write({
+                        'total_proveedor': proveedor_total_num or 0.0,
+                        'numero_contrato': invoice, 
+                    })
         if hasattr(pedido, 'termino_ids'):
                     pedido.termino_ids.unlink()
 
@@ -578,12 +581,15 @@ class rastreo_paquetes(models.Model):
                 'forwarder': datos.get('forwarder') or False,
                 'total_cliente': datos.get('total_cliente'),
                 'contenedores': datos.get('contenedores') or 0,
-
+                'proveedor_id': datos.get('proveedor_id') or False,
                 'total_proveedor_costo_dolar': datos.get('total_proveedor_costo_dolar') or 0.0,
                 'total_cliente_costo_dolar':  datos.get('total_cliente_costo_dolar') or 0.0,
 
                 'ETD': datos.get('ETD') or False,
                 'CRD': datos.get('CRD') or False,
+
+                'cotizacion_aduana': datos.get('cotizacion_aduana') or 0.0,
+                'salida_aduana': datos.get('salida_aduana') or False,
 
                 'fecha_creacion': datos.get('fecha_creacion') or False,
                 'fecha_termino_produccion' : datos.get('fecha_termino_produccion') or False,
@@ -686,7 +692,66 @@ class rastreo_paquetes(models.Model):
             'success': True,
         }
 
+    def _calcular_pagos_realizados(self, pedido):
+        moneda_usd = self.env.ref('base.USD', raise_if_not_found=False)
+        company_currency = self.env.company.currency_id
 
+        def _tc(fecha):
+            if not moneda_usd:
+                return 1.0
+            rate = moneda_usd._get_conversion_rate(
+                moneda_usd, company_currency, self.env.company, fecha or fields.Date.today()
+            )
+            return (1.0 / rate) if (rate and rate < 1.0) else (rate or 1.0)
+
+        cotizacion = pedido.sale_order_id
+        total_cot = cotizacion.amount_total if cotizacion else (pedido.total_cliente or 0.0)
+        moneda_cot = cotizacion.currency_id.name if cotizacion else 'USD'
+        tc_cliente = pedido.total_cliente_costo_dolar or _tc(pedido.fecha_creacion)
+
+        if moneda_cot == 'USD':
+            total_cliente_usd = total_cot
+        else:
+            total_cliente_usd = (total_cot / tc_cliente) if tc_cliente else 0.0
+
+        anticipos_cli = pedido.detalle_cliente_ids
+        pagado_cliente_usd = sum(a.monto_usd for a in anticipos_cli)
+        pagos_vinculados = anticipos_cli.mapped('account_payment_id').ids
+
+        if cotizacion:
+            facturas = cotizacion.invoice_ids.filtered(
+                lambda f: f.move_type == 'out_invoice' and f.state == 'posted'
+            )
+            pagos_factura = self.env['account.payment'].search([
+                ('reconciled_invoice_ids', 'in', facturas.ids),
+                ('id', 'not in', pagos_vinculados),
+            ]) if facturas else self.env['account.payment']
+
+            domain_pagos = [
+                ('partner_id', '=', cotizacion.partner_id.id),
+                ('state', '=', 'posted'),
+                ('payment_type', '=', 'inbound'),
+                ('id', 'not in', pagos_vinculados),
+            ]
+            if cotizacion.name:
+                domain_pagos.extend([
+                    '|',
+                    ('memo', 'ilike', cotizacion.name),
+                    ('move_id.ref', 'ilike', cotizacion.name),
+                ])
+            pagos_directos = self.env['account.payment'].search(domain_pagos) if cotizacion.partner_id else self.env['account.payment']
+
+            for pago in (pagos_factura | pagos_directos):
+                tc_p = _tc(pago.date)
+                if pago.currency_id.name == 'USD':
+                    pagado_cliente_usd += pago.amount
+                else:
+                    pagado_cliente_usd += (pago.amount / tc_p) if tc_p else 0.0
+
+        total_proveedor_usd = pedido.total_proveedor or 0.0
+        pagado_proveedor_usd = sum(a.monto_usd for a in pedido.detalle_proveedor_ids)
+
+        return pagado_cliente_usd, total_cliente_usd, pagado_proveedor_usd, total_proveedor_usd
 
     @api.model
     def crear_aviso(self, id):
@@ -695,93 +760,178 @@ class rastreo_paquetes(models.Model):
             return []
 
         avisos_a_crear = []
-        INFO = 'info'     
-        MEDIA = 'media'     
+        INFO = 'info'
+        MEDIA = 'media'
         URGENTE = 'urgente'
-        
-        hoy = fields.Date.today()
-        dias_restantes = 0
 
+        hoy = fields.Date.context_today(self.with_context(tz='America/Mazatlan'))
+
+        # =====================================================================
+        # 1. AVISOS POR ESTADO LOGÍSTICO
+        # =====================================================================
         if pedido.estado == 'produccion':
             if not pedido.numero_contrato:
                 avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Número de contrato"})
-            
+
             if not pedido.pdf_contrato_proveedor:
                 avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Contrato del proveedor"})
-            
+
             if pedido.fecha_termino_produccion:
                 dias_restantes = (pedido.fecha_termino_produccion - hoy).days
-                
+
                 if not pedido.forwarder and dias_restantes <= 13:
                     avisos_a_crear.append({
                         'severidad': URGENTE,
-                        'mensaje': f"faltan {dias_restantes} días, conseguir Forwarder",
+                        'mensaje': f"Faltan {dias_restantes} días, conseguir Forwarder",
                     })
-                
-                if dias_restantes > 0 and dias_restantes <= 20:
+                    if not pedido.CRD:
+                        avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Conseguir CRD (Cargo Ready Date)"})
+                elif 0 < dias_restantes <= 20:
                     avisos_a_crear.append({
                         'severidad': INFO,
                         'mensaje': f"Producción en curso, quedan {dias_restantes} días.",
                     })
-
+                elif pedido.CRD:
+                    dias_restantes = (pedido.CRD - hoy).days
+                    
+                    if dias_restantes <= 5:
+                        avisos_a_crear.append({
+                            'severidad': INFO,
+                            'mensaje': f"Faltan {dias_restantes} para CRD",
+                        })
+                    
         elif pedido.estado == 'puerto_origen':
             if not pedido.ETD:
-                avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el ETD"}) 
-            
+                avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el ETD"})
+
             if pedido.ETD:
                 dias_restantes = (pedido.ETD - hoy).days
                 if 0 <= dias_restantes <= 3:
-                    avisos_a_crear.append({'severidad': MEDIA, 'mensaje': f"El contenedor sale del puerto en {dias_restantes} días"})
-            
-            if not pedido.CRD:
-                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Conseguir CRD (Cargo Ready Date)"})
+                    avisos_a_crear.append({
+                        'severidad': MEDIA,
+                        'mensaje': f"El contenedor sale del puerto en {dias_restantes} días"
+                    })
 
-        elif pedido.estado == 'embarcado':
+            
+
+        elif pedido.estado in ('agua', 'embarcado'):
             if not pedido.ETA:
-                avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el ETA"}) 
-            
+                avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el ETA"})
+
             if not pedido.pdf_BL:
-                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir BL (Bill of Lading)"}) 
-            
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir BL (Bill of Lading)"})
+
             if not pedido.pdf_PL:
-                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir PL (Packing List)"}) 
-            
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir PL (Packing List)"})
+
             if not pedido.pdf_invoice:
-                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir Invoice"}) 
-            
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir Invoice"})
+
             if not pedido.pdf_prefactura:
-                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Pedir prefactura a proveedor de flete marítimo"}) 
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Pedir prefactura a proveedor de flete marítimo"})
 
-        elif pedido.estado == 'descargado':
-            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar Agente Aduanal"}) 
-            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar flete terrestre"}) 
-            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Aviso de arribo"}) 
-        
-        elif pedido.estado == 'aduana':  
-            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Informar a Agencia Aduanal"}) 
-            avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Despacho de aduana"}) 
-            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Revisión de documentación"}) 
-            
-        elif pedido.estado == 'entregado':  
-            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Realizar seguimiento a cliente"}) 
-            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Capturar entregado con evidencia"}) 
+        elif pedido.estado in ('puerto_destino', 'descargado'):
+            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar Agente Aduanal"})
+            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar flete terrestre"})
+            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Aviso de arribo"})
+
+        elif pedido.estado == 'aduana':
+            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Informar a Agencia Aduanal"})
+            avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Despacho de aduana"})
+            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Revisión de documentación"})
+
+        elif pedido.estado == 'entregado':
+            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Realizar seguimiento a cliente"})
+            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Capturar entregado con evidencia"})
 
 
+        (
+            pagado_cli_usd,
+            total_cli_usd,
+            pagado_prov_usd,
+            total_prov_usd,
+        ) = self._calcular_pagos_realizados(pedido)
+
+        def _texto_vencimiento(dias):
+            if dias < 0:
+                return f"vencido hace {abs(dias)} día(s)"
+            if dias == 0:
+                return "vence HOY"
+            return f"vence en {dias} día(s)"
+
+        porcentaje_acum_prov = 0.0
+        for termino in pedido.termino_ids.sorted(key=lambda t: t.numero):
+            porcentaje_acum_prov += (termino.porcentaje or 0.0)
+            if not termino.fecha_compromiso:
+                continue
+
+            dias_prov = (termino.fecha_compromiso - hoy).days
+            if dias_prov <= 3:
+                monto_esperado_usd = total_prov_usd * (porcentaje_acum_prov / 100.0)
+                if total_prov_usd <= 0 or (pagado_prov_usd + 0.50) < monto_esperado_usd:
+                    monto_tramo = total_prov_usd * ((termino.porcentaje or 0.0) / 100.0)
+                    severidad_pago = URGENTE if dias_prov <= 2 else MEDIA
+                    etiqueta = termino.texto or f"Pago #{termino.numero}"
+                    detalle_monto = f" (${monto_tramo:,.2f} USD)" if monto_tramo > 0 else ""
+
+                    avisos_a_crear.append({
+                        'severidad': severidad_pago,
+                        'mensaje': (
+                            f"Pago a proveedor {termino.porcentaje:g}%{detalle_monto}"
+                            f"{_texto_vencimiento(dias_prov)}."
+                        ),
+                    })
+
+        porcentaje_acum_cli = 0.0
+        for idx in range(1, 5):
+            fecha_cli = getattr(pedido, f'fecha_compromiso_cliente_{idx}', False)
+            porcentaje_cli = getattr(pedido, f'pago_compromiso_cliente_{idx}', 0.0) or 0.0
+            porcentaje_acum_cli += porcentaje_cli
+
+            if not fecha_cli or porcentaje_cli <= 0:
+                continue
+
+            dias_cli = (fecha_cli - hoy).days
+            if dias_cli <= 3:
+                monto_esperado_cli = total_cli_usd * (porcentaje_acum_cli / 100.0)
+                if total_cli_usd <= 0 or (pagado_cli_usd + 0.50) < monto_esperado_cli:
+                    monto_tramo_cli = total_cli_usd * (porcentaje_cli / 100.0)
+                    severidad_cobro = URGENTE if dias_cli <= 2 else MEDIA
+                    detalle_monto_cli = f" (${monto_tramo_cli:,.2f} USD)" if monto_tramo_cli > 0 else ""
+
+                    avisos_a_crear.append({
+                        'severidad': severidad_cobro,
+                        'mensaje': (
+                            f"Cobro a cliente (Pago #{idx} - {porcentaje_cli:g}%{detalle_monto_cli}) "
+                            f"{_texto_vencimiento(dias_cli)}."
+                        ),
+                    })
+
+        # =====================================================================
+        # 3. GUARDAR AVISOS EN BASE DE DATOS
+        # =====================================================================
         pedido.aviso_ids.unlink()
-        
-        nuevos_avisos = []
-        for av in avisos_a_crear:
-            nuevos_avisos.append((0, 0, {
+
+        nuevos_avisos = [
+            (0, 0, {
                 'importancia': av['severidad'],
                 'texto': av['mensaje'],
-                'pedido_id': pedido.id
-            }))
-            
+                'pedido_id': pedido.id,
+            })
+            for av in avisos_a_crear
+        ]
+
         if nuevos_avisos:
             pedido.write({'aviso_ids': nuevos_avisos})
-            
+
         return [{'severidad': av['severidad'], 'mensaje': av['mensaje']} for av in avisos_a_crear]
 
+    @api.model
+    def _cron_actualizar_avisos_diarios(self):
+        """Recalcula los avisos y recordatorios de pago de todos los pedidos activos cada día."""
+        pedidos_activos = self.search([('estado', '!=', 'entregado')])
+        for pedido in pedidos_activos:
+            self.crear_aviso(pedido.id)
         
     @api.model
     def listar_pedidos(self, termino_busqueda=None):
@@ -1159,9 +1309,11 @@ class rastreo_paquetes(models.Model):
 
         lista_anticipos_proveedor = []
         for a in anticipos_proveedor:
-            pago_asociado = self.env['account.payment'].search([
-                ('memo', 'ilike', pedido.numero_guia)
-            ], limit=1) if pedido.numero_guia else self.env['account.payment']
+            referencia_odoo = ''
+            if a.account_payment_id and a.account_payment_id.name and a.account_payment_id.name != '/':
+                referencia_odoo = a.account_payment_id.name
+            elif a.account_payment_id and a.account_payment_id.memo:
+                referencia_odoo = a.account_payment_id.memo
 
             lista_anticipos_proveedor.append({
                 'anticipo_id': a.id,
@@ -1171,7 +1323,7 @@ class rastreo_paquetes(models.Model):
                 'cantidad': a.monto_usd or 0.0,
                 'precio_dolar': a.precio_dolar or 0.0,
                 'monto_mxn': a.monto_mxn or 0.0,
-                'referencia': pago_asociado.name or f"ANTICIPO-{a.numero}",
+                'referencia': referencia_odoo or f"ANTICIPO-{a.numero}",
                 'pdf_anticipo_proveedor': bool(a.pdf_anticipo_proveedor),
             })
 
@@ -1229,6 +1381,9 @@ class rastreo_paquetes(models.Model):
                 'numero_guia': pedido.numero_guia or '',
                 'cliente_id': pedido.cliente_id.id if pedido.cliente_id else None,
                 'cliente_nombre': pedido.cliente_id.name if pedido.cliente_id else '',
+
+                'proveedor_id': pedido.proveedor_id.id if pedido.proveedor_id else None,
+                'proveedor_nombre': pedido.proveedor_id.name if pedido.proveedor_id else '',
 
                 'total_cliente': cotizacion.amount_total or 0,
                 'total_proveedor': pedido.total_proveedor or 0,
@@ -1437,7 +1592,6 @@ class rastreo_paquetes(models.Model):
                 lista_productos.append({
                     'id': linea.product_id.id,
                     'nombre': linea.product_id.name,
-                    'codigo': rack.clave or '',
                     'rack_id': rack.id,
                     'precio': linea.price_unit,
                     'unidad': linea.product_uom_id.name,
@@ -1448,7 +1602,6 @@ class rastreo_paquetes(models.Model):
                 lista_productos.append({
                     'id': linea.product_id.id,
                     'nombre': linea.product_id.name,
-                    'codigo': linea.product_id.default_code or '',
                     'rack_id': False,
                     'precio': linea.price_unit,
                     'unidad': linea.product_uom_id.name,

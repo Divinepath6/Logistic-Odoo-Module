@@ -13,6 +13,7 @@ import { componente_rack_colores_escoger } from "./componente_rack_colores_escog
 import { componente_terminos_condiciones} from "./componente_terminos_condiciones";
 import { componente_detalle_eta } from "./componente_detalle_eta";
 import { componente_terminos_cliente } from "./componente_terminos_cliente";
+import { componente_escoger_proveedor } from "./componente_escoger_proveedor";
 
 export class PantallaPedido extends Component {
     static components = { 
@@ -24,6 +25,7 @@ export class PantallaPedido extends Component {
         componente_terminos_condiciones,
         componente_detalle_eta,
         componente_terminos_cliente,
+        componente_escoger_proveedor,
     };
     setup() {
         this.action = useService("action");
@@ -38,6 +40,9 @@ export class PantallaPedido extends Component {
             guiaConfirmada: "",
             clienteId: 0,
             clienteNombre: "",
+            proveedorId: 0,
+            proveedorNombre: "",
+
             estado: "",
             cambioRacks: false,
             
@@ -138,8 +143,10 @@ export class PantallaPedido extends Component {
             this.state.estado = p.estado || '';
             this.state.clienteId = p.cliente_id || 0;
             this.state.clienteNombre = p.cliente_nombre || '';
-            this.state.numeroContrato = p.numero_contrato || '';
+            this.state.proveedorId = p.proveedor_id || 0;
+            this.state.proveedorNombre = p.proveedor_nombre || '';
 
+            this.state.numeroContrato = p.numero_contrato || '';
             this.state.cotizacionAduana = toNum(p.cotizacion_aduana);
             this.state.salidaAduana = !!p.salida_aduana;
   
@@ -252,6 +259,8 @@ export class PantallaPedido extends Component {
                     fechaAnticipo: d.fecha_anticipo || '',
                     cantidadAnticipo: cantidad,
                     referencia: d.referencia || '',
+                    journalId: d.journal_id || 0,
+                    journalNombre: d.journal_nombre || '',
                     cantidadAnticipo_fmt: fmt(cantidad),
                     precioDolar: precioDolar,
                     precioDolar_fmt: fmt(precioDolar),
@@ -346,6 +355,7 @@ export class PantallaPedido extends Component {
 
         } catch (e) {
             this.notification.add("Error al cargar el pedido", { type: "danger" });
+            console.log(e)
         } finally {
             this.state.cargando = false;
         }
@@ -383,6 +393,7 @@ export class PantallaPedido extends Component {
 
         }catch(e){
             this.notification.add("No hay pedido asociado",{ type: "danger" });
+            console.log(e)
         } finally {
             this.state.cargando = false;
         }
@@ -665,8 +676,8 @@ export class PantallaPedido extends Component {
         }
 
         const datos = {
-            numero_guia: this.state.guia,
             cliente_id: this.state.clienteId,
+            proveedor_id: this.state.proveedorId || false,
             cambio_racks: this.state.cambioRacks,
 
             //bool de PDF
@@ -679,7 +690,6 @@ export class PantallaPedido extends Component {
 
             total_proveedor: this.state.totalProveedor,
             total_cliente: this.state.totalCliente,
-            numero_contrato: this.state.numeroContrato,
             
             total_proveedor_costo_dolar:this.state.proveedorCostoDolar,
             total_cliente_costo_dolar: this.state.clienteCostoDolar,
@@ -718,8 +728,9 @@ export class PantallaPedido extends Component {
 
             }
             await this.cargarPedido()
-        } catch (error) {
-            this.notification.add("Hubo un error",{ type: "danger" });      
+        } catch (e) {
+            this.notification.add("Hubo un error",{ type: "danger" });     
+            console.log(e) 
         } finally {
             this.state.cargando = false;
         }        
@@ -755,6 +766,7 @@ export class PantallaPedido extends Component {
             pdfContratoProveedor: this.state.pdfContratoProveedor,
             terminos: this.state.terminos,
             totalProveedor: this.state.totalProveedor,
+            numeroContrato: this.state.numeroContrato,
         }
         this.dialogService.add(componente_terminos_condiciones,  {
             title: "Confirmación",
@@ -766,6 +778,18 @@ export class PantallaPedido extends Component {
             }
         });
     }
+    async onEscogerProveedor() {
+        this.dialogService.add(componente_escoger_proveedor, {
+            proveedorActualId: this.state.proveedorId,
+            confirm: async (proveedorSeleccionado) => {
+                this.state.proveedorId = proveedorSeleccionado.id;
+                this.state.proveedorNombre = proveedorSeleccionado.nombre;
+                await this.onGuardarDetalleGeneral();
+            },
+            cancel: () => {},
+        });
+    }
+
     async terminosCondicionesCliente(){
         const objeto = {
             pedidoId: this.state.pedidoId,

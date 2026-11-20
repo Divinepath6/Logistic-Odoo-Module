@@ -8,10 +8,7 @@ class rastreo_rack_detalle(models.Model):
     nombre = fields.Char(
         string = 'Nombre del rack' 
     )
-    precio_unitario = fields.Monetary(
-        string = 'Precio Unitario', 
-        currency_field='currency_id'    
-    )
+
     currency_id = fields.Many2one(
         'res.currency', 
         string='Moneda', 
@@ -59,7 +56,6 @@ class rastreo_rack_detalle(models.Model):
         vals = {
             'producto_id':      producto_id,
             'nombre':           datos.get('nombre', ''),
-            'precio_unitario':  float(datos.get('precio_unitario', 0.0)),
             'currency_id':      currency_id,
             'altura':           float(datos.get('altura', 0.0)),
             'ancho':            float(datos.get('ancho', 0.0)),
@@ -92,7 +88,7 @@ class rastreo_rack_detalle(models.Model):
             'data': {
                 'id':               rack.id,           
                 'nombre':           rack.nombre,
-                'precio_unitario':  rack.precio_unitario,
+                'precio_unitario':  rack.producto_id.lst_price or 0.0,
                 'altura':           rack.altura,
                 'ancho':            rack.ancho,
                 'largo':            rack.largo,
@@ -113,7 +109,7 @@ class rastreo_rack_detalle(models.Model):
             lista.append({
                 'id':               r.id,
                 'nombre':           r.nombre,
-                'precio_unitario':  r.precio_unitario,
+                'precio_unitario':  r.producto_id.lst_price or 0.0,
                 'medidas': [r.ancho, r.largo, r.altura],
                 'almacenaje':       r.almacenaje,
                 })
@@ -143,7 +139,7 @@ class rastreo_rack_detalle(models.Model):
                     'rack_nombre': rack.nombre or "",
                     'rack_existe': True,
                     'rack_id': rack.id or 0,
-                    'rack_precio': rack.precio_unitario or 0,
+                    'rack_precio':  rack.producto_id.lst_price or 0.0,
                     'rack_almacenaje': rack.almacenaje or 0,
                 })
             else:
