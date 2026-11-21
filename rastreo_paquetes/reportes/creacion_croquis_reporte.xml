@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <!-- Formato A4 con márgenes mínimos -->
     <record id="paperformat_croquis_bodega" model="report.paperformat">
         <field name="name">Croquis Bodega A4</field>
         <field name="default" eval="False"/>
@@ -139,34 +138,49 @@
     </template>
 
     <template id="croquis_svg_bodega">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px;">
-            <h2 class="texto">
-                <t t-esc="bodega['bodegaNombre']"/>
-            </h2>
-            <div class="texto"  >
-                Ancho de la bodega: <b><t t-esc="bodega['anchoBodega']"/> m</b> 
-                Largo de la bodega: <b><t t-esc="bodega['largoBodega']"/> m</b>
-            </div>
-            <div class="texto"  >
-                Rack: <b><t t-esc="bodega['rackNombre']"/> </b> 
-            </div>
-            <div class="texto"  >
-                Almacenaje Total con rack (Toneladas): <b><t t-esc="bodega['almacenaje']"/> </b> 
-            </div>
-            <div class="texto"  >
-                Ancho del pasillo Vertical: <b><t t-esc="bodega['sobranteH']"/> m </b> 
-                Ancho del pasillo Horizontal: <b><t t-esc="bodega['sobranteV']"/> m </b> 
-            </div>
-            <div class="texto"  >
-                Separación a paredes: <b>
-                Arriba: <t t-esc="bodega['sepParedArr']"/>  
-                Abajo: <t t-esc="bodega['sepParedAba']"/> 
-                Izquieda: <t t-esc="bodega['sepParedIzq']"/> 
-                Derecha: <t t-esc="bodega['sepParedDer']"/> 
-                </b> 
-            </div>
-            
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 3px;">
+            <tr>
+                <!-- Columna izquierda: Detalle de la bodega -->
+                <td style="vertical-align: middle; text-align: left; padding: 0;">
+                    <h2 class="texto" style="margin: 0 0 1px 0;">
+                        <t t-esc="bodega['bodegaNombre']"/>
+                    </h2>
+                    <div class="texto">
+                        Ancho de la bodega: <b><t t-esc="bodega['anchoBodega']"/> m</b> 
+                        Largo de la bodega: <b><t t-esc="bodega['largoBodega']"/> m</b>
+                    </div>
+                    <div class="texto">
+                        Rack: <b><t t-esc="bodega['rackNombre']"/></b> 
+                    </div>
+                    <div class="texto">
+                        Almacenaje Total con rack (Toneladas): <b><t t-esc="bodega['almacenaje']"/></b> 
+                    </div>
+                    <div class="texto">
+                        Ancho del pasillo Vertical: <b><t t-esc="bodega['sobranteH']"/> m</b> 
+                        Ancho del pasillo Horizontal: <b><t t-esc="bodega['sobranteV']"/> m</b> 
+                    </div>
+                    <div class="texto">
+                        Separaci&#243;n a paredes: <b>
+                        Arriba: <t t-esc="bodega['sepParedArr']"/>  
+                        Abajo: <t t-esc="bodega['sepParedAba']"/> 
+                        Izquierda: <t t-esc="bodega['sepParedIzq']"/> 
+                        Derecha: <t t-esc="bodega['sepParedDer']"/> 
+                        </b> 
+                    </div>
+                </td>
+                <td style="vertical-align: middle; text-align: right; padding: 0; width: 95px;">
+                    <div style="display: inline-block; text-align: center;">
+                        <div t-attf-style="width: 46px; height: 46px; background-color: #{bodega.get('colorHex') or '#cccccc'}; border: 1.5px solid #333333; border-radius: 4px; margin: 0 auto;"></div>
+                        <div style="font-size: 10px; color: #000000; margin-top: 2px; font-weight: bold;">
+                            Color Rack
+                            <t t-if="bodega.get('colorClave')">
+                                <br/><span style="font-weight: normal;"><t t-esc="bodega['colorClave']"/></span>
+                            </t>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
         <div class="plano-marco">
             <t t-call="rastreo_paquetes.croquis_svg_doc"/>
@@ -190,24 +204,26 @@
                   t-att-y="bodega['layout']['offsetY']"
                   t-att-width="bodega['layout']['ancho']" 
                   t-att-height="bodega['layout']['largo']"
-                  fill="#FFEFE5" 
-                  stroke="#4A2500" 
+                  fill="#eaedef" 
+                  stroke="#495057" 
                   stroke-width="2"/>
              
             <g t-foreach="bodega['layout']['pasillos']" t-as="p" t-key="p['id']">
                 <rect t-att-x="p['x']" t-att-y="p['y']" 
                       t-att-width="p['w']" t-att-height="p['h']"
-                      fill="#cfe3ff" stroke="#7aa7e0" 
-                      stroke-width="1" stroke-dasharray="6 4" 
-                      opacity="0.7"/>
+                      fill="#c8d3de" 
+                      stroke="#8796a5" 
+                      stroke-width="1" 
+                      stroke-dasharray="6 4" 
+                      opacity="0.85"/>
             </g>
             
             <g t-foreach="bodega['layout']['racks']" t-as="r" t-key="r['id']">
                 <rect t-att-x="r['x']" t-att-y="r['y']" 
                       t-att-width="r['w']" t-att-height="r['h']"
                       fill="#ffffff" 
-                      stroke="#ff8a3d" 
-                      stroke-width="1"/> 
+                      t-att-stroke="bodega.get('colorHex') or '#6c757d'" 
+                      stroke-width="1.5"/> 
             </g>
         </svg>
     </template>

@@ -8,11 +8,17 @@
                 </button>
 
                 <div class="cc-title-text">
+                    <h3 class="cc-card-title">
                      Cliente: <span class="odoo-highlight"><t t-esc=" state.clienteNombre "/></span>
+                    </h3>
                 </div>
+
                 <div class="cc-title-text">
-                    Cotizacion: <span class="odoo-highlight"><t t-esc=" state.guia"/></span>
+                    <h3 class="cc-card-title">
+                        Cotizacion: <span class="odoo-highlight"><t t-esc=" state.guia"/></span>
+                    </h3>
                 </div>
+
 
                 <button class="odoo-btn odoo-btn-primary" t-on-click="onGuardarCotizacion">
                     <i class="fa fa-save"/> Guardar en Cotización
@@ -295,6 +301,7 @@
                                 anchoBodega="state.anchoBodega"
                                 largoBodega="state.largoBodega"
                                 alturaBodega="state.alturaBodega"
+                                racksBase="state.racksBase"
                                 anchoRack="state.anchoRack"
                                 largoRack="state.largoRack"
                                 porAncho="state.porAncho"
@@ -313,37 +320,66 @@
                         </div>
                     </div>
                     
-                    <div class="cc-card cc-card-results">
-                        <h3 class="cc-card-title">
-                            <span class="cc-badge-dot cc-badge-accent"></span>
-                            Resultados
-                        </h3>
+                        <div class="cc-card cc-card-results">
+                            <h3 class="cc-card-title">
+                                <span class="cc-badge-dot cc-badge-accent"></span>
+                                Resultados: <t t-esc="state.bodegaNombre or 'Bodega Actual'"/>
+                            </h3>
 
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Cantidad de Racks ocupados:</span>
-                            <span class="odoo-result-value" t-esc="state.racksOcupados or 0"/>
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Racks en cuadrícula:</span>
+                                <span class="odoo-result-value" t-esc="state.racksBase or 0"/>
+                            </div>
+
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Total Racks bodega (con adicionales):</span>
+                                <span class="odoo-result-value" t-esc="state.racksOcupados or 0"/>
+                            </div>
+
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Costo estimado bodega:</span>
+                                <span class="odoo-result-value" t-esc="state.costoEstimadoDisplay or '$0.00'"/>
+                            </div>
+
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Ancho del pasillo Vertical (M):</span>
+                                <span class="odoo-result-value" t-esc="state.espacioSobranteHor or '0.00'"/>
+                            </div>
+
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Ancho del pasillo Horizontal (M):</span>
+                                <span class="odoo-result-value" t-esc="state.espacioSobranteVer or '0.00'"/>
+                            </div>
+
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Almacenaje bodega (Ton):</span>
+                                <span class="odoo-result-value" t-esc="state.almacenajeToneladaDisplay or '0.000'"/>
+                            </div>
                         </div>
 
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Costo estimado:</span>
-                            <span class="odoo-result-value" t-esc="state.costoEstimadoDisplay or '$0.00'"/>
+                        <div class="cc-card cc-card-results mt-3">
+                            <h3 class="cc-card-title">
+                                <span class="cc-badge-dot"></span>
+                                Resumen Total (<t t-esc="totalesGlobales.cantidadBodegas"/> bodega<t t-if="totalesGlobales.cantidadBodegas &gt; 1">s</t>)
+                            </h3>
+
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Total Racks (Todas las bodegas):</span>
+                                <span class="odoo-result-value fw-bold" t-esc="totalesGlobales.racksOcupados"/>
+                            </div>
+
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Costo Total Estimado (USD):</span>
+                                <span class="odoo-result-value fw-bold text-success" t-esc="totalesGlobales.costoEstimadoDisplay"/>
+                            </div>
+
+                            <div class="odoo-result-row">
+                                <span class="odoo-result-label">Almacenaje Total (Ton):</span>
+                                <span class="odoo-result-value fw-bold" t-esc="totalesGlobales.almacenajeToneladaDisplay"/>
+                            </div>
                         </div>
 
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Ancho del pasill Vertical (M):</span>
-                            <span class="odoo-result-value" t-esc="state.espacioSobranteHor or '0.00'"/>
-                        </div>
 
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Ancho del pasillo Horizontal(M):</span>
-                            <span class="odoo-result-value" t-esc="state.espacioSobranteVer or '0.00'"/>
-                        </div>
-
-                        <div class="odoo-result-row">
-                            <span class="odoo-result-label">Almacenaje con rack por tonelada:</span>
-                            <span class="odoo-result-value" t-esc="state.almacenajeToneladaDisplay or '0.00'"/>
-                        </div>
-                    </div>
                 </div>
 
             </div>

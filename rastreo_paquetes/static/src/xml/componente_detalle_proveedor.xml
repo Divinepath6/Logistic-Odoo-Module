@@ -4,6 +4,50 @@
         <Dialog title="state.crearEditar + ' el anticipo del proveedor número: ' + state.numero" size="'xl'">
             
             <div class="o_form_view p-3 border rounded bg-light">
+
+                <!-- Selector de Modo (solo al crear un registro nuevo) -->
+                <div class="mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between" t-if="!state.esEdicion">
+                    <div class="btn-group" role="group">
+                        <button type="button"
+                                t-attf-class="btn btn-sm {{ state.modoVinculo === 'crear' ? 'btn-primary' : 'btn-outline-primary' }}"
+                                t-on-click="() => this.cambiarModoVinculo('crear')">
+                            <i class="fa fa-plus-circle me-1"/> Crear nuevo pago en Odoo
+                        </button>
+                        <button type="button"
+                                t-attf-class="btn btn-sm {{ state.modoVinculo === 'vincular' ? 'btn-primary' : 'btn-outline-primary' }}"
+                                t-on-click="() => this.cambiarModoVinculo('vincular')">
+                            <i class="fa fa-link me-1"/> Cargar pago ya hecho (Referencia)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Buscador de Pago Existente -->
+                <div class="alert alert-info py-2 px-3 mb-3" t-if="!state.esEdicion and state.modoVinculo === 'vincular'">
+                    <label for="buscarRefProv" class="form-label fw-bold mb-1">
+                        Referencia del Pago a Proveedor en Odoo:
+                    </label>
+                    <div class="input-group">
+                        <input type="text"
+                               id="buscarRefProv"
+                               class="form-control"
+                               placeholder="Ej. PBNK1/2026/00018 o Memo del pago..."
+                               t-model="state.referenciaBuscar"
+                               t-on-keydown="(ev) => ev.key === 'Enter' and this.onBuscarReferencia()"/>
+                        <button type="button"
+                                class="btn btn-primary"
+                                t-att-disabled="state.buscandoRef"
+                                t-on-click="onBuscarReferencia">
+                            <i class="fa fa-search me-1"/>
+                            <t t-if="state.buscandoRef">Buscando...</t>
+                            <t t-else="">Buscar y cargar</t>
+                        </button>
+                    </div>
+                    <div class="mt-2 small text-success fw-bold" t-if="state.existingPaymentId">
+                        <i class="fa fa-check-circle me-1"/>
+                        Pago vinculado: <span t-esc="state.referencia"/>
+                    </div>
+                </div>
+
                 <div class="row g-4">
                     
                     <div class="col-md-7">
@@ -22,7 +66,7 @@
 
                             <div class="col-md-6">
                                 <label for="metodoPago" class="form-label fw-bold">Método de pago:</label>
-                                <t t-if="!state.esEdicion">
+                                <t t-if="!state.esEdicion and state.modoVinculo === 'crear'">
                                     <select id="metodoPago" class="form-select" t-model.number="state.journalId">
                                         <option value="0" disabled="1">Seleccione un método...</option>
                                         <t t-foreach="state.diarios" t-as="diario" t-key="diario.id">
@@ -52,7 +96,7 @@
                                        id="fechaAnticipo" 
                                        class="form-control" 
                                        t-model="state.fechaAnticipo"
-                                       t-att-readonly="state.esEdicion ? '1' : null"/>
+                                       t-att-readonly="(state.esEdicion or state.modoVinculo === 'vincular') ? '1' : null"/>
                             </div>
 
                             <div class="col-md-6">
@@ -62,7 +106,7 @@
                                        id="cantidad" 
                                        class="form-control" 
                                        t-model.number="state.cantidadAnticipo"
-                                       t-att-readonly="state.esEdicion ? '1' : null"/>
+                                       t-att-readonly="(state.esEdicion or state.modoVinculo === 'vincular') ? '1' : null"/>
                             </div>
 
                             <div class="col-md-6">
@@ -87,7 +131,10 @@
 
                     <div class="col-md-5 border-start">
                         <div class="d-flex flex-column h-100">
-                            <label class="form-label fw-bold text-primary">Comprobante PDF del Anticipo:</label>
+                            <label class="form-label fw-bold text-primary">
+                                Comprobante PDF del Anticipo
+                                <span t-if="state.modoVinculo === 'vincular'" class="text-muted fw-normal"> (opcional)</span>:
+                            </label>
                             <div class="flex-grow-1">
                                 <PdfUploader
                                     value="state.PDFAnticipo"

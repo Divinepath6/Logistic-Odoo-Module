@@ -413,7 +413,7 @@
                                         <tr t-foreach="state.detalleCliente" t-as="d"
                                             t-key="d.anticipoId or d.paymentId or d_index">
                                             <td>
-                                                <t t-esc="d.referencia or ''" />
+                                                 <strong><t t-esc="d.referencia or ''" /></strong>
                                             </td>
                                             <td>
                                                 <t t-esc="d.fechaAnticipo or ''" />
@@ -458,7 +458,10 @@
                         <div class="text-center">
                             <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
                                 t-on-click="() => this.onEditarDetalleCliente()">
-                                <i class="fa fa-plus" /> Agregar Nuevo Anticipo </button>
+                                <i class="fa fa-plus" /> Nuevo Anticipo </button>
+                            <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                t-on-click="() => this.onEditarDetalleCliente('cargar')">
+                                <i class="fa fa-cloud-upload" /> Cargar anticipo </button>
                         </div>
                     </div>
 
@@ -698,7 +701,7 @@
                                         t-if="state.detalleProveedor and state.detalleProveedor.length">
                                         <tr t-foreach="state.detalleProveedor" t-as="d" t-key="d.id">
                                             <td>
-                                                <t t-esc="d.referencia"/>
+                                               <strong> <t t-esc="d.referencia"/></strong>
                                             </td>
                                             <td>
                                                 <t t-esc="d.fechaAnticipo or ''" />
@@ -734,7 +737,10 @@
                         <div class="text-center">
                             <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
                                 t-on-click="() => this.onEditarDetalleProveedor()">
-                                <i class="fa fa-plus" /> Agregar Nuevo Anticipo </button>
+                                <i class="fa fa-plus" /> Nuevo Anticipo </button>
+                            <button class="odoo-btn odoo-btn-block odoo-btn-ghost"
+                                t-on-click="() => this.onEditarDetalleProveedor('cargar')">
+                                <i class="fa fa-cloud-upload" /> Cargar Anticipo </button>
                         </div>
                     </div>
 
@@ -819,7 +825,6 @@
                                         <th>N° ETA</th>
                                         <th>Fecha</th>
                                         <th>Observación</th>
-                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -833,13 +838,6 @@
                                             </td>
                                             <td>
                                                 <t t-esc="eta.texto or ''" />
-                                            </td>
-                                            <td class="text-end">
-                                                <button type="button"
-                                                    class="odoo-btn odoo-btn-sm odoo-btn-cyan"
-                                                    t-on-click="() => this.onEditarDetalleEta(eta)">
-                                                    Editar
-                                                </button>
                                             </td>
                                         </tr>
                                     </t>

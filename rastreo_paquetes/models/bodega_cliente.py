@@ -61,7 +61,7 @@ class rastreo_bodega_cliente(models.Model):
         impuesto_iva = Tax.search([
             ('type_tax_use', '=', 'sale'),
             ('amount', '=', 16.0),
-            ('price_include', '=', bool(con_iva)),
+            ('price_include', '=', False),
             ('company_id', '=', pedido.sale_order_id.company_id.id)
         ], limit=1)
 
@@ -156,17 +156,29 @@ class rastreo_bodega_cliente(models.Model):
             
             lineas_vals = []
             for info in racks_info:
+                precio_ingresado = info['costo']
+                
+                tiene_iva_producto = bool(info['producto_'].taxes_id.filtered(
+                    lambda t: t.company_id == sale.company_id and t.amount > 0
+                ))
+
+                if con_iva and tiene_iva_producto and impuesto_iva:
+                    precio_unitario_odoo = precio_ingresado / (1.0 + (impuesto_iva.amount / 100.0))
+                    taxes_command = [(6, 0, [impuesto_iva.id])]
+                else:
+                    precio_unitario_odoo = precio_ingresado / 1.16 if tiene_iva_producto else precio_ingresado
+                    taxes_command = [(5, 0, 0)]
+
                 linea_dict = {
                     'product_id': info['producto_'].id,
                     'product_uom_qty': info['cantidad'] or 1,
-                    'price_unit': info['costo'],
+                    'price_unit': precio_unitario_odoo,
                     'name': info['producto_'].name,
                     'rastreo_rack_id': info['rack_id'] or False,
                     'rastreo_color_id': info['color'] or False,
                     'rastreo_numero': info['numero'] or '',
+                    'tax_ids': taxes_command,  
                 }
-                if impuesto_iva:
-                    linea_dict['tax_id'] = [(6, 0, [impuesto_iva.id])]
 
                 lineas_vals.append((0, 0, linea_dict))
 

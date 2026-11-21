@@ -29,6 +29,13 @@ export class componente_detalle_proveedor extends Component {
             PDFAnticipo: "",
             PDFAnticipoNombre: "",
             crearEditar: "Crear",
+
+            // Estados para cargar pago ya hecho por referencia
+            modoVinculo: "crear", // 'crear' | 'vincular'
+            referenciaBuscar: "",
+            buscandoRef: false,
+            existingPaymentId: 0,
+
             get esEdicion() {
                 return Boolean(this.anticipoId && this.anticipoId !== 0);
             },
@@ -41,6 +48,7 @@ export class componente_detalle_proveedor extends Component {
         onWillStart(async () => {
             const r = this.props.objeto;
             if (r) {
+                this.state.modoVinculo = r.modoVinculo || "crear";
                 this.state.anticipoId = r.anticipoId || 0;
                 this.state.crearEditar = this.state.anticipoId ? "Editar" : "Crear";
                 this.state.pedidoId = r.pedidoId;
@@ -62,6 +70,61 @@ export class componente_detalle_proveedor extends Component {
         });
     }
 
+    cambiarModoVinculo(modo) {
+        this.state.modoVinculo = modo;
+        this.state.existingPaymentId = 0;
+        this.state.referencia = "";
+        if (modo === "crear") {
+            this.state.referenciaBuscar = "";
+            this.state.cantidadAnticipo = 0.0;
+            this.state.journalNombre = "";
+            if (this.state.diarios.length > 0) {
+                this.state.journalId = this.state.diarios[0].id;
+            }
+        }
+    }
+
+    async onBuscarReferencia() {
+        if (!this.state.referenciaBuscar || !this.state.referenciaBuscar.trim()) {
+            this.notification.add("Escribe la referencia del pago a buscar.", { type: "warning" });
+            return;
+        }
+
+        this.state.buscandoRef = true;
+        try {
+            const res = await this.orm.call(
+                "rastreo.detalle_proveedor",
+                "buscar_referencia_existente",
+                [this.state.pedidoId, this.state.referenciaBuscar.trim()]
+            );
+
+            if (res.success) {
+                this.state.existingPaymentId = res.payment_id;
+                this.state.referencia = res.referencia_encontrada;
+                this.state.fechaAnticipo = res.fecha;
+                this.state.cantidadAnticipo = Number(res.monto_usd) || 0.0;
+                if (res.tipo_cambio) {
+                    this.state.precioDolar = Number(res.tipo_cambio);
+                }
+                this.state.journalId = res.journal_id || 0;
+                this.state.journalNombre = res.journal_nombre || "Registrado en Odoo";
+
+                this.notification.add(
+                    `Pago encontrado: ${res.referencia_encontrada} ($${res.monto_usd} USD)`,
+                    { type: "success" }
+                );
+            } else {
+                this.state.existingPaymentId = 0;
+                this.state.referencia = "";
+                this.notification.add(res.error || "No se encontró el pago.", { type: "danger" });
+            }
+        } catch (e) {
+            this.notification.add("Error al buscar la referencia: " + (e.message || ""), { type: "danger" });
+        } finally {
+            this.state.buscandoRef = false;
+        }
+    }
+
     async cargarDiariosPago() {
         try {
             const diarios = await this.orm.searchRead(
@@ -74,7 +137,7 @@ export class componente_detalle_proveedor extends Component {
                 this.state.journalId = diarios[0].id;
             }
         } catch (e) {
-            this.notification.add("No se pudieron cargar los métodos de pago" + (e.error), { type: "warning" });
+            this.notification.add("No se pudieron cargar los métodos de pago" + (e.error || ""), { type: "warning" });
         }
     }
 
@@ -110,16 +173,23 @@ export class componente_detalle_proveedor extends Component {
             return;
         }
         if (!this.state.esEdicion) {
-            if (!this.state.journalId) {
-                this.notification.add("Necesita seleccionar un método de pago", { type: "danger" });
-                return;
+            if (this.state.modoVinculo === "vincular") {
+                if (!this.state.existingPaymentId) {
+                    this.notification.add("Primero busque y cargue una referencia válida de pago", { type: "danger" });
+                    return;
+                }
+            } else {
+                if (!this.state.journalId) {
+                    this.notification.add("Necesita seleccionar un método de pago", { type: "danger" });
+                    return;
+                }
+                if (!this.state.PDFAnticipo) {
+                    this.notification.add("Necesita subir el archivo PDF del comprobante", { type: "danger" });
+                    return;
+                }
             }
             if (!this.state.cantidadAnticipo || this.state.cantidadAnticipo <= 0) {
                 this.notification.add("Necesita indicar una cantidad válida en dólares", { type: "danger" });
-                return;
-            }
-            if (!this.state.PDFAnticipo) {
-                this.notification.add("Necesita subir el archivo PDF del comprobante", { type: "danger" });
                 return;
             }
         }
@@ -137,7 +207,9 @@ export class componente_detalle_proveedor extends Component {
                       cantidad: Number(this.state.cantidadAnticipo),
                       precio_dolar: Number(this.state.precioDolar),
                       fecha_anticipo: this.state.fechaAnticipo,
-                      journal_id: Number(this.state.journalId),
+                      journal_id: Number(this.state.journalId) || false,
+                      modo_vinculo: this.state.modoVinculo,
+                      existing_payment_id: this.state.existingPaymentId,
                   };
 
             const resultado = await this.orm.call(
@@ -163,7 +235,7 @@ export class componente_detalle_proveedor extends Component {
                     cantidadAnticipo: this.state.cantidadAnticipo,
                     precioDolar: this.state.precioDolar,
                     fechaAnticipo: this.state.fechaAnticipo,
-                    PDFAnticipo: true,
+                    PDFAnticipo: Boolean(this.state.PDFAnticipo),
                 });
                 this.props.close();
             } else {

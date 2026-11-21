@@ -52,15 +52,7 @@
                                    placeholder="Ej. Rack XXXX x XXXX x XXXX" 
                                    t-model="state.nombre"/>
                         </div>
-
-                        <div class="col-md-6">
-                            <label for="precio" class="form-label fw-bold">Precio Unitario ($)</label>
-                            <input type="number" 
-                                   step="0.01" 
-                                   id="precio" 
-                                   class="form-control" 
-                                   t-model.number="state.precioUnitario"/>
-                        </div>
+                        
                         <div class="col-md-6">
                             <label for="ancho" class="form-label fw-bold">Ancho (mm)</label>
                             <input type="number" 

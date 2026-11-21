@@ -29,6 +29,12 @@ export class componente_detalle_cliente extends Component {
             tipo: "pago",
             targetCurrency: "MXN",
             fetchingRate: false,
+
+            modoVinculo: "crear", 
+            referenciaBuscar: "",
+            buscandoRef: false,
+            existingRecordId: 0,
+
             get montoMxnText() {
                 const total = (Number(this.cantidadAnticipo) || 0) * (Number(this.precioDolar) || 0);
                 return total.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
@@ -38,6 +44,7 @@ export class componente_detalle_cliente extends Component {
         onWillStart(async () => {
             const r = this.props.objeto;
             if (r) {
+                this.state.modoVinculo = r.modoVinculo || "crear"; 
                 this.state.crearEditar = r.crearEditar || (r.anticipoId ? "Editar" : "Crear");
                 this.state.anticipoId = r.anticipoId || r.detalle_id || 0;
                 this.state.pedidoId = r.pedidoId || 0;
@@ -55,6 +62,55 @@ export class componente_detalle_cliente extends Component {
                 await this.fetchDollarRate();
             }
         });
+    }
+
+    cambiarModoVinculo(modo) {
+        this.state.modoVinculo = modo;
+        this.state.existingRecordId = 0;
+        this.state.referenciaOdoo = "";
+        if (modo === "crear") {
+            this.state.referenciaBuscar = "";
+            this.state.cantidadAnticipo = 0.0;
+        }
+    }
+
+    async onBuscarReferencia() {
+        if (!this.state.referenciaBuscar || !this.state.referenciaBuscar.trim()) {
+            this.notification.add("Escribe la referencia del pago o factura a buscar.", { type: "warning" });
+            return;
+        }
+
+        this.state.buscandoRef = true;
+        try {
+            const res = await this.orm.call(
+                "rastreo.detalle_cliente",
+                "buscar_referencia_existente",
+                [this.state.pedidoId, this.state.referenciaBuscar.trim()]
+            );
+
+            if (res.success) {
+                this.state.existingRecordId = res.record_id;
+                this.state.tipo = res.tipo;
+                this.state.referenciaOdoo = res.referencia_encontrada;
+                this.state.fechaAnticipo = res.fecha;
+                this.state.cantidadAnticipo = Number(res.monto_usd) || 0.0;
+                if (res.tipo_cambio) {
+                    this.state.precioDolar = parseFloat(Number(res.tipo_cambio).toFixed(4));
+                }
+                this.notification.add(
+                    `Registro encontrado: ${res.referencia_encontrada} ($${res.monto_usd} USD)`,
+                    { type: "success" }
+                );
+            } else {
+                this.state.existingRecordId = 0;
+                this.state.referenciaOdoo = "";
+                this.notification.add(res.error || "No se encontró el registro.", { type: "danger" });
+            }
+        } catch (e) {
+            this.notification.add("Error al buscar la referencia: " + (e.message || ""), { type: "danger" });
+        } finally {
+            this.state.buscandoRef = false;
+        }
     }
 
     async fetchDollarRate() {
@@ -122,6 +178,13 @@ export class componente_detalle_cliente extends Component {
         const esEdicion = Boolean(this.state.anticipoId && this.state.anticipoId !== 0);
 
         if (!esEdicion) {
+            if (this.state.modoVinculo === "vincular" && !this.state.existingRecordId) {
+                this.notification.add(
+                    "Primero busque y seleccione una referencia válida de pago o factura",
+                    { type: "danger" }
+                );
+                return;
+            }
             if (!this.state.cantidadAnticipo || this.state.cantidadAnticipo <= 0) {
                 this.notification.add(
                     "Necesita indicar una cantidad recibida",
@@ -129,7 +192,7 @@ export class componente_detalle_cliente extends Component {
                 );
                 return;
             }
-            if (this.state.tipo === "pago" && !this.state.PDFAnticipo) {
+            if (this.state.modoVinculo === "crear" && this.state.tipo === "pago" && !this.state.PDFAnticipo) {
                 this.notification.add(
                     "Necesita subir el PDF del pago",
                     { type: "danger" }
@@ -144,6 +207,8 @@ export class componente_detalle_cliente extends Component {
                 precio_dolar: Number(this.state.precioDolar),
                 fecha_anticipo: this.state.fechaAnticipo,
                 tipo: this.state.tipo,
+                modo_vinculo: this.state.modoVinculo,
+                existing_record_id: this.state.existingRecordId,
             };
 
             const pdf = this.state.PDFAnticipo || false;

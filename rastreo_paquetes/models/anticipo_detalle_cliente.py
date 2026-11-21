@@ -101,6 +101,184 @@ class rastreo_anticipo_detalle_cliente(models.Model):
             return 1.0 / rate
         return rate or 1.0
 
+    @api.model
+    def buscar_referencia_existente(self, pedido_id, referencia):
+        """Busca un pago de cliente o factura ya contabilizada en Odoo por su nombre o memo/ref."""
+        if not referencia or not referencia.strip():
+            return {'success': False, 'error': 'Ingrese una referencia para buscar.'}
+
+        ref = referencia.strip()
+        pedido = self.env['rastreo.pedido'].browse(pedido_id)
+        sale_order = pedido.sale_order_id if pedido.exists() else False
+        partner_id = sale_order.partner_id.id if sale_order else False
+
+        usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
+
+        # 1. Buscar primero en Pagos de Cliente (account.payment)
+        domain_pago = [
+            ('partner_type', '=', 'customer'),
+            ('payment_type', '=', 'inbound'),
+            ('state', 'in', ('posted', 'paid', 'in_process')),
+            '|', ('name', 'ilike', ref), ('memo', 'ilike', ref),
+        ]
+        if partner_id:
+            domain_pago.append(('partner_id', '=', partner_id))
+
+        pago = self.env['account.payment'].search(domain_pago, limit=1)
+        if pago:
+            # Verificar que no esté ya vinculado a otro detalle
+            ya_usado = self.search([('account_payment_id', '=', pago.id)], limit=1)
+            if ya_usado:
+                return {
+                    'success': False,
+                    'error': f'El pago {pago.name} ya está vinculado en el anticipo #{ya_usado.numero}.'
+                }
+
+            monto_usd = pago.amount
+            if usd_currency and pago.currency_id != usd_currency:
+                monto_usd = pago.currency_id._convert(
+                    pago.amount, usd_currency, self.env.company, pago.date or fields.Date.today()
+                )
+
+            return {
+                'success': True,
+                'tipo': 'pago',
+                'record_id': pago.id,
+                'referencia_encontrada': pago.name,
+                'fecha': str(pago.date),
+                'monto_usd': round(monto_usd, 2),
+                'tipo_cambio': self._get_tipo_cambio_dia(pago.date),
+            }
+
+        # 2. Si no es pago, buscar en Facturas de Cliente (account.move)
+        domain_factura = [
+            ('move_type', '=', 'out_invoice'),
+            ('state', '=', 'posted'),
+            '|', ('name', 'ilike', ref), ('ref', 'ilike', ref),
+        ]
+        if partner_id:
+            domain_factura.append(('partner_id', '=', partner_id))
+
+        factura = self.env['account.move'].search(domain_factura, limit=1)
+        if factura:
+            ya_usado = self.search([('account_move_id', '=', factura.id)], limit=1)
+            if ya_usado:
+                return {
+                    'success': False,
+                    'error': f'La factura {factura.name} ya está vinculada en el anticipo #{ya_usado.numero}.'
+                }
+
+            monto_usd = factura.amount_total
+            if usd_currency and factura.currency_id != usd_currency:
+                monto_usd = factura.currency_id._convert(
+                    factura.amount_total, usd_currency, self.env.company, factura.invoice_date or fields.Date.today()
+                )
+
+            return {
+                'success': True,
+                'tipo': 'factura',
+                'record_id': factura.id,
+                'referencia_encontrada': factura.name,
+                'fecha': str(factura.invoice_date or factura.date),
+                'monto_usd': round(monto_usd, 2),
+                'tipo_cambio': self._get_tipo_cambio_dia(factura.invoice_date or factura.date),
+            }
+
+        return {
+            'success': False,
+            'error': 'No se encontró ningún pago o factura publicada con esa referencia para este cliente.'
+        }
+
+    @api.model
+    def guardar_detalle(self, pedido_id, anticipoId, datos, pdf=None, pdf_name=None):
+        if not pedido_id:
+            return {'success': False, 'error': 'Pedido no indicado'}
+
+        pedido = self.env['rastreo.pedido'].browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False, 'error': 'Pedido no encontrado'}
+
+        sale_order = self._get_sale_order(pedido)
+        if not sale_order:
+            return {'success': False, 'error': 'El pedido no tiene una cotización asociada.'}
+
+        monto_usd = float(datos.get('cantidad') or datos.get('monto_usd') or 0.0)
+        fecha_anticipo = datos.get('fecha_anticipo') or fields.Date.today()
+        precio_dolar = float(datos.get('precio_dolar') or 0.0) or self._get_tipo_cambio_dia(fecha_anticipo)
+
+        anticipo = self.browse(anticipoId) if anticipoId else self.browse()
+
+        try:
+            with self.env.cr.savepoint():
+                if anticipo.exists():
+                    vals_edit = {
+                        'monto_usd': monto_usd,
+                        'precio_dolar': precio_dolar,
+                        'fecha_anticipo': fecha_anticipo,
+                        'fecha_editado': fields.Datetime.now(),
+                    }
+                    if pdf:
+                        vals_edit['pdf_anticipo_cliente'] = pdf
+                        vals_edit['pdf_anticipo_cliente_nombre'] = (
+                            pdf_name or anticipo.pdf_anticipo_cliente_nombre or f"anticipo_{sale_order.name}_{anticipo.numero}.pdf"
+                        )
+                    anticipo.write(vals_edit)
+                    return {'success': True, 'anticipo_id': anticipo.id}
+
+                tipo = datos.get('tipo') or 'pago'
+                modo_vinculo = datos.get('modo_vinculo') or 'crear'  # 'crear' o 'vincular'
+                existing_record_id = int(datos.get('existing_record_id') or 0)
+
+                usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1) or self.env.company.currency_id
+                numero = self.search_count([('pedido_id', '=', pedido_id)]) + 1
+
+                payment = self.env['account.payment']
+                invoice = self.env['account.move']
+
+                if modo_vinculo == 'vincular' and existing_record_id:
+                    # Vincular registro existente sin duplicar en contabilidad
+                    if tipo == 'pago':
+                        payment = self.env['account.payment'].browse(existing_record_id)
+                        if not payment.exists():
+                            return {'success': False, 'error': 'El pago seleccionado ya no existe.'}
+                    else:
+                        invoice = self.env['account.move'].browse(existing_record_id)
+                        if not invoice.exists():
+                            return {'success': False, 'error': 'La factura seleccionada ya no existe.'}
+                else:
+                    # Flujo original: crear nuevo asiento en Odoo
+                    ref = f"Anticipo {sale_order.name}"
+                    if pedido.numero_contrato:
+                        ref = f"Anticipo {sale_order.name} / {pedido.numero_contrato}"
+
+                    if tipo == 'pago':
+                        payment = self._crear_pago(sale_order, monto_usd, fecha_anticipo, ref, usd_currency)
+                    else:
+                        invoice = self._crear_factura(sale_order, monto_usd, fecha_anticipo, ref, usd_currency)
+
+                valores = {
+                    'pedido_id': pedido_id,
+                    'numero': numero,
+                    'currency_id': self.env.company.currency_id.id,
+                    'fecha_editado': fields.Datetime.now(),
+                    'fecha_anticipo': fecha_anticipo,
+                    'monto_usd': monto_usd,
+                    'precio_dolar': precio_dolar,
+                    'tipo_registro': tipo,
+                    'account_payment_id': payment.id if payment else False,
+                    'account_move_id': invoice.id if invoice else False,
+                }
+                if pdf:
+                    valores['pdf_anticipo_cliente'] = pdf
+                    valores['pdf_anticipo_cliente_nombre'] = (
+                        pdf_name or f"anticipo_{sale_order.name}_{numero}.pdf"
+                    )
+                detalle = self.create(valores)
+
+            return {'success': True, 'anticipo_id': detalle.id}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
     def _crear_pago(self, sale_order, monto_usd, fecha, memo_ref, usd_currency):
         journal = self._get_bank_journal()
         # En Odoo 19 se usa 'memo' en account.payment
@@ -157,80 +335,6 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         invoice.action_post()
         return invoice
 
-    @api.model
-    def guardar_detalle(self, pedido_id, anticipoId, datos, pdf=None, pdf_name=None):
-        if not pedido_id:
-            return {'success': False, 'error': 'Pedido no indicado'}
-
-        pedido = self.env['rastreo.pedido'].browse(pedido_id)
-        if not pedido.exists():
-            return {'success': False, 'error': 'Pedido no encontrado'}
-
-        sale_order = self._get_sale_order(pedido)
-        if not sale_order:
-            return {'success': False, 'error': 'El pedido no tiene una cotización asociada.'}
-
-        monto_usd = float(datos.get('cantidad') or datos.get('monto_usd') or 0.0)
-        fecha_anticipo = datos.get('fecha_anticipo') or fields.Date.today()
-        precio_dolar = float(datos.get('precio_dolar') or 0.0) or self._get_tipo_cambio_dia(fecha_anticipo)
-
-        anticipo = self.browse(anticipoId) if anticipoId else self.browse()
-
-        try:
-            with self.env.cr.savepoint():
-                if anticipo.exists():
-                    vals_edit = {
-                        'monto_usd': monto_usd,
-                        'precio_dolar': precio_dolar,
-                        'fecha_anticipo': fecha_anticipo,
-                        'fecha_editado': fields.Datetime.now(),
-                    }
-                    if pdf:
-                        vals_edit['pdf_anticipo_cliente'] = pdf
-                        vals_edit['pdf_anticipo_cliente_nombre'] = (
-                            pdf_name or anticipo.pdf_anticipo_cliente_nombre or f"anticipo_{sale_order.name}_{anticipo.numero}.pdf"
-                        )
-                    anticipo.write(vals_edit)
-                    return {'success': True, 'anticipo_id': anticipo.id}
-
-                tipo = datos.get('tipo') or 'pago'
-                usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1) or self.env.company.currency_id
-                numero = self.search_count([('pedido_id', '=', pedido_id)]) + 1
-
-                ref = f"Anticipo {sale_order.name}"
-                if pedido.numero_contrato:
-                    ref = f"Anticipo {sale_order.name} / {pedido.numero_contrato}"
-
-                payment = self.env['account.payment']
-                invoice = self.env['account.move']
-
-                if tipo == 'pago':
-                    payment = self._crear_pago(sale_order, monto_usd, fecha_anticipo, ref, usd_currency)
-                else:
-                    invoice = self._crear_factura(sale_order, monto_usd, fecha_anticipo, ref, usd_currency)
-
-                valores = {
-                    'pedido_id': pedido_id,
-                    'numero': numero,
-                    'currency_id': self.env.company.currency_id.id,
-                    'fecha_editado': fields.Datetime.now(),
-                    'fecha_anticipo': fecha_anticipo,
-                    'monto_usd': monto_usd,
-                    'precio_dolar': precio_dolar,
-                    'tipo_registro': tipo,
-                    'account_payment_id': payment.id if payment else False,
-                    'account_move_id': invoice.id if invoice else False,
-                }
-                if pdf:
-                    valores['pdf_anticipo_cliente'] = pdf
-                    valores['pdf_anticipo_cliente_nombre'] = (
-                        pdf_name or f"anticipo_{sale_order.name}_{numero}.pdf"
-                    )
-                detalle = self.create(valores)
-
-            return {'success': True, 'anticipo_id': detalle.id}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
 
     def cargar_detalle_pago(self):
         self.ensure_one()

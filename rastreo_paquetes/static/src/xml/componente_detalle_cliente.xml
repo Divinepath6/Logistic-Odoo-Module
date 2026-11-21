@@ -4,6 +4,47 @@
         <Dialog title="state.crearEditar + ' el anticipo del cliente número: ' + state.numero" size="'xl'">
             
             <div class="o_form_view p-3 border rounded bg-light">
+                <div class="mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between" t-if="!state.anticipoId">
+                    <div class="btn-group" role="group">
+                        <button type="button"
+                                t-attf-class="btn btn-sm {{ state.modoVinculo === 'crear' ? 'btn-primary' : 'btn-outline-primary' }}"
+                                t-on-click="() => this.cambiarModoVinculo('crear')">
+                            <i class="fa fa-plus-circle me-1"/> Crear nuevo pago en Odoo
+                        </button>
+                        <button type="button"
+                                t-attf-class="btn btn-sm {{ state.modoVinculo === 'vincular' ? 'btn-primary' : 'btn-outline-primary' }}"
+                                t-on-click="() => this.cambiarModoVinculo('vincular')">
+                            <i class="fa fa-link me-1"/> Cargar pago ya hecho (Referencia)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 px-3 mb-3" t-if="!state.anticipoId and state.modoVinculo === 'vincular'">
+                    <label for="buscarRef" class="form-label fw-bold mb-1">
+                        Referencia del Pago o Factura en Odoo:
+                    </label>
+                    <div class="input-group">
+                        <input type="text"
+                               id="buscarRef"
+                               class="form-control"
+                               placeholder="Ej. PBNK1/2026/00015, INV/2026/00042 o Memo..."
+                               t-model="state.referenciaBuscar"
+                               t-on-keydown="(ev) => ev.key === 'Enter' and this.onBuscarReferencia()"/>
+                        <button type="button"
+                                class="btn btn-primary"
+                                t-att-disabled="state.buscandoRef"
+                                t-on-click="onBuscarReferencia">
+                            <i class="fa fa-search me-1"/>
+                            <t t-if="state.buscandoRef">Buscando...</t>
+                            <t t-else="">Buscar y cargar</t>
+                        </button>
+                    </div>
+                    <div class="mt-2 small text-success fw-bold" t-if="state.existingRecordId">
+                        <i class="fa fa-check-circle me-1"/>
+                        Vinculado a: <span t-esc="state.referenciaOdoo"/> (<span class="text-capitalize" t-esc="state.tipo"/>)
+                    </div>
+                </div>
+
                 <div class="row g-4">
 
                     <div class="col-md-7">
@@ -19,17 +60,15 @@
                                 <span id="fecha" class="form-control bg-white" t-esc="state.fechaEdicion || 'Nuevo registro'"/>
                             </div>
 
-                            <div class="col-md-6" t-if="!state.anticipoId">
+                            <div class="col-md-6" t-if="!state.anticipoId and state.modoVinculo === 'crear'">
                                 <label for="tipo" class="form-label fw-bold">Tipo de registro:</label>
                                 <select id="tipo" class="form-select" t-model="state.tipo">
                                     <option value="pago">Pago</option>
-                                    <!-- desactivado por si acaso
                                     <option value="factura">Factura</option>
-                                    -->
                                 </select>
                             </div>
 
-                            <div class="col-md-6" t-if="state.anticipoId">
+                            <div class="col-md-6" t-if="state.anticipoId or state.modoVinculo === 'vincular'">
                                 <label class="form-label fw-bold">Tipo / Referencia Odoo:</label>
                                 <span class="form-control bg-white">
                                     <span class="text-capitalize" t-esc="state.tipo"/>
@@ -43,7 +82,7 @@
                                        id="fechaAnticipo"
                                        class="form-control"
                                        t-model="state.fechaAnticipo"
-                                       t-att-disabled="!!state.anticipoId"/>
+                                       t-att-disabled="!!state.anticipoId or state.modoVinculo === 'vincular'"/>
                             </div>
 
                             <div class="col-md-6">
@@ -53,7 +92,7 @@
                                        id="cantidad"
                                        class="form-control"
                                        t-model.number="state.cantidadAnticipo"
-                                       t-att-disabled="!!state.anticipoId"/>
+                                       t-att-disabled="!!state.anticipoId or state.modoVinculo === 'vincular'"/>
                             </div>
 
                             <div class="col-md-6">
@@ -83,7 +122,7 @@
                         <div class="d-flex flex-column h-100">
                             <label class="form-label fw-bold text-primary">
                                 Comprobante PDF del Anticipo
-                                <span t-if="state.tipo === 'factura'" class="text-muted fw-normal"> (opcional)</span>
+                                <span t-if="state.tipo === 'factura' or state.modoVinculo === 'vincular'" class="text-muted fw-normal"> (opcional)</span>
                             </label>
                             <div class="flex-grow-1">
                                 <PdfUploader

@@ -77,25 +77,45 @@ class rastreo_rack_detalle(models.Model):
         }
 
     
+    def _obtener_precio_con_iva(self, producto):
+        if not producto:
+            return 0.0
+        
+        precio_base = producto.lst_price or 0.0
+        impuestos = producto.taxes_id.filtered(lambda t: t.company_id == self.env.company)
+        
+        if impuestos:
+            res = impuestos.compute_all(
+                precio_base,
+                currency=self.env.company.currency_id,
+                quantity=1.0,
+                product=producto
+            )
+            return res['total_included']
+            
+        return precio_base
+
     @api.model
     def obtener_rack(self, rack_id):
         rack = self.browse(rack_id)
         if not rack.exists():
             return {'success': False, 'error': 'Rack no encontrado'}
 
-        return{
+        precio_con_iva = self._obtener_precio_con_iva(rack.producto_id)
+
+        return {
             'success': True, 
             'data': {
                 'id':               rack.id,           
                 'nombre':           rack.nombre,
-                'precio_unitario':  rack.producto_id.lst_price or 0.0,
+                'precio_unitario':  precio_con_iva,
                 'altura':           rack.altura,
                 'ancho':            rack.ancho,
                 'largo':            rack.largo,
                 'producto_id':      rack.producto_id.id or 0,
                 'producto_nombre':  rack.producto_id.name or '',
                 'producto_codigo':  rack.producto_id.default_code or '',
-                'producto_precio':  rack.producto_id.lst_price or 0.0,
+                'producto_precio':  precio_con_iva,
                 'almacenaje':       rack.almacenaje
             }
         }
@@ -106,14 +126,15 @@ class rastreo_rack_detalle(models.Model):
         racks = self.search(domain, limit=100)
         lista = []
         for r in racks:
+            precio_con_iva = self._obtener_precio_con_iva(r.producto_id)
             lista.append({
                 'id':               r.id,
                 'nombre':           r.nombre,
-                'precio_unitario':  r.producto_id.lst_price or 0.0,
-                'medidas': [r.ancho, r.largo, r.altura],
+                'precio_unitario':  precio_con_iva,
+                'medidas':          [r.ancho, r.largo, r.altura],
                 'almacenaje':       r.almacenaje,
-                })
-        return {'data': lista , 'success': True,}   
+            })
+        return {'data': lista, 'success': True}
     
     @api.model
     def listar_productos(self, termino_busqueda):

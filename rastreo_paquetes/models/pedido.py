@@ -21,7 +21,8 @@ class rastreo_paquetes(models.Model):
 
     estado = fields.Selection([
         ('fase_inicial', 'Fase inicial'),
-        ('produccion', 'En Producción'),
+        ('produccion', 'En producción'),
+        ('en_origen','En origen'),
         ('puerto_origen', 'En el puerto de origen'),
         ('agua', 'En el Agua'),
         ('puerto_destino', 'Puerto de Destino'),
@@ -370,32 +371,39 @@ class rastreo_paquetes(models.Model):
         return {'success': True}
 
     @api.model
-    def cambiar_estado(self, pedido_id,costoDolar, estado=None):
+    def cambiar_estado_inicial(self, pedido_id,costoDolar = 10.0, estado=None):
         pedido = self.browse(pedido_id)
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
         
-        siguiente_estado = estado
-            ### rellenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaar
-        match pedido.estado:
-            case "fase_inicial":
-                siguiente_estado = 'produccion'
-                if pedido.sale_order_id.exists():
-                    if pedido.sale_order_id.state in ('draft', 'sent'):
-                        pedido.sale_order_id.action_confirm()
-                pedido.write({
-                    'fecha_compromiso_cliente_1': fields.Date.today(),
-                    'total_proveedor_costo_dolar': costoDolar or 10.0,
-                    'total_cliente_costo_dolar': costoDolar or 10.0,
-                    'fecha_creacion': fields.Date.today(),
-                })
-            case "produccion":
-                if not pedido.pdf_contrato_proveedor:
-                    return {'success': False, 'error': 'Falta el contrato del proveedor para continuar'}
-                siguiente_estado = 'puerto_origen'
-            case _:
-                if not siguiente_estado:
-                    return {'success': False, 'error': 'Estado no especificado'}
+        siguiente_estado = 'produccion'
+        if pedido.sale_order_id.exists():
+            if pedido.sale_order_id.state in ('draft', 'sent'):
+                pedido.sale_order_id.action_confirm()
+        pedido.write({
+            'fecha_compromiso_cliente_1': fields.Date.today(),
+            'total_proveedor_costo_dolar': costoDolar or 10.0,
+            'total_cliente_costo_dolar': costoDolar or 10.0,
+            'fecha_creacion': fields.Date.today(),
+        })
+        pedido.write({'estado': siguiente_estado})
+        self.crear_aviso(pedido.id)
+
+        return {
+            'success': True, 
+            'id': pedido.id, 
+            'nuevo_estado': siguiente_estado
+        }
+    
+    @api.model
+    def cambiar_estado(self, pedido_id, estado=None):
+        pedido = self.browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False, 'error': 'Pedido no encontrado'}
+        
+        siguiente_estado = ''
+        
+
 
         pedido.write({'estado': siguiente_estado})
         self.crear_aviso(pedido.id)
@@ -405,6 +413,11 @@ class rastreo_paquetes(models.Model):
             'id': pedido.id, 
             'nuevo_estado': siguiente_estado
         }
+
+
+
+
+    
 
     ## PDFSSSS //////////////////////////////////////////////////
     @api.model
@@ -766,9 +779,6 @@ class rastreo_paquetes(models.Model):
 
         hoy = fields.Date.context_today(self.with_context(tz='America/Mazatlan'))
 
-        # =====================================================================
-        # 1. AVISOS POR ESTADO LOGÍSTICO
-        # =====================================================================
         if pedido.estado == 'produccion':
             if not pedido.numero_contrato:
                 avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Número de contrato"})
@@ -785,7 +795,7 @@ class rastreo_paquetes(models.Model):
                         'mensaje': f"Faltan {dias_restantes} días, conseguir Forwarder",
                     })
                     if not pedido.CRD:
-                        avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Conseguir CRD (Cargo Ready Date)"})
+                        avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Conseguir CRD"})
                 elif 0 < dias_restantes <= 20:
                     avisos_a_crear.append({
                         'severidad': INFO,
@@ -793,13 +803,19 @@ class rastreo_paquetes(models.Model):
                     })
                 elif pedido.CRD:
                     dias_restantes = (pedido.CRD - hoy).days
-                    
                     if dias_restantes <= 5:
                         avisos_a_crear.append({
                             'severidad': INFO,
-                            'mensaje': f"Faltan {dias_restantes} para CRD",
+                            'mensaje': f"Quedan {dias_restantes} para puerto",
                         })
-                    
+        
+        elif pedido.estado == 'en_origen':         
+            if not pedido.CRD:
+                avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el CRD"})
+            else:
+                dias_restantes = (pedido.CRD - hoy).days
+                avisos_a_crear.append({'severidad': INFO, 'mensaje': f"Quedan {dias_restantes} para puerto"})
+
         elif pedido.estado == 'puerto_origen':
             if not pedido.ETD:
                 avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el ETD"})
@@ -810,9 +826,7 @@ class rastreo_paquetes(models.Model):
                     avisos_a_crear.append({
                         'severidad': MEDIA,
                         'mensaje': f"El contenedor sale del puerto en {dias_restantes} días"
-                    })
-
-            
+                    })      
 
         elif pedido.estado in ('agua', 'embarcado'):
             if not pedido.ETA:
@@ -906,10 +920,6 @@ class rastreo_paquetes(models.Model):
                             f"{_texto_vencimiento(dias_cli)}."
                         ),
                     })
-
-        # =====================================================================
-        # 3. GUARDAR AVISOS EN BASE DE DATOS
-        # =====================================================================
         pedido.aviso_ids.unlink()
 
         nuevos_avisos = [
@@ -928,10 +938,12 @@ class rastreo_paquetes(models.Model):
 
     @api.model
     def _cron_actualizar_avisos_diarios(self):
-        """Recalcula los avisos y recordatorios de pago de todos los pedidos activos cada día."""
-        pedidos_activos = self.search([('estado', '!=', 'entregado')])
+        pedidos_activos = self.search([('estado', 'not in', ['fase_inicial', 'entregado'])])
         for pedido in pedidos_activos:
-            self.crear_aviso(pedido.id)
+            res = self.cambiar_estado(pedido.id)
+            if not res.get('success'):
+                self.crear_aviso(pedido.id)
+
         
     @api.model
     def listar_pedidos(self, termino_busqueda=None):

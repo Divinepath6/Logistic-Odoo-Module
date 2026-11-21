@@ -393,19 +393,18 @@ export class PantallaPrincipal extends Component {
         }
     }
 
-    asignarColumnas(){
-        const estados = 
-        [
-            ["fase_inicial", "Fase Inicial"], 
-            ["produccion", "En Producción"], 
-            ["puerto_origen", 'En el puerto de origen'], 
-            ["agua", "En Mar"],
-            ["puerto_destino", "Puerto de Destino"],
-            ["Entregado", "Entregado"]
+    asignarColumnas() {
+        const columnas = [
+            { keys: ["fase_inicial"], name: "Fase Inicial" },
+            { keys: ["produccion"], name: "En Producción" },
+            { keys: ["en_origen", "puerto_origen"], name: "En Puerto de Origen" },
+            { keys: ["agua"], name: "En Mar" },
+            { keys: ["puerto_destino"], name: "Puerto de Destino" },
+            { keys: ["entregado"], name: "Entregado" },
         ];
-        this.state.columns = estados.map(estado => ({
-            name: estado[1],
-            packages: this.state.pedidos.filter(p => p.estado === estado[0]),
+        this.state.columns = columnas.map(col => ({
+            name: col.name,
+            packages: this.state.pedidos.filter(p => col.keys.includes(p.estado)),
         }));
     }
 }

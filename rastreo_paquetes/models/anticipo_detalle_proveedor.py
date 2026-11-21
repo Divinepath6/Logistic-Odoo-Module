@@ -80,10 +80,6 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
 
     @api.model
     def crear_pago_proveedor(self, vals):
-        """
-        Registra el anticipo/pago, captura el tipo de cambio del día si no se provee,
-        y crea un único pago contable vinculado al proveedor del pedido.
-        """
         if not vals.get('precio_dolar'):
             vals['precio_dolar'] = self._obtener_tc_usd(vals.get('fecha_anticipo'))
 
@@ -122,13 +118,59 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
         }
 
     @api.model
+    def buscar_referencia_existente(self, pedido_id, referencia):
+        """Busca un pago a proveedor ya contabilizado en Odoo por su número (name) o memo."""
+        if not referencia or not referencia.strip():
+            return {'success': False, 'error': 'Ingrese una referencia para buscar.'}
+
+        ref = referencia.strip()
+        pedido = self.env['rastreo.pedido'].browse(pedido_id)
+        proveedor_id = pedido.proveedor_id.id if (pedido.exists() and pedido.proveedor_id) else False
+
+        domain = [
+            ('partner_type', '=', 'supplier'),
+            ('payment_type', '=', 'outbound'),
+            ('state', 'in', ('posted', 'paid', 'in_process')),
+            '|', ('name', 'ilike', ref), ('memo', 'ilike', ref),
+        ]
+        if proveedor_id:
+            domain.append(('partner_id', '=', proveedor_id))
+
+        pago = self.env['account.payment'].search(domain, limit=1)
+        if not pago:
+            return {
+                'success': False,
+                'error': 'No se encontró ningún pago a proveedor publicado con esa referencia.'
+            }
+
+        ya_usado = self.search([('account_payment_id', '=', pago.id)], limit=1)
+        if ya_usado:
+            return {
+                'success': False,
+                'error': f'El pago {pago.name} ya está vinculado en el anticipo #{ya_usado.numero}.'
+            }
+
+        tc = self._obtener_tc_usd(pago.date)
+        usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
+
+        if usd_currency and pago.currency_id == usd_currency:
+            monto_usd = pago.amount
+        else:
+            monto_usd = (pago.amount / tc) if tc else pago.amount
+
+        return {
+            'success': True,
+            'payment_id': pago.id,
+            'referencia_encontrada': pago.name,
+            'fecha': str(pago.date),
+            'monto_usd': round(monto_usd, 2),
+            'tipo_cambio': round(tc, 4),
+            'journal_id': pago.journal_id.id if pago.journal_id else 0,
+            'journal_nombre': pago.journal_id.name if pago.journal_id else '',
+        }
+
+    @api.model
     def guardar_detalle(self, pedido_id, anticipo_id, vals, pdf=False, pdf_nombre=False):
-        """
-        - Si anticipo_id == 0 (Creación): crea el detalle, crea un único account.payment
-          en el diario seleccionado y lo confirma con action_post().
-        - Si anticipo_id != 0 (Edición): solo actualiza el precio del dólar (y PDF si cambió),
-          sin duplicar ni volver a crear pagos en Odoo.
-        """
         try:
             if 'cantidad' in vals:
                 vals['monto_usd'] = vals.pop('cantidad')
@@ -136,9 +178,7 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
             if not vals.get('precio_dolar'):
                 vals['precio_dolar'] = self._obtener_tc_usd(vals.get('fecha_anticipo'))
 
-            # =========================================================
-            # MODO EDICIÓN: Solo actualizar precio_dolar (y PDF)
-            # =========================================================
+            # 1. Flujo de Edición
             if anticipo_id and int(anticipo_id) != 0:
                 detalle = self.browse(int(anticipo_id))
                 if not detalle.exists():
@@ -157,9 +197,10 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
 
                 return {'success': True, 'id': detalle.id}
 
-            # =========================================================
-            # MODO CREACIÓN: Crear detalle + 1 único pago en Odoo
-            # =========================================================
+            # 2. Flujo de Creación o Vinculación
+            modo_vinculo = vals.pop('modo_vinculo', 'crear')
+            existing_payment_id = int(vals.pop('existing_payment_id', 0) or 0)
+
             vals['pedido_id'] = pedido_id
             if pdf:
                 vals['pdf_anticipo_proveedor'] = pdf
@@ -173,6 +214,20 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
             )
             vals['numero'] = (ultimo_anticipo.numero + 1) if ultimo_anticipo else 1
 
+            if modo_vinculo == 'vincular' and existing_payment_id:
+                pago = self.env['account.payment'].browse(existing_payment_id)
+                if not pago.exists():
+                    return {'success': False, 'error': 'El pago seleccionado ya no existe en Odoo.'}
+
+                vals['account_payment_id'] = pago.id
+                if pago.journal_id:
+                    vals['journal_id'] = pago.journal_id.id
+
+                detalle = self.create(vals)
+                detalle.pedido_id.crear_aviso(detalle.pedido_id.id)
+                return {'success': True, 'id': detalle.id}
+
+            # Flujo original: crear pago nuevo en Odoo
             detalle = self.create(vals)
             pedido = detalle.pedido_id
             referencia_invoice = pedido.numero_contrato or pedido.numero_guia or f"ANTICIPO-{detalle.numero}"

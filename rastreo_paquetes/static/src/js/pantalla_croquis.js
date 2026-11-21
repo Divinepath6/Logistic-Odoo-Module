@@ -40,7 +40,7 @@ export class PantallaCroquis extends Component {
 
             enDolares: false, 
             conIva: true,
-
+            
             // Detalle adicional
             detalleRacks: [],
             // Valores "de la bodega"
@@ -54,7 +54,7 @@ export class PantallaCroquis extends Component {
             comentarios: "",
             racksOcupados: 0,
             rackSeleccionadoAlmacenaje: 0.00,
-
+            racksBase: 0,
             //orillas
             sepParedArr: 30,
             sepParedAba: 30,
@@ -145,6 +145,10 @@ export class PantallaCroquis extends Component {
         this.state.colorSeleccionado = bodega.colorHex || "#cccccc";
         this.state.colorSeleccionadoClave = bodega.colorClave || "";
 
+        this.state.racksBase = bodega.racksBase;
+        this.state.costoEstimado = bodega.costoEstimado;
+        this.state.almacenajeTonelada = bodega.almacenajeTonelada;
+
         this.state.alturaBodega = bodega.alturaBodega;
         this.state.anchoBodega = bodega.anchoBodega;
         this.state.largoBodega = bodega.largoBodega;
@@ -213,6 +217,10 @@ export class PantallaCroquis extends Component {
             colorId: this.state.colorSeleccionadoId,
             colorHex: this.state.colorSeleccionado,
             colorClave: this.state.colorSeleccionadoClave,
+
+            racksBase: this.state.racksBase,
+            costoEstimado: this.state.costoEstimado,
+            almacenajeTonelada: this.state.almacenajeTonelada,
         }
         this.state.bodegas[this.state.bodegaIndex] = bodega;
     }
@@ -260,6 +268,7 @@ export class PantallaCroquis extends Component {
                         sepParedDer: b.separacion_derecha,
                         racksOcupados: b.racks_ocupados,
 
+            
                         colorId: b.color_id || false,
                         colorHex: b.color_hex || "#cccccc",
                         colorClave: b.color_clave || "",
@@ -422,7 +431,7 @@ export class PantallaCroquis extends Component {
         try {
             const resultado = await this.orm.call(
                 "rastreo.pedido",
-                "cambiar_estado",
+                "cambiar_estado_inicial",
                 [
                     pedidoId,
                     costoDolar
@@ -599,31 +608,37 @@ export class PantallaCroquis extends Component {
 
         
 
-        let racksOcupadosTotal = porAncho * porLargo * altoBodega;
-        let costoEstimadoTotal = costo * racksOcupadosTotal;
-        let almacenajeTotal = racksOcupadosTotal * Number(this.state.rackSeleccionadoAlmacenaje);
+        const racksBase = porAncho * porLargo * altoBodega;
+        let racksOcupadosTotal = racksBase;
+        let costoEstimadoTotal = costo * racksBase;
+        let almacenajeTotal = racksBase * Number(this.state.rackSeleccionadoAlmacenaje);
 
-    for (let i = 0; i < this.state.detalleRacks.length; i++) {
-        const r = this.state.detalleRacks[i];
-        racksOcupadosTotal += Number(r.cantidadRacks) || 0;
-        costoEstimadoTotal += Number(r.costoTotal) || 0;
-        almacenajeTotal    += Number(r.almacenajeTotal) || 0;
-    }
+        for (let i = 0; i < this.state.detalleRacks.length; i++) {
+            const r = this.state.detalleRacks[i];
+            racksOcupadosTotal += Number(r.cantidadRacks) || 0;
+            costoEstimadoTotal += Number(r.costoTotal) || 0;
+            almacenajeTotal    += Number(r.almacenajeTotal) || 0;
+        }
 
+        this.state.racksBase = racksBase;
         this.state.racksOcupados = racksOcupadosTotal;
         this.state.costoEstimado = costoEstimadoTotal;
         this.state.almacenajeTonelada = almacenajeTotal;
         this.state.costoEstimadoDisplay = `$${costoEstimadoTotal.toFixed(2)}`;
         this.state.almacenajeToneladaDisplay = almacenajeTotal.toFixed(3);
         
-        this.state.anchoRack      = anchoRackM;   // m
-        this.state.largoRack      = largoRackM;   // m
-        this.state.porAncho       = porAncho;
-        this.state.porLargo       = porLargo;
+        this.state.anchoRack = anchoRackM; // m
+        this.state.largoRack = largoRackM; // m
+        this.state.porAncho  = porAncho;
+        this.state.porLargo  = porLargo;
+
+        this.guardarBodegaActual();
+
         this.notification.add(
             `Cálculo actualizado: ${this.state.costoEstimadoDisplay} (${this.state.racksOcupados} racks)`,
             { type: "success" }
         );
+
     }
 
 
@@ -847,6 +862,9 @@ export class PantallaCroquis extends Component {
                 descripcion:   b.comentarios || "",
                 numero_bodega: i + 1,
 
+                colorHex:      b.colorHex || "#fffcfc",
+                colorClave:    b.colorClave || "",
+
                 layout:        layout,
             };
         }).filter(Boolean);  
@@ -876,6 +894,31 @@ export class PantallaCroquis extends Component {
         });
     }
 
+    get totalesGlobales() {
+        let totalRacks = 0;
+        let totalCosto = 0;
+        let totalAlmacenaje = 0;
+
+        for (let i = 0; i < this.state.bodegas.length; i++) {
+            if (i === this.state.bodegaIndex) {
+                totalRacks += Number(this.state.racksOcupados) || 0;
+                totalCosto += Number(this.state.costoEstimado) || 0;
+                totalAlmacenaje += Number(this.state.almacenajeTonelada) || 0;
+            } else {
+                const b = this.state.bodegas[i];
+                totalRacks += Number(b.racksOcupados) || 0;
+                totalCosto += Number(b.costoEstimado) || 0;
+                totalAlmacenaje += Number(b.almacenajeTonelada) || 0;
+            }
+        }
+
+        return {
+            cantidadBodegas: this.state.bodegas.length,
+            racksOcupados: totalRacks,
+            costoEstimadoDisplay: `$${totalCosto.toFixed(2)}`,
+            almacenajeToneladaDisplay: totalAlmacenaje.toFixed(3),
+        };
+    }
 
 }
 

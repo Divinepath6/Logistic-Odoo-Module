@@ -71,7 +71,12 @@
             </svg>
 
             <div t-if="layout.valido" class="cc-croquis-legend">
-                <span><b t-esc="props.porAncho"/> × <b t-esc="props.porLargo"/> x <b t-esc="props.alturaBodega"/> = <b t-esc="props.totalRacks"/> racks</span>
+               <span>
+                    <b t-esc="props.porAncho"/> × <b t-esc="props.porLargo"/> × <b t-esc="props.alturaBodega"/> = <b t-esc="props.racksBase"/> racks
+                    <t t-if="props.totalRacks &gt; props.racksBase">
+                        (+ <b t-esc="props.totalRacks - props.racksBase"/> adicionales = <b t-esc="props.totalRacks"/> total)
+                    </t>
+                </span>
                 <span>Separación: <b t-esc="props.separacion"/> cm</span>
             </div>
         </div>

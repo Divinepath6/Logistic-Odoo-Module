@@ -390,7 +390,7 @@ export class PantallaPedido extends Component {
                 [pedidoId]
             );
             this.state.pedido = resultado.data ?? resultado;
-
+            
         }catch(e){
             this.notification.add("No hay pedido asociado",{ type: "danger" });
             console.log(e)
@@ -440,10 +440,13 @@ export class PantallaPedido extends Component {
     }
 
     async onEditarDetalleCliente(d) {
+        const esCargar = d === "cargar";
         let objetoModal;
-        if (!d) {
+
+        if (!d || esCargar) {
             objetoModal = {
-                crearEditar: "Crear",
+                crearEditar: esCargar ? "Cargar" : "Crear",
+                modoVinculo: esCargar ? "vincular" : "crear",
                 anticipoId: 0,
                 pedidoId: this.state.pedidoId,
                 numero: this.state.detalleCliente.length + 1,
@@ -458,6 +461,7 @@ export class PantallaPedido extends Component {
             objetoModal = {
                 ...d,
                 crearEditar: "Editar",
+                modoVinculo: "crear",
                 pedidoId: this.state.pedidoId,
             };
         }
@@ -471,6 +475,7 @@ export class PantallaPedido extends Component {
             cancel: () => {},
         });
     }
+
     async onEditarColorRack(r) {
         this.dialogService.add(componente_rack_colores_escoger, {
             confirm: (colorSeleccionado) => {
@@ -486,30 +491,44 @@ export class PantallaPedido extends Component {
             cancel: () => {}
         });
     }
+
+
     async onEditarDetalleProveedor(d) {
-        if(!d){
-            d = {
-                crearEditar: "Crear",
+        const esCargar = d === "cargar";
+        let objetoModal;
+
+        if (!d || esCargar) {
+            objetoModal = {
+                crearEditar: esCargar ? "Cargar" : "Crear",
+                modoVinculo: esCargar ? "vincular" : "crear",
                 anticipoId: 0,
+                pedidoId: this.state.pedidoId,
                 numero: this.state.detalleProveedor.length + 1,
                 fechaEdicion: "",
                 fechaAnticipo: "",
                 cantidadAnticipo: 0.0,
                 precioDolar: 0.0,
-                PDFAnticipo: null, 
-            }
+                PDFAnticipo: null,
+            };
+        } else {
+            objetoModal = {
+                ...d,
+                crearEditar: "Editar",
+                modoVinculo: "crear",
+                pedidoId: this.state.pedidoId,
+            };
         }
-        d.pedidoId = this.state.pedidoId;
-        this.dialogService.add(componente_detalle_proveedor,  {
-                title: "Confirmación",
-                objeto:d,
-                confirm: async () => {
-                    await this.cargarPedido();
-                },
-                cancel: () => {
-                }
+
+        this.dialogService.add(componente_detalle_proveedor, {
+            title: "Confirmación",
+            objeto: objetoModal,
+            confirm: async () => {
+                await this.cargarPedido();
+            },
+            cancel: () => {},
         });
     }
+
     async onEditarDetalleEta(eta) {
         const esCrear = !eta;
         const objetoModal = esCrear
