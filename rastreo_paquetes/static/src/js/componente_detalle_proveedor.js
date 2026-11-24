@@ -66,6 +66,10 @@ export class componente_detalle_proveedor extends Component {
                 } else {
                     await this.cargarDiariosPago();
                 }
+                
+                if (!this.state.precioDolar || this.state.precioDolar === 0) {
+                await this.fetchDollarRate();
+            }
             }
         });
     }
@@ -83,6 +87,26 @@ export class componente_detalle_proveedor extends Component {
             }
         }
     }
+
+    async fetchDollarRate() {
+        this.state.fetchingRate = true;
+        try {
+            const response = await fetch("https://open.er-api.com/v6/latest/USD");
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (data && data.result === "success" && data.rates) {
+                const rate = data.rates[this.state.targetCurrency] || data.rates.USD || null;
+                if (rate) {
+                    this.state.precioDolar = parseFloat(Number(rate).toFixed(2));
+                }
+            }
+        } catch (e) {
+            console.warn("No se pudo obtener el tipo de cambio automáticamente:", e);
+        } finally {
+            this.state.fetchingRate = false;
+        }
+    }
+
 
     async onBuscarReferencia() {
         if (!this.state.referenciaBuscar || !this.state.referenciaBuscar.trim()) {

@@ -190,7 +190,7 @@ export class componente_detalle_cliente extends Component {
             if (data && data.result === "success" && data.rates) {
                 const rate = data.rates[this.state.targetCurrency] || data.rates.USD || null;
                 if (rate) {
-                    this.state.precioDolar = parseFloat(Number(rate).toFixed(4));
+                    this.state.precioDolar = parseFloat(Number(rate).toFixed(2));
                 }
             }
         } catch (e) {

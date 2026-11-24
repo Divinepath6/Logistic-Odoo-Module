@@ -92,6 +92,7 @@ export class PantallaPedido extends Component {
             totalAnticiposProveedorMxnFmt: "$ 0.00",
             balanceClienteMxn: "$ 0.00",
             balanceProveedorMxn: "$ 0.00",
+            
             cotizacionAduanaFmt: "$ 0.00",
             cotizacionAduanaMxnFmt: "$ 0.00",
 
@@ -205,6 +206,7 @@ export class PantallaPedido extends Component {
                 numero_actualizacion: a.numero_actualizacion,
                 fecha: a.fecha || '',
                 texto: a.texto || '',
+                usuario: a.usuario || '',
             }));
 
             this.state.detalleRacks = (p.detalle_racks || []).map((d, i) => {
@@ -408,7 +410,7 @@ export class PantallaPedido extends Component {
                         campoFecha: item.campoFecha,
                     };
                 });
-
+         
         } catch (e) {
             this.notification.add("Error al cargar el pedido", { type: "danger" });
             console.log(e);

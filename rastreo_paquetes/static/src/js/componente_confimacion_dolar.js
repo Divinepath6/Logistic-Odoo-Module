@@ -13,7 +13,7 @@ export class componente_confimacion_dolar extends Component {
 
     setup() {
         this.state = useState({
-            costoDolar: 1.00,
+            costoDolar: 0.00,
         });
     }
 

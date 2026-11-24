@@ -239,16 +239,22 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="cotizacionAduana">Cotizacion de Aduana:
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact d-flex justify-content-between">
+                                        <span>Cotizacion de Aduana:</span>
+                                        <span class="text-primary fw-bold" t-esc="state.cotizacionAduana" />
                                     </label>
-                                    <input type="text"
-                                        id="cotizacionAduana"
-                                        class="odoo-input"
-                                        t-att-value="state.cotizacionAduana"
-                                        readonly="readonly"
-                                    />
+                                    <div class="odoo-money-box">
+                                        <div class="odoo-money-usd">
+                                            <span class="odoo-curr-tag">USD</span>
+                                            <span t-esc="state.cotizacionAduanaFmt" />
+                                        </div>
+                                        <div class="odoo-money-mxn">
+                                            <span class="odoo-curr-tag">MXN</span>
+                                            <span t-esc="state.cotizacionAduanaMxnFmt" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
