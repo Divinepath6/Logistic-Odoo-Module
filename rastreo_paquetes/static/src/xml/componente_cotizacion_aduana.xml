@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="rastreo_paquetes.componente_cotizacion_aduana_embed">
+        <Dialog title="'Cotización de Agencia Aduanal'" size="'xl'">
+            <div class="container-fluid">
+                <div class="row g-4">
+                    <div class="col-12 col-md-5 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nombre del PDF</label>
+                                <input type="text"
+                                       class="form-control"
+                                       placeholder="Ej: cotizacion_aduana.pdf"
+                                       t-model="state.PDFNombre"/>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Costo Cotización (USD)</label>
+                                <div class="input-group">
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control"
+                                           placeholder="0.00"
+                                           t-model.number="state.costoUsd"/>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Costo del Dólar (Tipo de cambio)</label>
+                                <div class="input-group">
+                                    <input type="number"
+                                           step="0.0001"
+                                           min="0"
+                                           class="form-control"
+                                           placeholder="0.0000"
+                                           t-model.number="state.costoDolar"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border mt-3 mb-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted fw-semibold">Equivalente estimado:</span>
+                                <span class="fs-5 fw-bold text-primary">
+                                    <t t-esc="formatCurrency(totalMxn, 'MXN')"/> MXN
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-7 border-start-md">
+                        <label class="form-label fw-bold d-block">Documento PDF de Cotización</label>
+                        <div class="p-2 bg-light rounded border">
+                            <PdfUploader
+                                value="state.PDF"
+                                filename="state.PDFNombre"
+                                onChange="(b64, name) => this.onPdfChange(b64, name)"
+                                previewMaxWidth="700"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <t t-set-slot="footer">
+                <button class="btn btn-outline-primary"
+                        t-if="state.PDF"
+                        t-on-click="onDescargarPDF">
+                    <i class="fa fa-download me-1"/> Descargar PDF
+                </button>
+                <button class="btn btn-primary" t-on-click="onConfirmar">
+                    <i class="fa fa-save me-1"/> Guardar y salir
+                </button>
+                <button class="btn btn-secondary" t-on-click="onCancelar">
+                    Cancelar
+                </button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

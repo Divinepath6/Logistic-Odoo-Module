@@ -400,7 +400,7 @@ export class PantallaPrincipal extends Component {
             { keys: ["en_origen", "puerto_origen"], name: "En Puerto de Origen" },
             { keys: ["agua"], name: "En Mar" },
             { keys: ["puerto_destino"], name: "Puerto de Destino" },
-            { keys: ["entregado"], name: "Entregado" },
+            { keys: ["entregado" , 'camino_cliente'], name: "Ultima Fase" },
         ];
         this.state.columns = columnas.map(col => ({
             name: col.name,

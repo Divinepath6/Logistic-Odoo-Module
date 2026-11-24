@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="rastreo_paquetes.componente_detalle_cliente_embed">
-        <Dialog title="state.crearEditar + ' el anticipo del cliente número: ' + state.numero" size="'xl'">
+        <Dialog title="state.crearEditar + ' el pago del cliente número: ' + state.numero" size="'xl'">
             
             <div class="o_form_view p-3 border rounded bg-light">
                 <div class="mb-3 pb-2 border-bottom d-flex align-items-center justify-content-between" t-if="!state.anticipoId">
@@ -21,13 +21,13 @@
 
                 <div class="alert alert-info py-2 px-3 mb-3" t-if="!state.anticipoId and state.modoVinculo === 'vincular'">
                     <label for="buscarRef" class="form-label fw-bold mb-1">
-                        Referencia del Pago o Factura en Odoo:
+                        Referencia del Pago en Odoo:
                     </label>
                     <div class="input-group">
                         <input type="text"
                                id="buscarRef"
                                class="form-control"
-                               placeholder="Ej. PBNK1/2026/00015, INV/2026/00042 o Memo..."
+                               placeholder="Ej. PBNK1/2026/00015 o Memo..."
                                t-model="state.referenciaBuscar"
                                t-on-keydown="(ev) => ev.key === 'Enter' and this.onBuscarReferencia()"/>
                         <button type="button"
@@ -41,7 +41,7 @@
                     </div>
                     <div class="mt-2 small text-success fw-bold" t-if="state.existingRecordId">
                         <i class="fa fa-check-circle me-1"/>
-                        Vinculado a: <span t-esc="state.referenciaOdoo"/> (<span class="text-capitalize" t-esc="state.tipo"/>)
+                        Vinculado a pago: <span t-esc="state.referenciaOdoo"/>
                     </div>
                 </div>
 
@@ -51,7 +51,7 @@
                         <div class="row g-3">
 
                             <div class="col-md-6">
-                                <label for="numeroAnticipo" class="form-label fw-bold">Número de anticipo:</label>
+                                <label for="numeroAnticipo" class="form-label fw-bold">Número de pago:</label>
                                 <span id="numeroAnticipo" class="form-control bg-white" t-esc="state.numero"/>
                             </div>
 
@@ -60,24 +60,62 @@
                                 <span id="fecha" class="form-control bg-white" t-esc="state.fechaEdicion || 'Nuevo registro'"/>
                             </div>
 
-                            <div class="col-md-6" t-if="!state.anticipoId and state.modoVinculo === 'crear'">
-                                <label for="tipo" class="form-label fw-bold">Tipo de registro:</label>
-                                <select id="tipo" class="form-select" t-model="state.tipo">
-                                    <option value="pago">Pago</option>
-                                    <option value="factura">Factura</option>
-                                </select>
-                            </div>
+                            <!-- Selectores de Diario y Método de Pago (Creación) -->
+                            <t t-if="!state.anticipoId and state.modoVinculo === 'crear'">
+                                <div class="col-md-6">
+                                    <label for="diarioPago" class="form-label fw-bold">Diario (Banco / Caja):</label>
+                                    <select id="diarioPago"
+                                            class="form-select"
+                                            t-att-value="state.journalId"
+                                            t-on-change="onDiarioChange">
+                                        <option value="0">-- Seleccionar diario --</option>
+                                        <t t-foreach="state.diarios" t-as="d" t-key="d.id">
+                                            <option t-att-value="d.id" t-att-selected="d.id === state.journalId">
+                                                <t t-esc="d.name"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
 
-                            <div class="col-md-6" t-if="state.anticipoId or state.modoVinculo === 'vincular'">
-                                <label class="form-label fw-bold">Tipo / Referencia Odoo:</label>
-                                <span class="form-control bg-white">
-                                    <span class="text-capitalize" t-esc="state.tipo"/>
-                                    <t t-if="state.referenciaOdoo"> — <strong t-esc="state.referenciaOdoo"/></t>
-                                </span>
-                            </div>
+                                <div class="col-md-6">
+                                    <label for="metodoPago" class="form-label fw-bold">Método de pago:</label>
+                                    <select id="metodoPago"
+                                            class="form-select"
+                                            t-att-value="state.paymentMethodLineId"
+                                            t-att-disabled="!state.journalId or state.metodosDisponibles.length === 0"
+                                            t-on-change="onMetodoChange">
+                                        <t t-if="state.metodosDisponibles.length === 0">
+                                            <option value="0">Sin métodos configurados</option>
+                                        </t>
+                                        <t t-foreach="state.metodosDisponibles" t-as="m" t-key="m.id">
+                                            <option t-att-value="m.id" t-att-selected="m.id === state.paymentMethodLineId">
+                                                <t t-esc="m.name"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </t>
+
+                            <!-- Datos en solo lectura al editar o vincular pago existente -->
+                            <t t-if="state.anticipoId or state.modoVinculo === 'vincular'">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Referencia Odoo:</label>
+                                    <span class="form-control bg-white">
+                                        <strong t-esc="state.referenciaOdoo || 'Pago registrado'"/>
+                                    </span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Diario / Método de pago:</label>
+                                    <span class="form-control bg-white">
+                                        <span t-esc="state.journalNombre || 'N/A'"/>
+                                        <t t-if="state.paymentMethodNombre"> — <span t-esc="state.paymentMethodNombre"/></t>
+                                    </span>
+                                </div>
+                            </t>
 
                             <div class="col-md-6">
-                                <label for="fechaAnticipo" class="form-label fw-bold">Fecha del anticipo:</label>
+                                <label for="fechaAnticipo" class="form-label fw-bold">Fecha del pago:</label>
                                 <input type="date"
                                        id="fechaAnticipo"
                                        class="form-control"
@@ -121,8 +159,8 @@
                     <div class="col-md-5 border-start">
                         <div class="d-flex flex-column h-100">
                             <label class="form-label fw-bold text-primary">
-                                Comprobante PDF del Anticipo
-                                <span t-if="state.tipo === 'factura' or state.modoVinculo === 'vincular'" class="text-muted fw-normal"> (opcional)</span>
+                                Comprobante PDF del Pago
+                                <span t-if="state.modoVinculo === 'vincular'" class="text-muted fw-normal"> (opcional)</span>
                             </label>
                             <div class="flex-grow-1">
                                 <PdfUploader

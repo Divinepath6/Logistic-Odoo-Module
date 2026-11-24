@@ -14,7 +14,7 @@
                                t-model.number="state.totalProveedor"
                                t-on-input="recalcularMontos"/>
                         
-                               <label class="form-label fw-bold">Invoice :</label>
+                            <label class="form-label fw-bold">Invoice :</label>
                             <input type="text"
                                class="form-control"
                                t-model="state.invoice"/>

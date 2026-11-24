@@ -4,7 +4,7 @@ from odoo.exceptions import UserError
 
 class rastreo_anticipo_detalle_cliente(models.Model):
     _name = 'rastreo.detalle_cliente'
-    _description = 'Anticipos de clientes (pago o factura) ligados a una cotización'
+    _description = 'Anticipos de clientes (pagos) ligados a una cotización'
 
     numero = fields.Integer(string='Número de anticipo', required=True)
     pedido_id = fields.Many2one(
@@ -29,7 +29,6 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         required=True,
     )
 
-    # Campos limpios para montos en ambas monedas y tipo de cambio
     monto_usd = fields.Monetary(
         string='Monto en USD',
         currency_field='currency_id',
@@ -56,21 +55,24 @@ class rastreo_anticipo_detalle_cliente(models.Model):
     )
 
     tipo_registro = fields.Selection(
-        selection=[
-            ('pago', 'Pago'),
-            ('factura', 'Factura'),
-        ],
+        selection=[('pago', 'Pago')],
         string='Tipo de registro',
         default='pago',
+    )
+    journal_id = fields.Many2one(
+        'account.journal',
+        string='Diario de pago',
+        domain="[('type', 'in', ('bank', 'cash'))]",
+        ondelete='set null',
+    )
+    payment_method_line_id = fields.Many2one(
+        'account.payment.method.line',
+        string='Método de pago',
+        ondelete='set null',
     )
     account_payment_id = fields.Many2one(
         'account.payment',
         string='Pago generado',
-        ondelete='set null',
-    )
-    account_move_id = fields.Many2one(
-        'account.move',
-        string='Factura generada',
         ondelete='set null',
     )
 
@@ -78,18 +80,6 @@ class rastreo_anticipo_detalle_cliente(models.Model):
     def _compute_monto_mxn(self):
         for record in self:
             record.monto_mxn = (record.monto_usd or 0.0) * (record.precio_dolar or 0.0)
-
-    def _get_sale_order(self, pedido):
-        return pedido.sale_order_id
-
-    def _get_bank_journal(self):
-        journal = self.env['account.journal'].search(
-            [('type', 'in', ('bank', 'cash')), ('company_id', '=', self.env.company.id)],
-            limit=1,
-        )
-        if not journal:
-            raise UserError(_('No hay diario de banco o caja configurado.'))
-        return journal
 
     def _get_tipo_cambio_dia(self, fecha):
         usd = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
@@ -102,8 +92,53 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         return rate or 1.0
 
     @api.model
+    def obtener_opciones_pago(self, anticipo_id=0):
+        """Devuelve los diarios de banco/caja y sus métodos de pago entrantes disponibles en Odoo."""
+        journals = self.env['account.journal'].search([
+            ('type', 'in', ('bank', 'cash')),
+            ('company_id', '=', self.env.company.id),
+        ])
+
+        diarios_data = []
+        for j in journals:
+            metodos = [
+                {
+                    'id': line.id,
+                    'name': line.name,
+                    'code': line.code,
+                }
+                for line in j.inbound_payment_method_line_ids
+            ]
+            diarios_data.append({
+                'id': j.id,
+                'name': j.name,
+                'type': j.type,
+                'metodos': metodos,
+            })
+
+        seleccion_actual = {}
+        if anticipo_id:
+            anticipo = self.browse(anticipo_id)
+            if anticipo.exists():
+                pago = anticipo.account_payment_id
+                journal = anticipo.journal_id or (pago.journal_id if pago else False)
+                method_line = anticipo.payment_method_line_id or (pago.payment_method_line_id if pago else False)
+                seleccion_actual = {
+                    'journal_id': journal.id if journal else 0,
+                    'journal_name': journal.name if journal else '',
+                    'payment_method_line_id': method_line.id if method_line else 0,
+                    'payment_method_name': method_line.name if method_line else '',
+                }
+
+        return {
+            'success': True,
+            'diarios': diarios_data,
+            'seleccion_actual': seleccion_actual,
+        }
+
+    @api.model
     def buscar_referencia_existente(self, pedido_id, referencia):
-        """Busca un pago de cliente o factura ya contabilizada en Odoo por su nombre o memo/ref."""
+        """Busca un pago de cliente ya registrado en Odoo por su referencia o memo."""
         if not referencia or not referencia.strip():
             return {'success': False, 'error': 'Ingrese una referencia para buscar.'}
 
@@ -114,7 +149,6 @@ class rastreo_anticipo_detalle_cliente(models.Model):
 
         usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1)
 
-        # 1. Buscar primero en Pagos de Cliente (account.payment)
         domain_pago = [
             ('partner_type', '=', 'customer'),
             ('payment_type', '=', 'inbound'),
@@ -125,68 +159,37 @@ class rastreo_anticipo_detalle_cliente(models.Model):
             domain_pago.append(('partner_id', '=', partner_id))
 
         pago = self.env['account.payment'].search(domain_pago, limit=1)
-        if pago:
-            # Verificar que no esté ya vinculado a otro detalle
-            ya_usado = self.search([('account_payment_id', '=', pago.id)], limit=1)
-            if ya_usado:
-                return {
-                    'success': False,
-                    'error': f'El pago {pago.name} ya está vinculado en el anticipo #{ya_usado.numero}.'
-                }
-
-            monto_usd = pago.amount
-            if usd_currency and pago.currency_id != usd_currency:
-                monto_usd = pago.currency_id._convert(
-                    pago.amount, usd_currency, self.env.company, pago.date or fields.Date.today()
-                )
-
+        if not pago:
             return {
-                'success': True,
-                'tipo': 'pago',
-                'record_id': pago.id,
-                'referencia_encontrada': pago.name,
-                'fecha': str(pago.date),
-                'monto_usd': round(monto_usd, 2),
-                'tipo_cambio': self._get_tipo_cambio_dia(pago.date),
+                'success': False,
+                'error': 'No se encontró ningún pago publicado con esa referencia para este cliente.'
             }
 
-        # 2. Si no es pago, buscar en Facturas de Cliente (account.move)
-        domain_factura = [
-            ('move_type', '=', 'out_invoice'),
-            ('state', '=', 'posted'),
-            '|', ('name', 'ilike', ref), ('ref', 'ilike', ref),
-        ]
-        if partner_id:
-            domain_factura.append(('partner_id', '=', partner_id))
-
-        factura = self.env['account.move'].search(domain_factura, limit=1)
-        if factura:
-            ya_usado = self.search([('account_move_id', '=', factura.id)], limit=1)
-            if ya_usado:
-                return {
-                    'success': False,
-                    'error': f'La factura {factura.name} ya está vinculada en el anticipo #{ya_usado.numero}.'
-                }
-
-            monto_usd = factura.amount_total
-            if usd_currency and factura.currency_id != usd_currency:
-                monto_usd = factura.currency_id._convert(
-                    factura.amount_total, usd_currency, self.env.company, factura.invoice_date or fields.Date.today()
-                )
-
+        ya_usado = self.search([('account_payment_id', '=', pago.id)], limit=1)
+        if ya_usado:
             return {
-                'success': True,
-                'tipo': 'factura',
-                'record_id': factura.id,
-                'referencia_encontrada': factura.name,
-                'fecha': str(factura.invoice_date or factura.date),
-                'monto_usd': round(monto_usd, 2),
-                'tipo_cambio': self._get_tipo_cambio_dia(factura.invoice_date or factura.date),
+                'success': False,
+                'error': f'El pago {pago.name} ya está vinculado en el anticipo #{ya_usado.numero}.'
             }
+
+        monto_usd = pago.amount
+        if usd_currency and pago.currency_id != usd_currency:
+            monto_usd = pago.currency_id._convert(
+                pago.amount, usd_currency, self.env.company, pago.date or fields.Date.today()
+            )
 
         return {
-            'success': False,
-            'error': 'No se encontró ningún pago o factura publicada con esa referencia para este cliente.'
+            'success': True,
+            'tipo': 'pago',
+            'record_id': pago.id,
+            'referencia_encontrada': pago.name,
+            'fecha': str(pago.date),
+            'monto_usd': round(monto_usd, 2),
+            'tipo_cambio': self._get_tipo_cambio_dia(pago.date),
+            'journal_id': pago.journal_id.id if pago.journal_id else 0,
+            'journal_name': pago.journal_id.name if pago.journal_id else '',
+            'payment_method_line_id': pago.payment_method_line_id.id if pago.payment_method_line_id else 0,
+            'payment_method_name': pago.payment_method_line_id.name if pago.payment_method_line_id else '',
         }
 
     @api.model
@@ -198,13 +201,15 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
 
-        sale_order = self._get_sale_order(pedido)
+        sale_order = pedido.sale_order_id
         if not sale_order:
             return {'success': False, 'error': 'El pedido no tiene una cotización asociada.'}
 
         monto_usd = float(datos.get('cantidad') or datos.get('monto_usd') or 0.0)
         fecha_anticipo = datos.get('fecha_anticipo') or fields.Date.today()
         precio_dolar = float(datos.get('precio_dolar') or 0.0) or self._get_tipo_cambio_dia(fecha_anticipo)
+        journal_id = int(datos.get('journal_id') or 0)
+        payment_method_line_id = int(datos.get('payment_method_line_id') or 0)
 
         anticipo = self.browse(anticipoId) if anticipoId else self.browse()
 
@@ -225,36 +230,35 @@ class rastreo_anticipo_detalle_cliente(models.Model):
                     anticipo.write(vals_edit)
                     return {'success': True, 'anticipo_id': anticipo.id}
 
-                tipo = datos.get('tipo') or 'pago'
-                modo_vinculo = datos.get('modo_vinculo') or 'crear'  # 'crear' o 'vincular'
+                modo_vinculo = datos.get('modo_vinculo') or 'crear'
                 existing_record_id = int(datos.get('existing_record_id') or 0)
 
                 usd_currency = self.env['res.currency'].search([('name', '=', 'USD')], limit=1) or self.env.company.currency_id
                 numero = self.search_count([('pedido_id', '=', pedido_id)]) + 1
 
-                payment = self.env['account.payment']
-                invoice = self.env['account.move']
-
                 if modo_vinculo == 'vincular' and existing_record_id:
-                    # Vincular registro existente sin duplicar en contabilidad
-                    if tipo == 'pago':
-                        payment = self.env['account.payment'].browse(existing_record_id)
-                        if not payment.exists():
-                            return {'success': False, 'error': 'El pago seleccionado ya no existe.'}
-                    else:
-                        invoice = self.env['account.move'].browse(existing_record_id)
-                        if not invoice.exists():
-                            return {'success': False, 'error': 'La factura seleccionada ya no existe.'}
+                    payment = self.env['account.payment'].browse(existing_record_id)
+                    if not payment.exists():
+                        return {'success': False, 'error': 'El pago seleccionado ya no existe.'}
+                    journal_id = payment.journal_id.id
+                    payment_method_line_id = payment.payment_method_line_id.id
                 else:
-                    # Flujo original: crear nuevo asiento en Odoo
+                    if not journal_id:
+                        return {'success': False, 'error': 'Debe seleccionar un diario (banco o caja).'}
+
                     ref = f"Anticipo {sale_order.name}"
                     if pedido.numero_contrato:
                         ref = f"Anticipo {sale_order.name} / {pedido.numero_contrato}"
 
-                    if tipo == 'pago':
-                        payment = self._crear_pago(sale_order, monto_usd, fecha_anticipo, ref, usd_currency)
-                    else:
-                        invoice = self._crear_factura(sale_order, monto_usd, fecha_anticipo, ref, usd_currency)
+                    payment = self._crear_pago(
+                        sale_order=sale_order,
+                        monto_usd=monto_usd,
+                        fecha=fecha_anticipo,
+                        memo_ref=ref,
+                        usd_currency=usd_currency,
+                        journal_id=journal_id,
+                        payment_method_line_id=payment_method_line_id,
+                    )
 
                 valores = {
                     'pedido_id': pedido_id,
@@ -264,9 +268,10 @@ class rastreo_anticipo_detalle_cliente(models.Model):
                     'fecha_anticipo': fecha_anticipo,
                     'monto_usd': monto_usd,
                     'precio_dolar': precio_dolar,
-                    'tipo_registro': tipo,
+                    'tipo_registro': 'pago',
+                    'journal_id': journal_id or False,
+                    'payment_method_line_id': payment_method_line_id or False,
                     'account_payment_id': payment.id if payment else False,
-                    'account_move_id': invoice.id if invoice else False,
                 }
                 if pdf:
                     valores['pdf_anticipo_cliente'] = pdf
@@ -279,10 +284,12 @@ class rastreo_anticipo_detalle_cliente(models.Model):
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
-    def _crear_pago(self, sale_order, monto_usd, fecha, memo_ref, usd_currency):
-        journal = self._get_bank_journal()
-        # En Odoo 19 se usa 'memo' en account.payment
-        payment = self.env['account.payment'].create({
+    def _crear_pago(self, sale_order, monto_usd, fecha, memo_ref, usd_currency, journal_id, payment_method_line_id=0):
+        journal = self.env['account.journal'].browse(journal_id)
+        if not journal.exists():
+            raise UserError(_('El diario de pago seleccionado no es válido.'))
+
+        payment_vals = {
             'payment_type': 'inbound',
             'partner_type': 'customer',
             'partner_id': sale_order.partner_id.id,
@@ -291,11 +298,13 @@ class rastreo_anticipo_detalle_cliente(models.Model):
             'journal_id': journal.id,
             'currency_id': usd_currency.id,
             'memo': memo_ref,
-        })
+        }
+        if payment_method_line_id:
+            payment_vals['payment_method_line_id'] = payment_method_line_id
 
+        payment = self.env['account.payment'].create(payment_vals)
         payment.action_post()
 
-        # Conciliar automáticamente si existen facturas publicadas pendientes de la cotización
         facturas_pendientes = sale_order.invoice_ids.filtered(
             lambda f: f.move_type == 'out_invoice' and f.state == 'posted' and f.payment_state != 'paid'
         )
@@ -307,56 +316,6 @@ class rastreo_anticipo_detalle_cliente(models.Model):
                 lines.reconcile()
 
         return payment
-
-    def _crear_factura(self, sale_order, monto_usd, fecha, ref, usd_currency):
-        journal = self.env['account.journal'].search([
-            ('type', '=', 'sale'),
-            ('company_id', '=', self.env.company.id),
-        ], limit=1)
-
-        if not journal:
-            raise UserError(_('No hay un diario de ventas configurado para la compañía.'))
-
-        move_vals = {
-            'move_type': 'out_invoice',
-            'partner_id': sale_order.partner_id.id,
-            'invoice_date': fecha,
-            'currency_id': usd_currency.id,
-            'invoice_origin': sale_order.name,
-            'ref': ref,
-            'journal_id': journal.id,
-            'invoice_line_ids': [(0, 0, {
-                'name': f'Asociado a {sale_order.name}',
-                'quantity': 1.0,
-                'price_unit': monto_usd,
-            })],
-        }
-        invoice = self.env['account.move'].create(move_vals)
-        invoice.action_post()
-        return invoice
-
-
-    def cargar_detalle_pago(self):
-        self.ensure_one()
-        referencia_odoo = ''
-        if self.account_payment_id:
-            referencia_odoo = self.account_payment_id.name or self.account_payment_id.memo or ''
-        elif self.account_move_id:
-            referencia_odoo = self.account_move_id.name or self.account_move_id.ref or ''
-
-        return {
-            'id': self.id,
-            'numero_anticipo': self.numero,
-            'cotizacion': self.pedido_id.sale_order_id.name if self.pedido_id.sale_order_id else 'Sin Cotización',
-            'referencia_odoo': referencia_odoo or f"{self.numero}",
-            'tipo_registro': self.tipo_registro,
-            'fecha_anticipo': self.fecha_anticipo,
-            'monto_usd': self.monto_usd,
-            'precio_dolar': self.precio_dolar,
-            'monto_mxn': self.monto_mxn,
-            'tiene_pdf': bool(self.pdf_anticipo_cliente),
-            'nombre_pdf': self.pdf_anticipo_cliente_nombre or 'Sin archivo',
-        }
 
     @api.model
     def obtener_pdf(self, detalle_id):

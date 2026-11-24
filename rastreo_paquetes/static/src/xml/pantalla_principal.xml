@@ -136,12 +136,11 @@
                                                 <t t-esc="p.cotizacion_total" />
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <div>USD: <t t-esc="p.proveedor_saldo_usd" /></div>
+                                                <div><t t-esc="p.proveedor_saldo_usd" /></div>
                                    
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <div>USD: <t t-esc="p.proveedor_acordado_usd" /></div>
-                      
+                                                <div><t t-esc="p.proveedor_acordado_usd" /></div>
                                             </div>
                                         </t>
                                         <t t-else="">

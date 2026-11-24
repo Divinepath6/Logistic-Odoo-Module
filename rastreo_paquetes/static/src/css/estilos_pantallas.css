@@ -511,3 +511,71 @@
         border-color: var(--odoo-primary);
     }
 }
+
+/* ============================================================
+   CELDAS FINANCIERAS COMPACTAS ESTILO EXCEL (USD / MXN)
+   ============================================================ */
+
+.odoo-label-compact {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--odoo-text-muted);
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.odoo-excel-input {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    padding: 0.35rem 0.55rem;
+    height: 100%;
+    min-height: 2.65rem;
+}
+
+.odoo-money-box {
+    background: #fafbff;
+    border: 1px solid var(--odoo-border);
+    border-radius: var(--odoo-radius-sm);
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.odoo-money-usd,
+.odoo-money-mxn {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+    text-align: right;
+    line-height: 1.2;
+}
+
+.odoo-money-usd {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--odoo-text-strong);
+}
+
+.odoo-money-mxn {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--odoo-text-muted);
+    border-top: 1px dashed var(--odoo-border-soft);
+    padding-top: 0.1rem;
+}
+
+.odoo-curr-tag {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--odoo-accent);
+    opacity: 0.85;
+    margin-right: 0.35rem;
+}

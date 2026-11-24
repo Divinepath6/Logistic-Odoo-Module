@@ -83,8 +83,11 @@
             'rastreo_paquetes/static/src/js/componente_terminos_cliente.js',
             'rastreo_paquetes/static/src/xml/componente_terminos_cliente.xml',
 
-             'rastreo_paquetes/static/src/js/componente_escoger_proveedor.js',
+            'rastreo_paquetes/static/src/js/componente_escoger_proveedor.js',
             'rastreo_paquetes/static/src/xml/componente_escoger_proveedor.xml',
+
+            'rastreo_paquetes/static/src/js/componente_cotizacion_aduana.js',
+            'rastreo_paquetes/static/src/xml/componente_cotizacion_aduana.xml',
         ],
     },
     'installable': True,

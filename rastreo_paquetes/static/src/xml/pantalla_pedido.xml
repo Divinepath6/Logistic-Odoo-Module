@@ -39,37 +39,30 @@
                         </div>
 
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="odoo-field">
+                            <div class="col-6">
+                                <div class="odoo-field mb-1">
                                     <label class="odoo-label" for="numero_contrato">INVOICE</label>
                                     <input type="text"
                                         id="numero_contrato"
                                         class="odoo-input"
                                         t-model="state.numeroContrato"
-                                        readonly="1"
-                                    />
+                                        readonly="1" />
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="numero_guia">Número de
-                                        Cotización:</label>
+                            <div class="col-6">
+                                <div class="odoo-field mb-1">
+                                    <label class="odoo-label" for="numero_guia">Número de Cotización</label>
                                     <input type="text"
                                         id="numero_guia"
                                         class="odoo-input"
-                                        t-model="state.guia" 
-                                        readonly="readonly"/>
+                                        t-model="state.guia"
+                                        readonly="readonly" />
                                 </div>
                             </div>
-                            <!-- 
-                            <button type="button" class="odoo-btn odoo-btn-primary"
-                                t-on-click="() => this.onCambiarCotizacion()">
-                                <i class="fa fa-random"></i> Buscar Cotización </button>
-                            -->
 
-                            <div class="col-md-6">
-                                <div class="odoo-field">
+                            <div class="col-6">
+                                <div class="odoo-field mb-1">
                                     <label class="odoo-label">Cliente</label>
                                     <input type="text"
                                         class="odoo-input"
@@ -78,179 +71,175 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
-                                <div class="odoo-field">
+                            <div class="col-6">
+                                <div class="odoo-field mb-1">
                                     <label class="odoo-label">Proveedor</label>
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex gap-1">
                                         <input type="text"
                                             class="odoo-input"
-                                            t-att-value="state.proveedorNombre or 'Sin proveedor asignado'"
+                                            t-att-value="state.proveedorNombre or 'Sin proveedor'"
                                             readonly="readonly" />
                                         <button type="button"
                                             class="odoo-btn odoo-btn-sm odoo-btn-primary"
                                             t-on-click="() => this.onEscogerProveedor()">
-                                            <i class="fa fa-search" /> Escoger
+                                            <i class="fa fa-search" />
                                         </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-2 opacity-25" />
+
+                        <div class="row g-2">
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact" for="contenedores">Contenedores</label>
+                                    <input type="number"
+                                        id="contenedores"
+                                        class="odoo-input odoo-excel-input"
+                                        step="1"
+                                        t-model="state.contenedores" />
+                                </div>
+                            </div>
+
+                            <!-- 2. Costo del dólar cotizado -->
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact" for="clienteCostoDolar">T.C. Dólar Cliente</label>
+                                    <input type="number"
+                                        id="clienteCostoDolar"
+                                        class="odoo-input odoo-excel-input"
+                                        step="0.01"
+                                        t-model="state.clienteCostoDolar" />
+                                </div>
+                            </div>
+
+                            <!-- 3. Cotización de Aduana -->
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact">Cotización Aduana</label>
+                                    <div class="odoo-money-box">
+                                        <div class="odoo-money-usd">
+                                            <span class="odoo-curr-tag">USD</span>
+                                            <span t-esc="state.cotizacionAduanaFmt" />
+                                        </div>
+                                        <div class="odoo-money-mxn">
+                                            <span class="odoo-curr-tag">MXN</span>
+                                            <span t-esc="state.cotizacionAduanaMxnFmt" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Total Cliente -->
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact">Total Cliente</label>
+                                    <div class="odoo-money-box">
+                                        <div class="odoo-money-usd">
+                                            <span class="odoo-curr-tag">USD</span>
+                                            <span t-esc="state.totalClienteFmt" />
+                                        </div>
+                                        <div class="odoo-money-mxn">
+                                            <span class="odoo-curr-tag">MXN</span>
+                                            <span t-esc="state.totalClienteMxnFmt" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5. Total Anticipos Cliente -->
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact">Anticipos Cliente</label>
+                                    <div class="odoo-money-box">
+                                        <div class="odoo-money-usd">
+                                            <span class="odoo-curr-tag">USD</span>
+                                            <span t-esc="state.totalAnticiposClienteFmt" />
+                                        </div>
+                                        <div class="odoo-money-mxn">
+                                            <span class="odoo-curr-tag">MXN</span>
+                                            <span t-esc="state.totalAnticiposClienteMxnFmt" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 6. Balance Cliente + % -->
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact d-flex justify-content-between">
+                                        <span>Balance Cliente</span>
+                                        <span class="text-primary fw-bold" t-esc="state.balancePorcentajeCliente" />
+                                    </label>
+                                    <div class="odoo-money-box">
+                                        <div class="odoo-money-usd">
+                                            <span class="odoo-curr-tag">USD</span>
+                                            <span t-esc="state.balanceCliente" />
+                                        </div>
+                                        <div class="odoo-money-mxn">
+                                            <span class="odoo-curr-tag">MXN</span>
+                                            <span t-esc="state.balanceClienteMxn" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 7. Total Proveedor -->
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact">Total Proveedor</label>
+                                    <div class="odoo-money-box">
+                                        <div class="odoo-money-usd">
+                                            <span class="odoo-curr-tag">USD</span>
+                                            <span t-esc="state.totalProveedorFmt" />
+                                        </div>
+                                        <div class="odoo-money-mxn">
+                                            <span class="odoo-curr-tag">MXN</span>
+                                            <span t-esc="state.totalProveedorMxnFmt" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 8. Total Anticipos Proveedor -->
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact">Anticipos Proveedor</label>
+                                    <div class="odoo-money-box">
+                                        <div class="odoo-money-usd">
+                                            <span class="odoo-curr-tag">USD</span>
+                                            <span t-esc="state.totalAnticiposProveedorFmt" />
+                                        </div>
+                                        <div class="odoo-money-mxn">
+                                            <span class="odoo-curr-tag">MXN</span>
+                                            <span t-esc="state.totalAnticiposProveedorMxnFmt" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-6 col-md-4">
+                                <div class="odoo-field mb-0">
+                                    <label class="odoo-label-compact d-flex justify-content-between">
+                                        <span>Balance Proveedor</span>
+                                        <span class="text-primary fw-bold" t-esc="state.balancePorcentajeProveedor" />
+                                    </label>
+                                    <div class="odoo-money-box">
+                                        <div class="odoo-money-usd">
+                                            <span class="odoo-curr-tag">USD</span>
+                                            <span t-esc="state.balanceProveedor" />
+                                        </div>
+                                        <div class="odoo-money-mxn">
+                                            <span class="odoo-curr-tag">MXN</span>
+                                            <span t-esc="state.balanceProveedorMxn" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="forwarder">Forwarder</label>
-                                    <input type="checkbox"
-                                        id="forwarder"
-                                        class="odoo-input"
-                                        t-att-checked="state.forwarder"
-                                        t-on-change="(ev) => this.onVerificarForwarder(ev)" />
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="salidaAduana">Salida de Aduana</label>
-                                    <input type="checkbox"
-                                        id="salidaAduana"
-                                        class="odoo-input"
-                                        t-att-checked="state.salidaAduana"
-                                        t-on-change="(ev) => this.onVerificarSalidaAduana(ev)" />
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="contenedores">Cantidad de Contenedores</label>
-                                    <input type="number"
-                                        id="contenedores"
-                                        class="odoo-input"
-                                        step="1"
-                                        t-model="state.contenedores"
-                                    />
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="total_cliente">Total Cliente</label>
-                                    <input type="text"
-                                        id="total_cliente"
-                                        class="odoo-input"
-                                        t-att-value="state.totalCliente"
-                                        readonly="readonly"
-                                    />
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="clienteCostoDolar"> Costo del dolar cotizado a cliente:</label>
-                                        <input type="number" 
-                                        class="form-control" 
-                                        step="0.01" 
-                                        t-model="state.clienteCostoDolar"/>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="total_cliente">Total Anticipos de
-                                        cliente:</label>
-                                    <input type="text"
-                                        id="total_cliente"
-                                        class="odoo-input"
-                                        t-att-value="state.totalAnticiposCliente"
-                                        readonly="readonly"
-                                    />
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="total_proveedor">Total Proveedor</label>
-                                    <input type="number"
-                                        id="total_proveedor"
-                                        class="odoo-input"
-                                        t-model="state.totalProveedor"
-                                        readonly="readonly"
-                                    />
-                                </div>
-                            </div>
-                            
-                            <!-- 
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="total_cliente"> Costo del dolar acordado con proveedor:</label>
-                                        <input type="number" 
-                                        class="form-control" 
-                                        step="0.01" 
-                                        t-model="state.total_proveedor_costo_dolar"/>
-                                </div>
-                            </div>
--->
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="totalAnticiposProveedor">Total
-                                        Anticipos al Proveedor:</label>
-                                    <input type="text"
-                                        id="totalAnticiposProveedor"
-                                        class="odoo-input"
-                                        t-att-value="state.totalAnticiposProveedor"
-                                        readonly="readonly"
-                                    />
-                                </div>
-                            </div>
-
-
-
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="balanceCliente">Balance Cliente:</label>
-                                    <input type="text"
-                                        id="balanceCliente"
-                                        class="odoo-input"
-                                        t-att-value="state.balanceCliente"
-                                        readonly="readonly"
-                                    />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="balancePorcentajeCliente">Porcentaje
-                                        Cliente:</label>
-                                    <input type="text"
-                                        id="balancePorcentajeCliente"
-                                        class="odoo-input"
-                                        t-att-value="state.balancePorcentajeCliente"
-                                        readonly="readonly"
-                                    />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="balanceProveedor">Balance
-                                        Proveedor:</label>
-                                    <input type="text"
-                                        id="balanceProveedor"
-                                        class="odoo-input"
-                                        t-att-value="state.balanceProveedor"
-                                        readonly="readonly"
-                                    />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="balancePorcentajeProveedor">Porcentaje
-                                        Proveedor:</label>
-                                    <input type="text"
-                                        id="balancePorcentajeProveedor"
-                                        class="odoo-input"
-                                        t-att-value="state.balancePorcentajeProveedor"
-                                        readonly="readonly"
-                                    />
-                                </div>
-                            </div>
-
-                             <div class="col-md-6">
                                 <div class="odoo-field">
                                     <label class="odoo-label" for="cotizacionAduana">Cotizacion de Aduana:
                                     </label>
@@ -258,7 +247,7 @@
                                         id="cotizacionAduana"
                                         class="odoo-input"
                                         t-att-value="state.cotizacionAduana"
-                                        step="1"
+                                        readonly="readonly"
                                     />
                                 </div>
                             </div>
@@ -476,14 +465,15 @@
 
                         <t t-set="estados_pedido" t-value="[
                             ['fase_inicial', 'Fase inicial'],
-                            ['produccion', 'En Producción'],
+                            ['produccion', 'Producción'],
+                            ['en_origen', 'Camino a puerto'],
                             ['puerto_origen', 'Puerto de origen'],
                             ['agua', 'En el Agua'],
                             ['puerto_destino', 'Puerto de Destino'],
+                            ['camino_cliente', 'Camino a cliente'],
                             ['entregado', 'Entregado']
                         ]" />
                         <t t-set="indice_actual" t-value="estados_pedido.findIndex(e => e[0] === state.estado)" />
-
                         <div class="odoo-statusbar">
                             <t t-foreach="estados_pedido" t-as="item" t-key="item[0]">
                                 <t t-set="is_active" t-value="item[0] === state.estado" />
@@ -496,6 +486,28 @@
                                 </div>
                             </t>
                         </div>
+                        
+                        <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="forwarder">Forwarder</label>
+                                    <input type="checkbox"
+                                        id="forwarder"
+                                        class="odoo-input"
+                                        t-att-checked="state.forwarder"
+                                        t-on-change="(ev) => this.onVerificarForwarder(ev)" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="odoo-field">
+                                    <label class="odoo-label" for="salidaAduana">Salida de Aduana</label>
+                                    <input type="checkbox"
+                                        id="salidaAduana"
+                                        class="odoo-input"
+                                        t-att-checked="state.salidaAduana"
+                                        t-on-change="(ev) => this.onVerificarSalidaAduana(ev)" />
+                                </div>
+                            </div>
                     </div>
                     <div class="odoo-card">
                         <div class="odoo-card-title">
@@ -641,7 +653,7 @@
                         </div>
                         
                         <div class="odoo-result-row">
-                            <span class="odoo-result-label"> Flete: </span>
+                            <span class="odoo-result-label"> Flete </span>
                             <span>
                                 <t t-if="state.pdfFlete">
                                     <span>
@@ -655,6 +667,26 @@
                                 <button type="button"
                                     class="odoo-btn odoo-btn-primary"
                                     t-on-click="  () =>this.verPDF('pdf_flete')">
+                                    <i class="fa fa-save" /> Ver </button>
+                            </span>
+                        </div>
+
+                        <div class="odoo-result-row">
+
+                            <span class="odoo-result-label">Cotización de Agencia Aduanal</span>
+                            <span>
+                                <t t-if="state.pdfCotizacionAduana">
+                                    <span>
+                                        <strong>En el sistema</strong>
+                                    </span>
+                                    <i class="oi" data-icon="check" />
+                                </t>
+                                <t t-else="">
+                                    <span class="text-muted">No cargado </span>
+                                </t>
+                                <button type="button"
+                                    class="odoo-btn odoo-btn-sm odoo-btn-primary ms-auto"
+                                    t-on-click=" () => this.abrirCotizacionAduana()">
                                     <i class="fa fa-save" /> Ver </button>
                             </span>
                         </div>

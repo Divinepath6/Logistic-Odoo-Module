@@ -26,6 +26,7 @@ class rastreo_paquetes(models.Model):
         ('puerto_origen', 'En el puerto de origen'),
         ('agua', 'En el Agua'),
         ('puerto_destino', 'Puerto de Destino'),
+        ('camino_cliente', 'Camino a cliente'),
         ('entregado', 'Entregado'),
     ], string = 'Estado', default='fase_inicial')
 
@@ -81,14 +82,27 @@ class rastreo_paquetes(models.Model):
     pdf_aviso_nombre = fields.Char(
         string='Nombre de PDF'
     )
+
+
     cotizacion_aduana = fields.Monetary(
-        string='Documento Aviso de arribo',
+        string='Costo de la cotizacion aduanal',
     )
-    salida_aduana= fields.Boolean(
-        string="Forwarder conseguido", 
-        default=False
+    cotizacion_aduana_costo_dolar = fields.Float(
+        string='Tipo de cambio cotización aduanal',
+        digits=(12, 4)
     )
     
+    pdf_cotizacion_aduana = fields.Binary(
+        string='Costo de la cotizacion aduanal',
+    )
+    pdf_cotizacion_aduana_nombre = fields.Char(
+        string='Nombre del PDF de la cotizacion aduanal',
+    )
+    
+    salida_aduana= fields.Boolean(
+        string="Salio de Aduana", 
+        default=False
+    )
     currency_id = fields.Many2one(
         'res.currency', 
         string='Moneda', 
@@ -400,17 +414,86 @@ class rastreo_paquetes(models.Model):
         pedido = self.browse(pedido_id)
         if not pedido.exists():
             return {'success': False, 'error': 'Pedido no encontrado'}
-        
-        siguiente_estado = ''
-        
+        if pedido.estado == 'fase_inicial':
+            return {
+                'success': False,
+                'error': 'El pedido aún está en fase inicial.'
+            }
 
+        hoy = fields.Date.context_today(self.with_context(tz='America/Mazatlan'))
+        siguiente_estado = ''
+
+        estados_validos = [
+            'produccion',
+            'en_origen',
+            'puerto_origen',
+            'agua',
+            'puerto_destino',
+            'camino_cliente',
+            'entregado',
+        ]
+
+        if estado and estado in estados_validos and estado != pedido.estado:
+            siguiente_estado = estado
+
+        elif pedido.estado == 'produccion':
+            fecha_limite_prod = pedido.fecha_termino_produccion or (
+                pedido.fecha_creacion + timedelta(days=20) if pedido.fecha_creacion else False
+            )
+            if fecha_limite_prod and hoy >= fecha_limite_prod:
+                siguiente_estado = 'en_origen'
+
+        elif pedido.estado == 'en_origen':
+            if pedido.CRD and hoy >= pedido.CRD:
+                siguiente_estado = 'puerto_origen'
+
+        elif pedido.estado == 'puerto_origen':
+            if pedido.ETD and hoy >= pedido.ETD:
+                siguiente_estado = 'agua'
+
+        elif pedido.estado == 'agua':
+            if pedido.ETA and hoy >= pedido.ETA:
+                siguiente_estado = 'puerto_destino'
+
+        elif pedido.estado == 'puerto_destino':
+            if pedido.salida_aduana:
+                siguiente_estado = 'camino_cliente'
+
+        elif pedido.estado == 'camino_cliente':
+            if pedido.pdf_evidencia_entregado:
+                siguiente_estado = 'entregado'
+
+        if not siguiente_estado or siguiente_estado == pedido.estado:
+            return {
+                'success': False,
+                'id': pedido.id,
+                'estado_actual': pedido.estado,
+                'mensaje': 'Aún no se cumplen las condiciones de fecha o evidencia para cambiar de fase.'
+            }
 
         pedido.write({'estado': siguiente_estado})
+
+        estados_dict = dict(self._fields['estado'].selection)
+        nombre_estado = estados_dict.get(siguiente_estado, siguiente_estado)
+        ultima = self.env['rastreo.pedido_actualizacion'].search(
+            [('pedido_id', '=', pedido.id)],
+            order='numero_actualizacion desc',
+            limit=1
+        )
+        numero_act = (ultima.numero_actualizacion or 0) + 1
+        self.env['rastreo.pedido_actualizacion'].create({
+            'pedido_id': pedido.id,
+            'numero_actualizacion': numero_act,
+            'fecha_actualizacion': datetime.now(),
+            'actualizacion_texto': f'Cambio de estado a: {nombre_estado}',
+            'usuario_id': self.env.user.id,
+        })
+
         self.crear_aviso(pedido.id)
 
         return {
-            'success': True, 
-            'id': pedido.id, 
+            'success': True,
+            'id': pedido.id,
             'nuevo_estado': siguiente_estado
         }
 
@@ -435,6 +518,7 @@ class rastreo_paquetes(models.Model):
             'pdf_aviso',
             'pdf_flete',
             'pdf_evidencia_entregado',
+            'pdf_cotizacion_aduana',
         ]
         #verificacion de campos aaa
         if not pedido_id:
@@ -495,6 +579,7 @@ class rastreo_paquetes(models.Model):
             'pdf_aviso',
             'pdf_flete',
             'pdf_evidencia_entregado',
+            'pdf_cotizacion_aduana',
         ]
         if not pedido_id:
             return {'success': False, 'error': 'Necesita un Id de pedido'}
@@ -840,24 +925,21 @@ class rastreo_paquetes(models.Model):
 
             if not pedido.pdf_invoice:
                 avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir Invoice"})
-
             if not pedido.pdf_prefactura:
                 avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Pedir prefactura a proveedor de flete marítimo"})
+            if not pedido.cotizacion_aduana: 
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar Agente Aduanal"})
+            if not pedido.pdf_aviso:
+                avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Aviso de arribo"})
 
         elif pedido.estado in ('puerto_destino', 'descargado'):
-            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar Agente Aduanal"})
-            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar flete terrestre"})
-            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Aviso de arribo"})
+            if not pedido.salida_aduana:
+                avisos_a_crear.append({'severidad': INFO, 'mensaje': "Esperado despacho Aduanal"})
 
-        elif pedido.estado == 'aduana':
-            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Informar a Agencia Aduanal"})
-            avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Despacho de aduana"})
-            avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Revisión de documentación"})
-
-        elif pedido.estado == 'entregado':
-            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Realizar seguimiento a cliente"})
-            avisos_a_crear.append({'severidad': INFO, 'mensaje': "Capturar entregado con evidencia"})
-
+        elif pedido.estado == 'camino_cliente':
+            if not pedido.pdf_evidencia_entregado:
+                avisos_a_crear.append({'severidad': INFO, 'mensaje': "Capturar entregado con evidencia"})
+          
 
         (
             pagado_cli_usd,
@@ -1204,27 +1286,23 @@ class rastreo_paquetes(models.Model):
         for c in anticipos_cliente_mod:
             referencia_odoo = ''
             factura_origen = ''
-            diario = ''
+            diario = c.journal_id.name if c.journal_id else ''
+            metodo_pago = c.payment_method_line_id.name if c.payment_method_line_id else ''
             estado = 'posted'
 
             if c.account_payment_id:
                 pagos_ya_vinculados.append(c.account_payment_id.id)
                 referencia_odoo = c.account_payment_id.name or c.account_payment_id.memo or ''
-                diario = c.account_payment_id.journal_id.name or ''
+                diario = c.account_payment_id.journal_id.name or diario
                 estado = c.account_payment_id.state
                 if c.account_payment_id.reconciled_invoice_ids:
                     factura_origen = ', '.join(c.account_payment_id.reconciled_invoice_ids.mapped('name'))
-            elif c.account_move_id:
-                referencia_odoo = c.account_move_id.name or c.account_move_id.ref or ''
-                factura_origen = c.account_move_id.name or ''
-                diario = c.account_move_id.journal_id.name or ''
-                estado = c.account_move_id.state
 
             lista_pagos_cliente.append({
                 'detalle_id': c.id,
                 'anticipo_id': c.id,
                 'payment_id': c.account_payment_id.id if c.account_payment_id else False,
-                'move_id': c.account_move_id.id if c.account_move_id else False,
+                'move_id': False,
                 'numero': c.numero or 0,
                 'tipo_registro': c.tipo_registro,
                 'referencia': referencia_odoo or f"ANTICIPO-{c.numero}",
@@ -1237,6 +1315,7 @@ class rastreo_paquetes(models.Model):
                 'fecha_editado': str(c.fecha_editado or c.write_date or ''),
                 'estado': estado,
                 'diario': diario,
+                'metodo_pago': metodo_pago,
                 'factura': factura_origen or (cotizacion.name if cotizacion else ''),
                 'pdf_anticipo_cliente': bool(c.pdf_anticipo_cliente),
             })
@@ -1406,6 +1485,10 @@ class rastreo_paquetes(models.Model):
                 'avisos': lista_avisos,
                 'numero_contrato': pedido.numero_contrato or '',
                 'fecha_creacion': pedido.fecha_creacion or '',
+
+                'cotizacion_aduana': pedido.cotizacion_aduana or 0,
+                'cotizacion_aduana_costo_dolar': pedido.cotizacion_aduana_costo_dolar or 0,
+                'pdf_cotizacion_aduana': bool(pedido.pdf_cotizacion_aduana),
 
                 'ETA':pedido.ETA or '',
                 'CRD': pedido.CRD or '',
@@ -1634,3 +1717,24 @@ class rastreo_paquetes(models.Model):
             },
             'data': lista_productos,
         }
+    
+    @api.model
+    def guardar_cotizacion_aduana(self, pedido_id, pdf, nombre_archivo, costo_usd, costo_dolar):
+        if not pedido_id:
+            return {'success': False, 'error': 'Debes indicar un pedido'}
+        
+        pedido = self.browse(pedido_id)
+        if not pedido.exists():
+            return {'success': False, 'error': 'El pedido indicado no existe'}
+
+        if pdf:
+            res_pdf = self.guardar_pdf('pdf_cotizacion_aduana', pdf, pedido_id, nombre_archivo)
+            if not res_pdf.get('success'):
+                return res_pdf
+
+        pedido.write({
+            'cotizacion_aduana': float(costo_usd or 0.0),
+            'cotizacion_aduana_costo_dolar': float(costo_dolar or 0.0),
+        })
+
+        return {'success': True}

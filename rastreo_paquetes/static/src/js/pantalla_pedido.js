@@ -14,6 +14,7 @@ import { componente_terminos_condiciones} from "./componente_terminos_condicione
 import { componente_detalle_eta } from "./componente_detalle_eta";
 import { componente_terminos_cliente } from "./componente_terminos_cliente";
 import { componente_escoger_proveedor } from "./componente_escoger_proveedor";
+import { componente_cotizacion_aduana } from "./componente_cotizacion_aduana";
 
 export class PantallaPedido extends Component {
     static components = { 
@@ -68,15 +69,31 @@ export class PantallaPedido extends Component {
             pdfPrefactura: false,
             pdfAviso:false,
             salidaAduana: false,
+            pdfCotizacionAduana: false,
+
             // Monedas
             totalProveedor: 0,
             totalCliente: 0,
             totalAnticiposCliente: 0,
             totalAnticiposProveedor: 0,
             cotizacionAduana:0,
+            cotizacionAduanaCostoDolar: 0,
     
             proveedorCostoDolar: 0,
             clienteCostoDolar: 0,
+
+            totalClienteFmt: "$ 0.00",
+            totalClienteMxnFmt: "$ 0.00",
+            totalAnticiposClienteFmt: "$ 0.00",
+            totalAnticiposClienteMxnFmt: "$ 0.00",
+            totalProveedorFmt: "$ 0.00",
+            totalProveedorMxnFmt: "$ 0.00",
+            totalAnticiposProveedorFmt: "$ 0.00",
+            totalAnticiposProveedorMxnFmt: "$ 0.00",
+            balanceClienteMxn: "$ 0.00",
+            balanceProveedorMxn: "$ 0.00",
+            cotizacionAduanaFmt: "$ 0.00",
+            cotizacionAduanaMxnFmt: "$ 0.00",
 
             balanceCliente : "",
             balancePorcentajeProveedor: "",
@@ -107,7 +124,6 @@ export class PantallaPedido extends Component {
                 const pedidoId = this.props.action.params.pedido_id || null;
                 this.state.pedidoId = pedidoId;
                 await this.cargarPedido()
-
             }
         });
         this.searchTimeout = null;
@@ -136,6 +152,13 @@ export class PantallaPedido extends Component {
                     maximumFractionDigits: 2,
                 });
             };
+            const fmtMoney = (n) => {
+                const num = Number(n) || 0;
+                return "$ " + num.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            };
             const toNum = (n) => Number(n) || 0;
 
             this.state.guia = p.numero_guia || '';
@@ -147,17 +170,24 @@ export class PantallaPedido extends Component {
             this.state.proveedorNombre = p.proveedor_nombre || '';
 
             this.state.numeroContrato = p.numero_contrato || '';
-            this.state.cotizacionAduana = toNum(p.cotizacion_aduana);
             this.state.salidaAduana = !!p.salida_aduana;
-  
-            
-            this.state.totalProveedor = toNum(p.total_proveedor).toFixed(2);
-            this.state.totalCliente = toNum(p.total_cliente).toFixed(2);
 
-            this.state.proveedorCostoDolar =toNum(p.total_proveedor_costo_dolar);
-            this.state.clienteCostoDolar = toNum(p.total_cliente_costo_dolar);     
+            const totalCliUsd = toNum(p.total_cliente);
+            const totalProvUsd = toNum(p.total_proveedor);
+            const tcCliente = toNum(p.total_cliente_costo_dolar);
+            const tcProveedor = toNum(p.total_proveedor_costo_dolar) || tcCliente;
+            const cotAduanaUsd = toNum(p.cotizacion_aduana);
+            const tcAduana = toNum(p.cotizacion_aduana_costo_dolar) || tcCliente;
+
+            this.state.totalProveedor = totalProvUsd.toFixed(2);
+            this.state.totalCliente = totalCliUsd.toFixed(2);
+            this.state.proveedorCostoDolar = tcProveedor;
+            this.state.clienteCostoDolar = tcCliente;
             this.state.contenedores = toNum(p.contenedores);
-            
+            this.state.cotizacionAduana = cotAduanaUsd;
+            this.state.cotizacionAduanaCostoDolar = tcAduana;
+            this.state.pdfCotizacionAduana = !!p.pdf_cotizacion_aduana;
+
             this.state.forwarder = !!p.forwarder;
             this.state.pdfContratoProveedor = !!p.bool_contrato_proveedor;
             this.state.pdfFacturaProveedor = !!p.bool_factura_proveedor;
@@ -199,12 +229,14 @@ export class PantallaPedido extends Component {
 
             const pagos = p.lista_pagos_cliente || [];
             let totalAnticiposCliente = 0;
+            let totalAnticiposClienteMxn = 0;
 
             this.state.detalleCliente = pagos.map((d, index) => {
                 const monto = toNum(d.monto);
                 const precioDolar = toNum(d.precio_dolar);
-                const montoMxn = toNum(d.monto_mxn);
+                const montoMxn = toNum(d.monto_mxn) || (monto * precioDolar);
                 totalAnticiposCliente += monto;
+                totalAnticiposClienteMxn += montoMxn;
                 return {
                     crearEditar: "Editar",
                     paymentId: d.payment_id,
@@ -230,8 +262,8 @@ export class PantallaPedido extends Component {
             });
 
             this.state.terminos = p.terminos.map((t) => { 
-                let cantidadMonto = 0
-                if (this.state.totalProveedor != 0 ){
+                let cantidadMonto = 0;
+                if (this.state.totalProveedor != 0) {
                     cantidadMonto = (this.state.totalProveedor / 100) * t.porcentaje;
                 }
                 return {
@@ -247,11 +279,14 @@ export class PantallaPedido extends Component {
             
             const anticiposProv = p.lista_anticipos_proveedor || [];
             let totalAnticiposProveedor = 0;
+            let totalAnticiposProveedorMxn = 0;
 
             this.state.detalleProveedor = anticiposProv.map((d) => {
                 const cantidad = toNum(d.cantidad);
                 const precioDolar = toNum(d.precio_dolar);
+                const montoMxn = toNum(d.monto_mxn) || (cantidad * precioDolar);
                 totalAnticiposProveedor += cantidad;
+                totalAnticiposProveedorMxn += montoMxn;
                 return {
                     anticipoId: d.anticipo_id,
                     numero: d.numero || 0,
@@ -269,22 +304,43 @@ export class PantallaPedido extends Component {
             });
             this.state.totalAnticiposProveedor = totalAnticiposProveedor.toFixed(2);
 
-            const balanceC = this.state.totalCliente - this.state.totalAnticiposCliente;
-            const balanceP = this.state.totalProveedor - this.state.totalAnticiposProveedor;
+            // Totales y balances formateados en USD y MXN
+            const totalClienteMxn = totalCliUsd * tcCliente;
+            const totalProveedorMxn = totalProvUsd * tcProveedor;
+            const cotAduanaMxn = cotAduanaUsd * tcAduana;
 
-            const porC = this.state.totalCliente > 0
-                ? (this.state.totalAnticiposCliente * 100) / this.state.totalCliente
-                : 0;
-            const porP = this.state.totalProveedor > 0
-                ? (this.state.totalAnticiposProveedor * 100) / this.state.totalProveedor
-                : 0;
+            const balanceC = totalCliUsd - totalAnticiposCliente;
+            const balanceCMxn = totalClienteMxn - totalAnticiposClienteMxn;
+            const balanceP = totalProvUsd - totalAnticiposProveedor;
+            const balancePMxn = totalProveedorMxn - totalAnticiposProveedorMxn;
 
-            this.state.balanceCliente = "$ " + fmt(balanceC);
-            this.state.balancePorcentajeCliente = "% " + fmt(porC);
-            this.state.balanceProveedor = "$ " + fmt(balanceP);
-            this.state.balancePorcentajeProveedor = "% " + fmt(porP);
+            const porC = totalCliUsd > 0 ? (totalAnticiposCliente * 100) / totalCliUsd : 0;
+            const porP = totalProvUsd > 0 ? (totalAnticiposProveedor * 100) / totalProvUsd : 0;
 
-            // FechasFechas Fechas  
+            this.state.totalClienteFmt = fmtMoney(totalCliUsd);
+            this.state.totalClienteMxnFmt = fmtMoney(totalClienteMxn);
+
+            this.state.totalAnticiposClienteFmt = fmtMoney(totalAnticiposCliente);
+            this.state.totalAnticiposClienteMxnFmt = fmtMoney(totalAnticiposClienteMxn);
+
+            this.state.totalProveedorFmt = fmtMoney(totalProvUsd);
+            this.state.totalProveedorMxnFmt = fmtMoney(totalProveedorMxn);
+
+            this.state.totalAnticiposProveedorFmt = fmtMoney(totalAnticiposProveedor);
+            this.state.totalAnticiposProveedorMxnFmt = fmtMoney(totalAnticiposProveedorMxn);
+
+            this.state.balanceCliente = fmtMoney(balanceC);
+            this.state.balanceClienteMxn = fmtMoney(balanceCMxn);
+            this.state.balancePorcentajeCliente = fmt(porC) + " %";
+
+            this.state.balanceProveedor = fmtMoney(balanceP);
+            this.state.balanceProveedorMxn = fmtMoney(balancePMxn);
+            this.state.balancePorcentajeProveedor = fmt(porP) + " %";
+
+            this.state.cotizacionAduanaFmt = fmtMoney(cotAduanaUsd);
+            this.state.cotizacionAduanaMxnFmt = fmtMoney(cotAduanaMxn);
+
+            // Fechas
             this.state.CRD = p.CRD || '';
             this.state.fecha_creacion = p.fecha_creacion || '';
             this.state.ETA = p.ETA || '';
@@ -355,7 +411,7 @@ export class PantallaPedido extends Component {
 
         } catch (e) {
             this.notification.add("Error al cargar el pedido", { type: "danger" });
-            console.log(e)
+            console.log(e);
         } finally {
             this.state.cargando = false;
         }
@@ -365,7 +421,7 @@ export class PantallaPedido extends Component {
 
         this.dialogService.add(ConfirmationDialog, {
             title: _t("¿Estás seguro?"),
-            body: _t(this.state.guia),
+            body: _t("Esta acción no se podra deshacer"),
             confirm: async () => {
                 await this.cambiarEstado();
             },
@@ -390,9 +446,10 @@ export class PantallaPedido extends Component {
                 [pedidoId]
             );
             this.state.pedido = resultado.data ?? resultado;
-            
+            if(resultado.success){
+                await this.cargarPedido()
+            }
         }catch(e){
-            this.notification.add("No hay pedido asociado",{ type: "danger" });
             console.log(e)
         } finally {
             this.state.cargando = false;
@@ -590,7 +647,7 @@ export class PantallaPedido extends Component {
         const nuevoValor = ev.target.checked; 
         this.dialogService.add(ConfirmationDialog, {
             title: _t("¿Estás seguro?"),
-            body: _t("¿Ya consiguió el forwarder?"),
+            body: _t("¿Ya salio de la Agencia Aduanal?"),
             confirm: async () => {
                 this.state.salidaAduana = true;
             },
@@ -701,6 +758,8 @@ export class PantallaPedido extends Component {
 
             //bool de PDF
             forwarder: this.state.forwarder,
+            salida_aduana: this.state.salidaAduana,
+
             pdf_BL: this.state.pdf_BL,
             pdf_PL: this.state.pdf_PL,
             pdf_invoice: this.state.pdf_invoice,
@@ -744,7 +803,7 @@ export class PantallaPedido extends Component {
             );
             if(resultado.success){
                 this.notification.add("Información guardada Exitosamente",{ type: "success" });  
-
+                
             }
             await this.cargarPedido()
         } catch (e) {
@@ -766,9 +825,7 @@ export class PantallaPedido extends Component {
             title: "Confirmación",
             objeto: objeto,
             confirm: async (documento) => {
-                if(documento.editado){
-                    // documento.documentoNombre <- tiene el nombre del documento
-                }
+                await this.cargarPedido()
             },
             cancel: () => {
             }
@@ -791,7 +848,7 @@ export class PantallaPedido extends Component {
             title: "Confirmación",
             objeto: objeto,
             confirm: async (documento) => {
-                await this.cargarPedido();
+                await this.onGuardarDetalleGeneral();
             },
             cancel: () => {
             }
@@ -875,6 +932,22 @@ export class PantallaPedido extends Component {
             },
         });
     }
+
+    async abrirCotizacionAduana() {
+    this.dialogService.add(componente_cotizacion_aduana, {
+        objeto: {
+            pedidoId: this.state.pedidoId,
+            documentoNombre: "pdf_cotizacion_aduana",
+            cotizacionAduana: this.state.cotizacionAduana,
+            cotizacionAduanaCostoDolar: this.state.cotizacionAduanaCostoDolar,
+            tienePdf: this.state.pdfCotizacionAduana,
+        },
+        confirm: async () => {
+            await this.cargarPedido();
+        },
+        cancel: () => {},
+    });
+}
 }
 
 PantallaPedido.template = "rastreo_paquetes.pantalla_pedido";
