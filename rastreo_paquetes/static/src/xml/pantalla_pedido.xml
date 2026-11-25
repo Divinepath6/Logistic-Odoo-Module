@@ -35,8 +35,7 @@
 
                     <div class="odoo-card odoo-card-accent">
                         <div class="odoo-card-title">
-                            <i class="fa fa-info-circle" /> Detalle general de el pedido: 
-                        </div>
+                            <i class="fa fa-info-circle" /> Detalle general de el pedido: </div>
 
                         <div class="row g-3">
                             <div class="col-6">
@@ -94,7 +93,8 @@
                         <div class="row g-2">
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
-                                    <label class="odoo-label-compact" for="contenedores">Contenedores</label>
+                                    <label class="odoo-label-compact" for="contenedores">
+                                        Contenedores</label>
                                     <input type="number"
                                         id="contenedores"
                                         class="odoo-input odoo-excel-input"
@@ -106,7 +106,8 @@
                             <!-- 2. Costo del dólar cotizado -->
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
-                                    <label class="odoo-label-compact" for="clienteCostoDolar">T.C. Dólar Cliente</label>
+                                    <label class="odoo-label-compact" for="clienteCostoDolar">T.C.
+                                        Dólar Cliente</label>
                                     <input type="number"
                                         id="clienteCostoDolar"
                                         class="odoo-input odoo-excel-input"
@@ -171,7 +172,8 @@
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact d-flex justify-content-between">
                                         <span>Balance Cliente</span>
-                                        <span class="text-primary fw-bold" t-esc="state.balancePorcentajeCliente" />
+                                        <span class="text-primary fw-bold"
+                                            t-esc="state.balancePorcentajeCliente" />
                                     </label>
                                     <div class="odoo-money-box">
                                         <div class="odoo-money-usd">
@@ -224,7 +226,8 @@
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact d-flex justify-content-between">
                                         <span>Balance Proveedor</span>
-                                        <span class="text-primary fw-bold" t-esc="state.balancePorcentajeProveedor" />
+                                        <span class="text-primary fw-bold"
+                                            t-esc="state.balancePorcentajeProveedor" />
                                     </label>
                                     <div class="odoo-money-box">
                                         <div class="odoo-money-usd">
@@ -239,24 +242,6 @@
                                 </div>
                             </div>
 
-                            <div class="col-6 col-md-4">
-                                <div class="odoo-field mb-0">
-                                    <label class="odoo-label-compact d-flex justify-content-between">
-                                        <span>Cotizacion de Aduana:</span>
-                                        <span class="text-primary fw-bold" t-esc="state.cotizacionAduana" />
-                                    </label>
-                                    <div class="odoo-money-box">
-                                        <div class="odoo-money-usd">
-                                            <span class="odoo-curr-tag">USD</span>
-                                            <span t-esc="state.cotizacionAduanaFmt" />
-                                        </div>
-                                        <div class="odoo-money-mxn">
-                                            <span class="odoo-curr-tag">MXN</span>
-                                            <span t-esc="state.cotizacionAduanaMxnFmt" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                     </div>
@@ -319,17 +304,16 @@
                         </div>
                     </div>
 
-<div class="odoo-card odoo-card-accent">
-                        <div class="odoo-card-title d-flex align-items-center justify-content-between">
+                    <div class="odoo-card odoo-card-accent">
+                        <div
+                            class="odoo-card-title d-flex align-items-center justify-content-between">
                             <span>
                                 <i class="fa fa-info-circle" /> Fechas limite de compromiso de Pago
-                                cliente
-                            </span>
+                                cliente </span>
                             <button type="button"
                                 class="odoo-btn odoo-btn-sm odoo-btn-primary ms-auto"
                                 t-on-click="() => this.terminosCondicionesCliente()">
-                                <i class="fa fa-percent" /> Términos
-                            </button>
+                                <i class="fa fa-percent" /> Términos </button>
                         </div>
 
                         <div class="cc-card">
@@ -339,9 +323,13 @@
                                         <label class="odoo-label">
                                             <t t-esc="t.nombre or ('Término ' + (t_index + 1))" />
                                            
-                                        <strong> $<t t-esc="t.cantidad" /> </strong>
-                                        (<strong><t t-esc="t.porcentaje" /></strong> %):
-                                        </label>
+                                        <strong>
+                                            $<t t-esc="t.cantidad" />
+                                            </strong>
+                                            (<strong>
+                                                <t t-esc="t.porcentaje" />
+                                            </strong>
+                                            %): </label>
                                         <input type="date"
                                             class="form-control"
                                             t-model="t.fecha_compromiso"
@@ -368,10 +356,12 @@
                                         <label class="odoo-label">
                                             <t t-esc="t.nombre or ('Término ' + (t_index + 1))" /> 
                                             <strong>
-                                                $<t
-                                                t-esc="t.cantidad" /></strong>
-                                                (<strong><t
-                                                t-esc="t.porcentaje" /></strong> %): </label>
+                                            $<t
+                                                    t-esc="t.cantidad" /></strong> (<strong>
+                                                <t
+                                                    t-esc="t.porcentaje" />
+                                            </strong>
+                                            %): </label>
                                         <input type="date"
                                             class="form-control"
                                             t-model="t.fecha_compromiso"
@@ -408,7 +398,9 @@
                                         <tr t-foreach="state.detalleCliente" t-as="d"
                                             t-key="d.anticipoId or d.paymentId or d_index">
                                             <td>
-                                                 <strong><t t-esc="d.referencia or ''" /></strong>
+                                                <strong>
+                                                    <t t-esc="d.referencia or ''" />
+                                                </strong>
                                             </td>
                                             <td>
                                                 <t t-esc="d.fechaAnticipo or ''" />
@@ -416,8 +408,7 @@
                                             <td class="text-end">
                                                 <t t-esc="d.monto" />
                                             </td>
-                                            <td class="text-end">
-                                                $<t t-esc="d.precioDolar_fmt" />
+                                            <td class="text-end"> $<t t-esc="d.precioDolar_fmt" />
                                             </td>
                                             <td>
                                                 <span t-if="d.pagado" class="text-success">
@@ -466,10 +457,10 @@
 
                     <div class="odoo-card">
                         <div class="odoo-card-title">
-                            <i class="fa fa-flag" /> Estado del pedido
-                        </div>
+                            <i class="fa fa-flag" /> Estado del pedido </div>
 
-                        <t t-set="estados_pedido" t-value="[
+                        <t t-set="estados_pedido"
+                            t-value="[
                             ['fase_inicial', 'Fase inicial'],
                             ['produccion', 'Producción'],
                             ['en_origen', 'Camino a puerto'],
@@ -479,41 +470,49 @@
                             ['camino_cliente', 'Camino a cliente'],
                             ['entregado', 'Entregado']
                         ]" />
-                        <t t-set="indice_actual" t-value="estados_pedido.findIndex(e => e[0] === state.estado)" />
+                        <t t-set="indice_actual"
+                            t-value="estados_pedido.findIndex(e => e[0] === state.estado)" />
                         <div class="odoo-statusbar">
                             <t t-foreach="estados_pedido" t-as="item" t-key="item[0]">
                                 <t t-set="is_active" t-value="item[0] === state.estado" />
-                                <t t-set="is_done" t-value="indice_actual !== -1 and item_index &lt; indice_actual" />
-                                
-                                <div t-attf-class="odoo-statusbar-step {{ is_active ? 'is-active' : '' }} {{ is_done ? 'is-done' : '' }}"
+                                <t t-set="is_done"
+                                    t-value="indice_actual !== -1 and item_index &lt; indice_actual" />
+
+                                <div
+                                    t-attf-class="odoo-statusbar-step {{ is_active ? 'is-active' : '' }} {{ is_done ? 'is-done' : '' }}"
                                     t-att-title="item[1]">
                                     <i t-if="is_done" class="fa fa-check odoo-step-icon" />
-                                    <span class="odoo-step-text"><t t-esc="item[1]" /></span>
+                                    <span class="odoo-step-text">
+                                        <t t-esc="item[1]" />
+                                    </span>
                                 </div>
                             </t>
                         </div>
-                        
-                        <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="forwarder">Forwarder</label>
+
+                        <div class="row g-2 mt-2 pt-2 border-top">
+                            <div class="col-6">
+                                <label class="odoo-check-inline" for="forwarder">
+                                    <span>Forwarder</span>
                                     <input type="checkbox"
                                         id="forwarder"
-                                        class="odoo-input"
+                                        class="odoo-checkbox"
                                         t-att-checked="state.forwarder"
                                         t-on-change="(ev) => this.onVerificarForwarder(ev)" />
-                                </div>
+                                </label>
                             </div>
 
-                            <div class="col-md-6">
-                                <div class="odoo-field">
-                                    <label class="odoo-label" for="salidaAduana">Salida de Aduana</label>
+                            <div class="col-6">
+                                <label class="odoo-check-inline" for="salidaAduana">
+                                    <span>Salida de Aduana</span>
                                     <input type="checkbox"
                                         id="salidaAduana"
-                                        class="odoo-input"
+                                        class="odoo-checkbox"
                                         t-att-checked="state.salidaAduana"
                                         t-on-change="(ev) => this.onVerificarSalidaAduana(ev)" />
-                                </div>
+                                </label>
                             </div>
+                        </div>
+
                     </div>
                     <div class="odoo-card">
                         <div class="odoo-card-title">
@@ -657,7 +656,7 @@
                                     <i class="fa fa-save" /> Ver </button>
                             </span>
                         </div>
-                        
+
                         <div class="odoo-result-row">
                             <span class="odoo-result-label"> Flete </span>
                             <span>
@@ -715,7 +714,7 @@
                                     <i class="fa fa-save" /> Ver </button>
                             </span>
                         </div>
-                        
+
                     </div>
 
                     <!-- PROVEEDOR  -->
@@ -739,7 +738,9 @@
                                         t-if="state.detalleProveedor and state.detalleProveedor.length">
                                         <tr t-foreach="state.detalleProveedor" t-as="d" t-key="d.id">
                                             <td>
-                                               <strong> <t t-esc="d.referencia"/></strong>
+                                                <strong>
+                                                    <t t-esc="d.referencia" />
+                                                </strong>
                                             </td>
                                             <td>
                                                 <t t-esc="d.fechaAnticipo or ''" />
@@ -749,7 +750,7 @@
                                             </td>
                                             <td class="text-end">
                                                 <t t-esc="d.precioDolar_fmt or 0" />
-                                            </td> 
+                                            </td>
                                             <td class="text-end">
                                                 <t t-esc="d.PDFAnticipo or 'No cargado'" />
                                             </td>
@@ -853,8 +854,7 @@
                     <!-- HISTORIAL DE ETAs -->
                     <div class="odoo-card">
                         <div class="odoo-card-title">
-                            <i class="fa fa-calendar" /> Historial de ETAs
-                        </div>
+                            <i class="fa fa-calendar" /> Historial de ETAs </div>
 
                         <div class="table-responsive">
                             <table class="table table-sm align-middle">
@@ -867,7 +867,8 @@
                                 </thead>
                                 <tbody>
                                     <t t-if="state.listaEtas and state.listaEtas.length">
-                                        <tr t-foreach="state.listaEtas" t-as="eta" t-key="eta.id or eta.numero or eta_index">
+                                        <tr t-foreach="state.listaEtas" t-as="eta"
+                                            t-key="eta.id or eta.numero or eta_index">
                                             <td>
                                                 <strong>#<t t-esc="eta.numero" /></strong>
                                             </td>
@@ -894,22 +895,19 @@
                             <button type="button"
                                 class="odoo-btn odoo-btn-block odoo-btn-ghost"
                                 t-on-click="() => this.onEditarDetalleEta()">
-                                <i class="fa fa-plus" /> Agregar Nueva ETA
-                            </button>
+                                <i class="fa fa-plus" /> Agregar Nueva ETA </button>
                         </div>
                     </div>
                 </div>
-                
+
             </div>
 
-            <!-- ============================================
-                 TABLA DE ACTUALIZACIONES
-                 ============================================ -->
+
+            
             <div class="odoo-card mt-3">
                 <div class="odoo-card-title">
                     <i class="fa fa-history" /> Tabla de actualizaciones </div>
-
-                <div class="table-responsive">
+                <div class="table-responsive odoo-actualizaciones-scroll">
                     <table class="table table-striped align-middle">
                         <thead>
                             <tr>
@@ -938,7 +936,7 @@
                             </t>
                             <t t-else="">
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted">
+                                    <td colspan="4" class="text-center text-muted">
                                         No hay actualizaciones registradas.
                                     </td>
                                 </tr>
@@ -947,6 +945,8 @@
                     </table>
                 </div>
             </div>
+
+
 
         </div>
     </t>

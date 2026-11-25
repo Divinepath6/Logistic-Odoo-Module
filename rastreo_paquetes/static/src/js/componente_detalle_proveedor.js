@@ -66,10 +66,10 @@ export class componente_detalle_proveedor extends Component {
                 } else {
                     await this.cargarDiariosPago();
                 }
-                
+
                 if (!this.state.precioDolar || this.state.precioDolar === 0) {
-                await this.fetchDollarRate();
-            }
+                    await this.fetchDollarRate();
+                }
             }
         });
     }
@@ -209,6 +209,10 @@ export class componente_detalle_proveedor extends Component {
                 }
                 if (!this.state.PDFAnticipo) {
                     this.notification.add("Necesita subir el archivo PDF del comprobante", { type: "danger" });
+                    return;
+                }
+                if (!this.state.fechaAnticipo) {
+                    this.notification.add("Necesita indicar la fecha del anticipo", { type: "danger" });
                     return;
                 }
             }

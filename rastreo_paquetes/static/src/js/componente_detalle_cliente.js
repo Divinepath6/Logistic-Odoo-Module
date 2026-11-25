@@ -60,7 +60,7 @@ export class componente_detalle_cliente extends Component {
                 this.state.numero = r.numero || 0;
                 this.state.referenciaOdoo = r.referencia || "";
                 this.state.fechaEdicion = r.fechaEdicion || r.fecha_editado || "";
-                this.state.fechaAnticipo = r.fechaAnticipo || r.fecha || new Date().toISOString().split("T")[0];
+                this.state.fechaAnticipo = r.fechaAnticipo || r.fecha || "";
                 this.state.cantidadAnticipo = Number(r.cantidadAnticipo ?? r.monto_usd ?? r.monto_raw ?? 0) || 0.0;
                 this.state.precioDolar = Number(r.precioDolar ?? r.precio_dolar ?? 0) || 0.0;
                 await this.obtenerPDF();
@@ -234,12 +234,15 @@ export class componente_detalle_cliente extends Component {
             this.notification.add("Necesita indicar el precio del Dólar", { type: "danger" });
             return;
         }
-
         const esEdicion = Boolean(this.state.anticipoId && this.state.anticipoId !== 0);
 
         if (!esEdicion) {
             if (this.state.modoVinculo === "vincular" && !this.state.existingRecordId) {
                 this.notification.add("Primero busque y seleccione un pago válido", { type: "danger" });
+                return;
+            }
+            if (!this.state.fechaAnticipo || this.state.fechaAnticipo == "") {
+                this.notification.add("Necesita indicar la fecha del anticipo", { type: "danger" });
                 return;
             }
             if (!this.state.cantidadAnticipo || this.state.cantidadAnticipo <= 0) {

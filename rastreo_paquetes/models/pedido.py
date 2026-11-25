@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 class rastreo_paquetes(models.Model):
     _name = 'rastreo.pedido'
     _description = 'Clase principal del modulo'
-    #_inherit = ['mail.thread', 'mail.activity.mixin']
     numero_guia = fields.Char(string='Número de guía o cotización')
     
     sale_order_id = fields.Many2one(
@@ -30,7 +29,6 @@ class rastreo_paquetes(models.Model):
         ('entregado', 'Entregado'),
     ], string = 'Estado', default='fase_inicial')
 
-    # FORWARDER ¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡
     forwarder = fields.Boolean(
         string="Forwarder conseguido", 
         default=False
@@ -1038,7 +1036,7 @@ class rastreo_paquetes(models.Model):
                 ('numero_contrato', 'ilike', termino_busqueda),
             ]
 
-        pedidos = self.search(domain, limit=50)
+        pedidos = self.search(domain, limit=100)
         lista = []
 
         kpi_saldo_clientes_mxn = 0.0

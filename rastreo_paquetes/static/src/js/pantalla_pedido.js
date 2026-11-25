@@ -631,33 +631,47 @@ export class PantallaPedido extends Component {
     }   
 
     async onVerificarForwarder(ev) {
-        const nuevoValor = ev.target.checked; 
+        const valorAnterior = this.state.forwarder;
+        const nuevoValor = ev.target.checked;
+
+        ev.target.checked = valorAnterior;
+
         this.dialogService.add(ConfirmationDialog, {
             title: _t("¿Estás seguro?"),
-            body: _t("¿Ya consiguió el forwarder?"),
-            confirm: async () => {
-                this.state.forwarder = true;
+            body: nuevoValor
+                ? _t("¿Ya consiguió el forwarder?")
+                : _t("¿Deseas desmarcar el forwarder?"),
+            confirm: () => {
+                this.state.forwarder = nuevoValor;
+                ev.target.checked = nuevoValor;
             },
             cancel: () => {
-                this.state.forwarder = false;
+                this.state.forwarder = valorAnterior;
+                ev.target.checked = valorAnterior;
             },
         });
-        ev.target.checked = this.state.forwarder;
     }
 
     async onVerificarSalidaAduana(ev) {
-        const nuevoValor = ev.target.checked; 
+        const valorAnterior = this.state.salidaAduana;
+        const nuevoValor = ev.target.checked;
+
+        ev.target.checked = valorAnterior;
+
         this.dialogService.add(ConfirmationDialog, {
             title: _t("¿Estás seguro?"),
-            body: _t("¿Ya salio de la Agencia Aduanal?"),
-            confirm: async () => {
-                this.state.salidaAduana = true;
+            body: nuevoValor
+                ? _t("¿Ya salió de la Agencia Aduanal?")
+                : _t("¿Deseas desmarcar la salida de Aduana?"),
+            confirm: () => {
+                this.state.salidaAduana = nuevoValor;
+                ev.target.checked = nuevoValor;
             },
             cancel: () => {
-                this.state.salidaAduana = false;
+                this.state.salidaAduana = valorAnterior;
+                ev.target.checked = valorAnterior;
             },
         });
-        ev.target.checked = this.state.salidaAduana;
     }
 
 
@@ -693,7 +707,6 @@ export class PantallaPedido extends Component {
     }
 
     async onCambiarCotizacion (){
-
         const guiaActual = this.state.guia; 
 
         const guiaConfirmada = this.state.guiaConfirmada;

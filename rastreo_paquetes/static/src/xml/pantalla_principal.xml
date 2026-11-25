@@ -12,6 +12,58 @@
                         t-on-input="onBusqueda" />
                 </div>
 
+                <div class="odoo-filter-wrapper" t-ref="filterWrapper">
+                    <button type="button"
+                        t-attf-class="odoo-btn odoo-btn-ghost #{state.estadosSeleccionados.length ? 'is-filtered' : ''}"
+                        t-on-click="togglePanelFiltros">
+                        <i class="fa fa-filter" />
+                        <span>Estados</span>
+                        <t t-if="state.estadosSeleccionados.length">
+                            <span class="odoo-filter-badge"
+                                t-esc="state.estadosSeleccionados.length" />
+                        </t>
+                        <i
+                            t-attf-class="fa #{state.mostrarFiltros ? 'fa-chevron-up' : 'fa-chevron-down'}"
+                            style="font-size: 0.7rem;" />
+                    </button>
+
+                    <t t-if="state.mostrarFiltros">
+                        <div class="odoo-filter-panel">
+                            <div class="odoo-filter-panel-header">
+                                <span>Filtrar por estado</span>
+                                <span class="odoo-text-muted" style="font-size: 0.72rem;">
+                                    <t t-esc="state.pedidos.length" /> de <t
+                                        t-esc="state.pedidosTodos.length" />
+                                </span>
+                            </div>
+
+                            <div class="odoo-filter-list odoo-scroll">
+                                <t t-foreach="state.opcionesEstado" t-as="est" t-key="est.key">
+                                    <label class="odoo-filter-option">
+                                        <input type="checkbox"
+                                            t-att-checked="state.estadosSeleccionados.includes(est.key)"
+                                            t-on-change="() => this.onToggleEstado(est.key)" />
+                                        <span t-esc="est.label" />
+                                    </label>
+                                </t>
+                            </div>
+
+                            <div class="odoo-filter-panel-footer">
+                                <button type="button" class="odoo-btn odoo-btn-ghost odoo-btn-sm"
+                                    t-on-click="seleccionarTodosEstados">
+                                    Todos
+                                </button>
+                                <button type="button"
+                                    class="odoo-btn odoo-btn-secondary odoo-btn-sm"
+                                    t-on-click="limpiarFiltrosEstado"
+                                    t-att-disabled="!state.estadosSeleccionados.length">
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+
                 <div class="odoo-header-actions">
                     <button type="button" class="odoo-btn odoo-btn-primary"
                         t-on-click="onCargarCotizacion">
@@ -136,11 +188,15 @@
                                                 <t t-esc="p.cotizacion_total" />
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <div><t t-esc="p.proveedor_saldo_usd" /></div>
-                                   
+                                                <div>
+                                                    <t t-esc="p.proveedor_saldo_usd" />
+                                                </div>
+
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <div><t t-esc="p.proveedor_acordado_usd" /></div>
+                                                <div>
+                                                    <t t-esc="p.proveedor_acordado_usd" />
+                                                </div>
                                             </div>
                                         </t>
                                         <t t-else="">

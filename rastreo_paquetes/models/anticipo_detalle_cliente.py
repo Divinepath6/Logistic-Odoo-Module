@@ -279,7 +279,7 @@ class rastreo_anticipo_detalle_cliente(models.Model):
                         pdf_name or f"anticipo_{sale_order.name}_{numero}.pdf"
                     )
                 detalle = self.create(valores)
-
+                self._registrar_actualizacion_pago(pedido, payment)
             return {'success': True, 'anticipo_id': detalle.id}
         except Exception as e:
             return {'success': False, 'error': str(e)}
@@ -316,6 +316,23 @@ class rastreo_anticipo_detalle_cliente(models.Model):
                 lines.reconcile()
 
         return payment
+
+    def _registrar_actualizacion_pago(self, pedido, payment):
+        ultima = self.env['rastreo.pedido_actualizacion'].search(
+            [('pedido_id', '=', pedido.id)],
+            order='numero_actualizacion desc',
+            limit=1
+        )
+        sig_numero = (ultima.numero_actualizacion or 0) + 1
+        referencia = payment.name or payment.memo or 'Sin referencia'
+
+        self.env['rastreo.pedido_actualizacion'].create({
+            'pedido_id': pedido.id,
+            'numero_actualizacion': sig_numero,
+            'fecha_actualizacion': fields.Datetime.now(),
+            'actualizacion_texto': f'Pago de cliente subido: {referencia}',
+            'usuario_id': self.env.user.id,
+        })
 
     @api.model
     def obtener_pdf(self, detalle_id):

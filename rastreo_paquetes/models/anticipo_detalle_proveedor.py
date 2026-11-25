@@ -64,7 +64,6 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
 
     @api.depends('monto_usd', 'precio_dolar')
     def _compute_monto_mxn(self):
-        """Calcula automáticamente el total en MXN multiplicando los dólares por el tipo de cambio."""
         for record in self:
             record.monto_mxn = record.monto_usd * record.precio_dolar
 
@@ -99,7 +98,7 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
         pago = self.env['account.payment'].create(payment_vals)
         pago.action_post()
         detalle.account_payment_id = pago.id
-
+        self._registrar_actualizacion_pago(pedido, pago)
         pedido.crear_aviso(pedido.id)
         return detalle
 
@@ -247,12 +246,31 @@ class rastreo_anticipo_detalle_proveedor(models.Model):
             pago = self.env['account.payment'].create(payment_vals)
             pago.action_post()
             detalle.account_payment_id = pago.id
-
+            self._registrar_actualizacion_pago(pedido, pago)
             pedido.crear_aviso(pedido.id)
             return {'success': True, 'id': detalle.id}
 
         except Exception as e:
             return {'success': False, 'error': str(e)}
+    
+    def _registrar_actualizacion_pago(self, pedido, pago):
+        ultima = self.env['rastreo.pedido_actualizacion'].search(
+            [('pedido_id', '=', pedido.id)],
+            order='numero_actualizacion desc',
+            limit=1
+        )
+        sig_numero = (ultima.numero_actualizacion or 0) + 1
+        # payment.name es el folio/secuencia de Odoo (ej. PBNK1/2026/00015)
+        # Si también quieres mostrar la referencia de factura (memo), puedes combinarlos:
+        referencia = pago.name or 'Sin referencia'
+
+        self.env['rastreo.pedido_actualizacion'].create({
+            'pedido_id': pedido.id,
+            'numero_actualizacion': sig_numero,
+            'fecha_actualizacion': fields.Datetime.now(),
+            'actualizacion_texto': f'Pago a proveedor subido: {referencia}',
+            'usuario_id': self.env.user.id,
+        })
 
     @api.model
     def obtener_pdf(self, detalle_id):

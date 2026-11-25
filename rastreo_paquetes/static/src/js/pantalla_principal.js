@@ -22,6 +22,7 @@ export class PantallaPrincipal extends Component {
     
     setup() {
         this.rootRef = useRef("root");
+        this.filterWrapperRef = useRef("filterWrapper");
         this.notification = useService("notification");
         this.action = useService("action");
         this.orm = useService("orm");
@@ -33,6 +34,20 @@ export class PantallaPrincipal extends Component {
         this._startWidth = 0;
 
         this.state = useState({
+            pedidosTodos: [],          
+            mostrarFiltros: false,     
+            estadosSeleccionados: [],  
+            opcionesEstado: [         
+                { key: "fase_inicial", label: "Fase Inicial" },
+                { key: "produccion", label: "En Producción" },
+                { key: "en_origen", label: "En Origen" },
+                { key: "puerto_origen", label: "En Puerto de Origen" },
+                { key: "agua", label: "En Mar" },
+                { key: "puerto_destino", label: "Puerto de Destino" },
+                { key: "camino_cliente", label: "En Camino al Cliente" },
+                { key: "entregado", label: "Entregado" },
+            ],
+
             pedidos: [],
             modoTablero: true,
             cargando: false,
@@ -56,6 +71,7 @@ export class PantallaPrincipal extends Component {
 
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
+        
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onTopScroll = (event) => {
             const wrapper = event.target.closest?.(".odoo-top-scroll-wrapper");
@@ -86,8 +102,19 @@ export class PantallaPrincipal extends Component {
                 scrollContent.style.width = `${tableContainer.scrollWidth}px`;
             }
         };
+        this.onClickOutsideFilter = (ev) => {
+            if (
+                this.state.mostrarFiltros &&
+                this.filterWrapperRef.el &&
+                !this.filterWrapperRef.el.contains(ev.target)
+            ) {
+                this.state.mostrarFiltros = false;
+            }
+        };
 
         document.addEventListener('mousedown', this.onMouseDown);
+        document.addEventListener("click", this.onClickOutsideFilter);
+
         onMounted(() => {
             this.rootRef.el.addEventListener("scroll", this.onTopScroll, true);
             this.updateTopScrollbar();
@@ -98,6 +125,7 @@ export class PantallaPrincipal extends Component {
             document.removeEventListener('mousedown', this.onMouseDown);
             document.removeEventListener('mousemove', this.onMouseMove);
             document.removeEventListener('mouseup', this.onMouseUp);
+            document.removeEventListener("click", this.onClickOutsideFilter);
             this.rootRef.el?.removeEventListener("scroll", this.onTopScroll, true);
         });
 
@@ -286,6 +314,7 @@ export class PantallaPrincipal extends Component {
             );
 
             if (!resultado || !resultado.success) {
+                this.state.pedidosTodos = [];
                 this.state.pedidos = [];
                 return;
             }
@@ -300,7 +329,7 @@ export class PantallaPrincipal extends Component {
 
             const toNum = (n) => Number(n) || 0;
 
-            this.state.pedidos = resultado.lista.map((p) => {
+            this.state.pedidosTodos = resultado.lista.map((p) => {
                 const cot   = p.cotizacion   || {};
                 const ac    = p.anticipos_cliente    || {};
                 const ap    = p.anticipos_proveedor  || {};
@@ -383,10 +412,10 @@ export class PantallaPrincipal extends Component {
                 mxn: fmt(resultado.kpi.proveedor.mxn),
                 usd: fmt(resultado.kpi.proveedor.usd)
             };
-
-            this.asignarColumnas();
+            this.aplicarFiltroEstados();
         } catch (e) {
             console.error("Error al cargar pedidos:", e);
+            this.state.pedidosTodos = [];
             this.state.pedidos = [];
         } finally {
             this.state.cargando = false;
@@ -406,6 +435,41 @@ export class PantallaPrincipal extends Component {
             name: col.name,
             packages: this.state.pedidos.filter(p => col.keys.includes(p.estado)),
         }));
+    }
+
+
+    togglePanelFiltros() {
+        this.state.mostrarFiltros = !this.state.mostrarFiltros;
+    }
+    onToggleEstado(estadoKey) {
+        const idx = this.state.estadosSeleccionados.indexOf(estadoKey);
+        if (idx === -1) {
+            this.state.estadosSeleccionados.push(estadoKey);
+        } else {
+            this.state.estadosSeleccionados.splice(idx, 1);
+        }
+        this.aplicarFiltroEstados();
+    }
+
+    seleccionarTodosEstados() {
+        this.state.estadosSeleccionados = this.state.opcionesEstado.map((e) => e.key);
+        this.aplicarFiltroEstados();
+    }
+
+    limpiarFiltrosEstado() {
+        this.state.estadosSeleccionados = [];
+        this.aplicarFiltroEstados();
+    }
+
+    aplicarFiltroEstados() {
+        if (!this.state.estadosSeleccionados.length) {
+            this.state.pedidos = [...this.state.pedidosTodos];
+        } else {
+            this.state.pedidos = this.state.pedidosTodos.filter((p) =>
+                this.state.estadosSeleccionados.includes(p.estado)
+            );
+        }
+        this.asignarColumnas();
     }
 }
 
