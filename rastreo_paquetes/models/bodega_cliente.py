@@ -38,9 +38,13 @@ class rastreo_bodega_cliente(models.Model):
             raise UserError("El pedido no tiene una cotización de Odoo vinculada.")
 
         codigo_moneda = 'USD' if en_dolares else 'MXN'
-        moneda_activa = self.env['res.currency'].search([('name', '=', codigo_moneda)], limit=1)
+        moneda_activa = self.env['res.currency'].with_context(active_test=False).search(
+            [('name', '=', codigo_moneda)], limit=1
+        )
         if not moneda_activa:
-            raise UserError(f"No se encontró la moneda {codigo_moneda} activa en Odoo.")
+            raise UserError(f"No se encontró la moneda {codigo_moneda} en Odoo.")
+        if not moneda_activa.active:
+            moneda_activa.sudo().write({'active': True})
 
         Pricelist = self.env['product.pricelist']
         domain_pricelist = [('currency_id', '=', moneda_activa.id)]
@@ -55,7 +59,11 @@ class rastreo_bodega_cliente(models.Model):
                 pricelist = Pricelist.search(domain_pricelist, limit=1)
 
         if not pricelist:
-            raise UserError(f"No existe una Lista de Precios configurada para la moneda {codigo_moneda}.")
+            pricelist = Pricelist.sudo().create({
+                'name': f"Tarifa {codigo_moneda}{' con IVA' if con_iva else ''}",
+                'currency_id': moneda_activa.id,
+                'company_id': pedido.sale_order_id.company_id.id,
+            })
 
         Tax = self.env['account.tax']
         impuesto_iva = Tax.search([
@@ -136,7 +144,7 @@ class rastreo_bodega_cliente(models.Model):
                         'color': d.get('color_id') or False,
                         'producto_id': producto_.id,
                         'bodega_adicional_id': bodega_creada.id,
-                        'currency_id': moneda_activa.id, # <-- Dinámico según en_dolares
+                        'currency_id': moneda_activa.id,
                     })
                     racks_info.append({
                         'producto_': producto_,
@@ -202,7 +210,7 @@ class rastreo_bodega_cliente(models.Model):
                     'product_id': linea.product_id.id,
                     'rack_id': linea.rastreo_rack_id.id or False,
                     'color': linea.rastreo_color_id.id or False,
-                    'currency_id': moneda_activa.id, # <-- Dinámico según en_dolares
+                    'currency_id': moneda_activa.id,
                     'cantidad_racks': int(linea.product_uom_qty),
                     'pedido_id': pedido_id,
                     'sale_order_line_id': linea.id,
