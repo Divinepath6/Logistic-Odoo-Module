@@ -88,6 +88,10 @@
 
             'rastreo_paquetes/static/src/js/componente_cotizacion_aduana.js',
             'rastreo_paquetes/static/src/xml/componente_cotizacion_aduana.xml',
+
+            'rastreo_paquetes/static/src/js/componente_confirmar_eliminar.js',
+            'rastreo_paquetes/static/src/xml/componente_confirmar_eliminar.xml',
+
         ],
     },
     'installable': True,

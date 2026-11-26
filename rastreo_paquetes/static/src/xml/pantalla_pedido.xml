@@ -103,7 +103,6 @@
                                 </div>
                             </div>
 
-                            <!-- 2. Costo del dólar cotizado -->
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact" for="clienteCostoDolar">T.C.
@@ -116,7 +115,6 @@
                                 </div>
                             </div>
 
-                            <!-- 3. Cotización de Aduana -->
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact">Cotización Aduana</label>
@@ -133,7 +131,6 @@
                                 </div>
                             </div>
 
-                            <!-- 4. Total Cliente -->
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact">Total Cliente</label>
@@ -150,7 +147,6 @@
                                 </div>
                             </div>
 
-                            <!-- 5. Total Anticipos Cliente -->
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact">Anticipos Cliente</label>
@@ -167,7 +163,6 @@
                                 </div>
                             </div>
 
-                            <!-- 6. Balance Cliente + % -->
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact d-flex justify-content-between">
@@ -188,7 +183,6 @@
                                 </div>
                             </div>
 
-                            <!-- 7. Total Proveedor -->
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact">Total Proveedor</label>
@@ -205,7 +199,6 @@
                                 </div>
                             </div>
 
-                            <!-- 8. Total Anticipos Proveedor -->
                             <div class="col-6 col-md-4">
                                 <div class="odoo-field mb-0">
                                     <label class="odoo-label-compact">Anticipos Proveedor</label>
@@ -906,7 +899,16 @@
             
             <div class="odoo-card mt-3">
                 <div class="odoo-card-title">
-                    <i class="fa fa-history" /> Tabla de actualizaciones </div>
+                    <i class="fa fa-history" /> Tabla de actualizaciones 
+                <button
+                    type="button"
+                    class="btn btn-outline-danger"
+                    t-on-click="onClickEliminarPedido"
+                    t-att-disabled="state.cargando or !state.pedidoId"
+                >
+                    <i class="fa fa-trash me-1"/> Eliminar Pedido
+                </button>
+                </div>
                 <div class="table-responsive odoo-actualizaciones-scroll">
                     <table class="table table-striped align-middle">
                         <thead>

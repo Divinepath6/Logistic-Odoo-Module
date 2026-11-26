@@ -178,23 +178,19 @@ class rastreo_paquetes(models.Model):
     pago_compromiso_cliente_1 = fields.Float(
         string= 'Porcentaje de pago acordado con el cliente',
         digits=(5, 2),
-        required=True
     )
             
     pago_compromiso_cliente_2 = fields.Float(
         string= 'Porcentaje de pago acordado con el cliente',
         digits=(5, 2),
-        required=True
     )
     pago_compromiso_cliente_3 = fields.Float(
         string= 'Porcentaje de pago acordado con el cliente',
         digits=(5, 2),
-        required=True
     )
     pago_compromiso_cliente_4 = fields.Float(
         string= 'Porcentaje de pago acordado con el cliente',
         digits=(5, 2),
-        required=True
     )
         
     fecha_termino_produccion = fields.Date(
@@ -216,7 +212,14 @@ class rastreo_paquetes(models.Model):
     contenedores = fields.Integer(
         string = 'Total de contenedores'
     )
-    
+    moneda_cliente = fields.Selection(
+        [
+            ('USD', 'Dólares (USD)'),
+            ('MXN', 'Pesos (MXN)'),
+        ],
+        string='Moneda real de la cotización',
+        default='USD',
+    )
 
     ##LLave foranea para lo de clientes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     cliente_id = fields.Many2one(
@@ -654,6 +657,7 @@ class rastreo_paquetes(models.Model):
                         'success': False, 
                         'error': "El modelo de pedido no tiene configurado el campo relacional 'termino_ids'."
                     }
+        self.crear_aviso(pedido.id)
         return {
                 'success': True,
         }
@@ -680,7 +684,7 @@ class rastreo_paquetes(models.Model):
                 'proveedor_id': datos.get('proveedor_id') or False,
                 'total_proveedor_costo_dolar': datos.get('total_proveedor_costo_dolar') or 0.0,
                 'total_cliente_costo_dolar':  datos.get('total_cliente_costo_dolar') or 0.0,
-
+                'moneda_cliente': datos.get('moneda_cliente') or 'USD',
                 'ETD': datos.get('ETD') or False,
                 'CRD': datos.get('CRD') or False,
 
@@ -801,14 +805,19 @@ class rastreo_paquetes(models.Model):
             return (1.0 / rate) if (rate and rate < 1.0) else (rate or 1.0)
 
         cotizacion = pedido.sale_order_id
-        total_cot = cotizacion.amount_total if cotizacion else (pedido.total_cliente or 0.0)
-        moneda_cot = cotizacion.currency_id.name if cotizacion else 'USD'
-        tc_cliente = pedido.total_cliente_costo_dolar or _tc(pedido.fecha_creacion)
+        total_cotizacion = cotizacion.amount_total if cotizacion else (pedido.total_cliente or 0.0)
+        moneda_efectiva = pedido.moneda_cliente or 'USD'
 
-        if moneda_cot == 'USD':
-            total_cliente_usd = total_cot
+        fecha_cot = cotizacion.date_order.date() if (cotizacion and cotizacion.date_order) else (pedido.fecha_creacion or fields.Date.today())
+        precio_dolar_cliente = pedido.total_cliente_costo_dolar or _tc(fecha_cot)
+     
+        if moneda_efectiva == 'USD':
+            total_cliente_usd = total_cotizacion
+            total_cliente_mxn = total_cotizacion * precio_dolar_cliente
         else:
-            total_cliente_usd = (total_cot / tc_cliente) if tc_cliente else 0.0
+            total_cliente_mxn = total_cotizacion
+            total_cliente_usd = (total_cotizacion / precio_dolar_cliente) if precio_dolar_cliente else 0.0
+
 
         anticipos_cli = pedido.detalle_cliente_ids
         pagado_cliente_usd = sum(a.monto_usd for a in anticipos_cli)
@@ -891,8 +900,8 @@ class rastreo_paquetes(models.Model):
                             'severidad': INFO,
                             'mensaje': f"Quedan {dias_restantes} para puerto",
                         })
-        
-        elif pedido.estado == 'en_origen':         
+
+        elif pedido.estado == 'en_origen':
             if not pedido.CRD:
                 avisos_a_crear.append({'severidad': URGENTE, 'mensaje': "Conseguir y capturar el CRD"})
             else:
@@ -909,7 +918,7 @@ class rastreo_paquetes(models.Model):
                     avisos_a_crear.append({
                         'severidad': MEDIA,
                         'mensaje': f"El contenedor sale del puerto en {dias_restantes} días"
-                    })      
+                    })
 
         elif pedido.estado in ('agua', 'embarcado'):
             if not pedido.ETA:
@@ -925,7 +934,7 @@ class rastreo_paquetes(models.Model):
                 avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Subir Invoice"})
             if not pedido.pdf_prefactura:
                 avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Pedir prefactura a proveedor de flete marítimo"})
-            if not pedido.cotizacion_aduana: 
+            if not pedido.cotizacion_aduana:
                 avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Cotizar Agente Aduanal"})
             if not pedido.pdf_aviso:
                 avisos_a_crear.append({'severidad': MEDIA, 'mensaje': "Aviso de arribo"})
@@ -937,7 +946,6 @@ class rastreo_paquetes(models.Model):
         elif pedido.estado == 'camino_cliente':
             if not pedido.pdf_evidencia_entregado:
                 avisos_a_crear.append({'severidad': INFO, 'mensaje': "Capturar entregado con evidencia"})
-          
 
         (
             pagado_cli_usd,
@@ -953,25 +961,33 @@ class rastreo_paquetes(models.Model):
                 return "vence HOY"
             return f"vence en {dias} día(s)"
 
+        # --- Términos del Proveedor ---
         porcentaje_acum_prov = 0.0
         for termino in pedido.termino_ids.sorted(key=lambda t: t.numero):
-            porcentaje_acum_prov += (termino.porcentaje or 0.0)
+            porcentaje_prov = termino.porcentaje or 0.0
+            porcentaje_acum_prov += porcentaje_prov
+            etiqueta = termino.texto or f"Pago #{termino.numero}"
+
             if not termino.fecha_compromiso:
+                if porcentaje_prov > 0:
+                    avisos_a_crear.append({
+                        'severidad': MEDIA,
+                        'mensaje': f"Falta fecha de pago a proveedor ({etiqueta})",
+                    })
                 continue
 
             dias_prov = (termino.fecha_compromiso - hoy).days
             if dias_prov <= 3:
                 monto_esperado_usd = total_prov_usd * (porcentaje_acum_prov / 100.0)
                 if total_prov_usd <= 0 or (pagado_prov_usd + 0.50) < monto_esperado_usd:
-                    monto_tramo = total_prov_usd * ((termino.porcentaje or 0.0) / 100.0)
+                    monto_tramo = total_prov_usd * (porcentaje_prov / 100.0)
                     severidad_pago = URGENTE if dias_prov <= 2 else MEDIA
-                    etiqueta = termino.texto or f"Pago #{termino.numero}"
                     detalle_monto = f" (${monto_tramo:,.2f} USD)" if monto_tramo > 0 else ""
 
                     avisos_a_crear.append({
                         'severidad': severidad_pago,
                         'mensaje': (
-                            f"Pago a proveedor {termino.porcentaje:g}%{detalle_monto}"
+                            f"Pago a proveedor {porcentaje_prov:g}%{detalle_monto} "
                             f"{_texto_vencimiento(dias_prov)}."
                         ),
                     })
@@ -982,7 +998,14 @@ class rastreo_paquetes(models.Model):
             porcentaje_cli = getattr(pedido, f'pago_compromiso_cliente_{idx}', 0.0) or 0.0
             porcentaje_acum_cli += porcentaje_cli
 
-            if not fecha_cli or porcentaje_cli <= 0:
+            if porcentaje_cli <= 0:
+                continue
+
+            if not fecha_cli:
+                avisos_a_crear.append({
+                    'severidad': MEDIA,
+                    'mensaje': f"Falta fecha de cobro a cliente (Pago #{idx})",
+                })
                 continue
 
             dias_cli = (fecha_cli - hoy).days
@@ -1000,6 +1023,7 @@ class rastreo_paquetes(models.Model):
                             f"{_texto_vencimiento(dias_cli)}."
                         ),
                     })
+
         pedido.aviso_ids.unlink()
 
         nuevos_avisos = [
@@ -1069,20 +1093,20 @@ class rastreo_paquetes(models.Model):
             ]
 
             cotizacion = p.sale_order_id
-            total_cotizacion = cotizacion.amount_total if cotizacion else 0.0
-            moneda_cotizacion = cotizacion.currency_id if cotizacion else company_currency
-            moneda_nombre = moneda_cotizacion.name
+            total_cotizacion = cotizacion.amount_total if cotizacion else (p.total_cliente or 0.0)
+            moneda_efectiva = p.moneda_cliente or 'USD'
 
             fecha_cot = cotizacion.date_order.date() if (cotizacion and cotizacion.date_order) else (p.fecha_creacion or fields.Date.today())
             precio_dolar_cliente = p.total_cliente_costo_dolar or _obtener_tc(fecha_cot)
 
-            if moneda_nombre == 'USD':
+            if moneda_efectiva == 'USD':
                 total_cliente_usd = total_cotizacion
                 total_cliente_mxn = total_cotizacion * precio_dolar_cliente
             else:
                 total_cliente_mxn = total_cotizacion
                 total_cliente_usd = (total_cotizacion / precio_dolar_cliente) if precio_dolar_cliente else 0.0
 
+            
             anticipos_cliente_mod = p.detalle_cliente_ids
             total_pagos_cliente_usd = sum(a.monto_usd for a in anticipos_cliente_mod)
             total_pagos_cliente_mxn = sum(a.monto_mxn for a in anticipos_cliente_mod)
@@ -1180,13 +1204,13 @@ class rastreo_paquetes(models.Model):
                     'total': total_cotizacion,
                     'total_usd': total_cliente_usd,
                     'total_mxn': total_cliente_mxn,
-                    'moneda': moneda_nombre,
+                    'moneda': moneda_efectiva,
                 },
 
                 'anticipos_cliente': {
                     'count': count_pagos_cliente,
-                    'total': total_pagos_cliente_usd if moneda_nombre == 'USD' else total_pagos_cliente_mxn,
-                    'saldo_cliente': saldo_cliente_usd if moneda_nombre == 'USD' else saldo_cliente_mxn,
+                    'total': total_pagos_cliente_usd if moneda_efectiva == 'USD' else total_pagos_cliente_mxn,
+                    'saldo_cliente': saldo_cliente_usd if moneda_efectiva == 'USD' else saldo_cliente_mxn,
                     'total_acordado': total_cotizacion,
                     'total_usd': total_pagos_cliente_usd,
                     'total_mxn': total_pagos_cliente_mxn,
@@ -1474,7 +1498,12 @@ class rastreo_paquetes(models.Model):
                 'proveedor_id': pedido.proveedor_id.id if pedido.proveedor_id else None,
                 'proveedor_nombre': pedido.proveedor_id.name if pedido.proveedor_id else '',
 
-                'total_cliente': cotizacion.amount_total or 0,
+                'moneda_cliente': pedido.moneda_cliente or 'USD',
+                'total_cliente': (
+                    (cotizacion.amount_total / (pedido.total_cliente_costo_dolar or 1.0))
+                    if (pedido.moneda_cliente == 'MXN' and cotizacion)
+                    else (cotizacion.amount_total if cotizacion else (pedido.total_cliente or 0.0))
+                ),
                 'total_proveedor': pedido.total_proveedor or 0,
                 'total_proveedor_costo_dolar': pedido.total_proveedor_costo_dolar or 0,
                 'total_cliente_costo_dolar': pedido.total_cliente_costo_dolar or 0,
@@ -1566,7 +1595,7 @@ class rastreo_paquetes(models.Model):
                     valores[f'pago_compromiso_cliente_{index}'] = porcentaje_val
 
                 pedido.write(valores)
-
+            self.crear_aviso(pedido.id)
             return {'success': True}
         except Exception as e:
             return {'success': False, 'error': str(e)}

@@ -182,10 +182,10 @@
 
                                         <t t-if="p.estado != 'fase_inicial'">
                                             <div class="odoo-td odoo-text-right">
-                                                <t t-esc="p.cliente_saldo" />
+                                                <t t-esc="p.cliente_saldo_usd" />
                                             </div>
                                             <div class="odoo-td odoo-text-right">
-                                                <t t-esc="p.cotizacion_total" />
+                                                <t t-esc="p.cliente_acordado_usd" />
                                             </div>
                                             <div class="odoo-td odoo-text-right">
                                                 <div>
@@ -265,17 +265,11 @@
                                                     <span class="odoo-text-muted">Sin Pendiente</span>
                                                 </t>
                                             </div>
-
-                                            <div>Saldo cliente: <span t-esc="p.cliente_saldo" /></div>
-                                            <div>Total cliente: <span t-esc="p.cliente_acordado" /></div>
+                                            <div>Saldo cliente (USD): <span t-esc="p.cliente_saldo_usd" /></div>
                                             <div>Saldo proveedor (USD): <span
                                                     t-esc="p.proveedor_saldo_usd" /></div>
-                                            <div>Saldo proveedor (MXN): <span
-                                                    t-esc="p.proveedor_saldo_mxn" /></div>
                                             <div>Total proveedor (USD): <span
                                                     t-esc="p.proveedor_acordado_usd" /></div>
-                                            <div>Total proveedor (MXN): <span
-                                                    t-esc="p.proveedor_acordado_mxn" /></div>
                                             <div>Racks: <span t-esc="p.detalle_racks" /></div>
                                             <div>Actualización: <span t-esc="p.ultima_fecha || ''" /></div>
                                         </div>

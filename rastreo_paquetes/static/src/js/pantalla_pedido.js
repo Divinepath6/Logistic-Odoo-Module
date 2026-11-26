@@ -15,6 +15,7 @@ import { componente_detalle_eta } from "./componente_detalle_eta";
 import { componente_terminos_cliente } from "./componente_terminos_cliente";
 import { componente_escoger_proveedor } from "./componente_escoger_proveedor";
 import { componente_cotizacion_aduana } from "./componente_cotizacion_aduana";
+import { componente_confirmar_eliminar } from "./componente_confirmar_eliminar";
 
 export class PantallaPedido extends Component {
     static components = { 
@@ -27,6 +28,7 @@ export class PantallaPedido extends Component {
         componente_detalle_eta,
         componente_terminos_cliente,
         componente_escoger_proveedor,
+        componente_confirmar_eliminar,
     };
     setup() {
         this.action = useService("action");
@@ -949,19 +951,64 @@ export class PantallaPedido extends Component {
     }
 
     async abrirCotizacionAduana() {
-    this.dialogService.add(componente_cotizacion_aduana, {
-        objeto: {
-            pedidoId: this.state.pedidoId,
-            documentoNombre: "pdf_cotizacion_aduana",
-            cotizacionAduana: this.state.cotizacionAduana,
-            cotizacionAduanaCostoDolar: this.state.cotizacionAduanaCostoDolar,
-            tienePdf: this.state.pdfCotizacionAduana,
-        },
-        confirm: async () => {
-            await this.cargarPedido();
-        },
-        cancel: () => {},
-    });
+        this.dialogService.add(componente_cotizacion_aduana, {
+            objeto: {
+                pedidoId: this.state.pedidoId,
+                documentoNombre: "pdf_cotizacion_aduana",
+                cotizacionAduana: this.state.cotizacionAduana,
+                cotizacionAduanaCostoDolar: this.state.cotizacionAduanaCostoDolar,
+                tienePdf: this.state.pdfCotizacionAduana,
+            },
+            confirm: async () => {
+                await this.cargarPedido();
+            },
+            cancel: () => {},
+        });
+    }
+    onClickEliminarPedido() {
+        if (!this.state.pedidoId) {
+            return;
+        }
+
+        this.dialogService.add(componente_confirmar_eliminar, {
+            numeroContrato: this.state.numeroContrato,
+            guia: this.state.guia,
+            confirm: async () => {
+                await this.eliminarPedido();
+            },
+        });
+    }
+
+async eliminarPedido() {
+    const pedidoId = this.state.pedidoId;
+    this.state.cargando = true;
+    try {
+        const resultado = await this.orm.call(
+            "rastreo.pedido",
+            "eliminar_pedido",
+            [pedidoId]
+        );
+
+        if (resultado && resultado.success) {
+            this.notification.add("Pedido eliminado correctamente", {
+                type: "success",
+            });
+            // Regresamos directo sin llamar a onGuardarDetalleGeneral() porque el registro ya no existe
+            await this.action.doAction("rastreo_paquetes.action_pantalla_principal");
+        } else {
+            this.notification.add(
+                resultado?.error || "No se pudo eliminar el pedido",
+                { type: "danger" }
+            );
+        }
+    } catch (e) {
+        console.error(e);
+        this.notification.add("Error al eliminar el pedido", {
+            type: "danger",
+        });
+    } finally {
+        this.state.cargando = false;
+    }
 }
 }
 

@@ -360,17 +360,21 @@ export class PantallaPrincipal extends Component {
                     cotizacion_total: `${fmt(cot.total)}`.trim(),
 
                     cliente_count_raw: toNum(ac.count),
-                    cliente_total_raw: toNum(ac.total),
-                    cliente_saldo_raw: toNum(ac.saldo_cliente),
-                    cliente_acordado_raw: toNum(ac.total_acordado),
+                    cliente_total_raw: toNum(ac.total_usd),
+                    cliente_saldo_raw: toNum(ac.saldo_cliente_usd),
+                    cliente_acordado_raw: toNum(ac.total_acordado_usd),
 
-                    cliente_count:   String(toNum(ac.count)),
-                    cliente_total:   fmt(ac.total),
-                    cliente_saldo:   fmt(ac.saldo_cliente),
-                    cliente_acordado: fmt(ac.total_acordado),
-                    
+                    cliente_count:        String(toNum(ac.count)),
+                    cliente_total:        fmt(ac.total_usd),
+                    cliente_saldo:        fmt(ac.saldo_cliente_usd),
+                    cliente_acordado:     fmt(ac.total_acordado_usd),
+                    cliente_saldo_usd:    fmt(ac.saldo_cliente_usd),
+                    cliente_saldo_mxn:    fmt(ac.saldo_cliente_mxn),
+                    cliente_acordado_usd: fmt(ac.total_acordado_usd),
+                    cliente_acordado_mxn: fmt(ac.total_acordado_mxn),
+
                     // Bandera útil para colorear en la tabla
-                    cliente_pagado: toNum(ac.saldo_cliente) <= 0,
+                    cliente_pagado: toNum(ac.saldo_cliente_usd) <= 0,
 
                     // ---- Anticipos proveedor ----
                     proveedor_total_raw: toNum(ap.total),

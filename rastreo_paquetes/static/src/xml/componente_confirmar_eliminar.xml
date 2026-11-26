@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="rastreo_paquetes.componente_confirmar_eliminar">
+        <Dialog title="'Confirmar eliminación de pedido'" size="'md'">
+            <div class="p-2">
+                <div class="alert alert-danger d-flex align-items-start gap-2 mb-3" role="alert">
+                    <i class="fa fa-exclamation-triangle mt-1 fs-5"/>
+                    <div>
+                        <strong>¡Atención! Esta acción es irreversible.</strong>
+                        <p class="mb-0 small">
+                            Se eliminará permanentemente el pedido y toda su información asociada.
+                        </p>
+                    </div>
+                </div>
+
+                <t t-if="codigoEsperado">
+                    <p class="mb-2">
+                        Para confirmar, escribe el <strong t-esc="tipoIdentificador"/> del pedido:
+                        <span class="badge bg-dark user-select-all fs-6 ms-1" t-esc="codigoEsperado"/>
+                    </p>
+
+                    <div class="mb-2">
+                        <input
+                            type="text"
+                            class="form-control"
+                            t-att-class="state.inputContrato ? (esValido ? 'is-valid' : 'is-invalid') : ''"
+                            t-model="state.inputContrato"
+                            t-on-keydown="onKeydown"
+                            t-att-placeholder="'Escribe ' + codigoEsperado"
+                            autocomplete="off"
+                            autofocus="autofocus"
+                        />
+                        <div t-if="state.inputContrato and !esValido" class="invalid-feedback">
+                            El texto no coincide con <strong t-esc="codigoEsperado"/>.
+                        </div>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="alert alert-warning mb-0">
+                        Este pedido no tiene un número de contrato ni guía asignado para validar su eliminación.
+                    </div>
+                </t>
+            </div>
+
+            <t t-set-slot="footer">
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    t-on-click="onConfirmar"
+                    t-att-disabled="!esValido or state.eliminando"
+                >
+                    <i t-if="state.eliminando" class="fa fa-spinner fa-spin me-1"/>
+                    <i t-else="" class="fa fa-trash me-1"/>
+                    Eliminar pedido
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    t-on-click="() => props.close()"
+                    t-att-disabled="state.eliminando"
+                >
+                    Cancelar
+                </button>
+            </t>
+        </Dialog>
+    </t>
+</templates>
