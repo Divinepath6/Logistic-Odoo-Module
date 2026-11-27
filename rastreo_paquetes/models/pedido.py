@@ -155,6 +155,13 @@ class rastreo_paquetes(models.Model):
         string = 'Fecha de la Cargo Ready Date'
     )
 
+    origen = fields.Char(
+        string='Origen del pedido'
+    )
+    destino = fields.Char(
+        string='Destino del pedido'
+    )
+
     ETD = fields.Date(
         string = 'Fecha de la Estimated Time of Departure'
     )
@@ -611,7 +618,7 @@ class rastreo_paquetes(models.Model):
         }
     
     @api.model
-    def guardar_terminos(self, tipo_documento, pdf, pedido_id, nombre_archivo, terminos, totalProveedor,invoice, cambio):
+    def guardar_terminos(self, tipo_documento, pdf, pedido_id, nombre_archivo, terminos, totalProveedor, invoice, cambio, origen='', destino='', etd=False):
         if not pedido_id:
             return {'success': False, 'error': "Debes indicar un pedido"}
         
@@ -624,48 +631,46 @@ class rastreo_paquetes(models.Model):
                 'success': False, 
                 'error': "Debe haber al menos un término de pago"
             }
-            
-        ##try:
-           # with self.env.cr.savepoint():
+
         res_pdf = self.guardar_pdf(tipo_documento, pdf, pedido_id, nombre_archivo)
         if not res_pdf.get('success'):
             return res_pdf
-                ##try:
-        proveedor_total_num = float(totalProveedor) if totalProveedor else 0.0
-                ##except (ValueError, TypeError):
-                    #proveedor_total_num = 0.0
-        if cambio == True:
-            pedido.write({
-                        'total_proveedor': proveedor_total_num or 0.0,
-                        'numero_contrato': invoice, 
-                    })
-        if hasattr(pedido, 'termino_ids'):
-                    pedido.termino_ids.unlink()
 
-                    nuevos_terminos_vals = []
-                    for index, t in enumerate(terminos, start=1):
-                        nuevos_terminos_vals.append({
-                            'pedido_id': pedido.id,
-                            'numero': index,
-                            'porcentaje': t.get('porcentaje', 0),
-                            'texto': t.get('nombre', f'Término {index}'),
-                        })
-                    
-                    self.env['rastreo.termino'].create(nuevos_terminos_vals)
+        proveedor_total_num = float(totalProveedor) if totalProveedor else 0.0
+
+        vals_pedido = {
+            'origen': origen or '',
+            'destino': destino or '',
+            'ETD': etd or False,
+        }
+        if cambio:
+            vals_pedido.update({
+                'total_proveedor': proveedor_total_num or 0.0,
+                'numero_contrato': invoice,
+            })
+        pedido.write(vals_pedido)
+
+        if hasattr(pedido, 'termino_ids'):
+            pedido.termino_ids.unlink()
+
+            nuevos_terminos_vals = []
+            for index, t in enumerate(terminos, start=1):
+                nuevos_terminos_vals.append({
+                    'pedido_id': pedido.id,
+                    'numero': index,
+                    'porcentaje': t.get('porcentaje', 0),
+                    'texto': t.get('nombre', f'Término {index}'),
+                })
+            
+            self.env['rastreo.termino'].create(nuevos_terminos_vals)
         else:
             return {
-                        'success': False, 
-                        'error': "El modelo de pedido no tiene configurado el campo relacional 'termino_ids'."
-                    }
+                'success': False, 
+                'error': "El modelo de pedido no tiene configurado el campo relacional 'termino_ids'."
+            }
+
         self.crear_aviso(pedido.id)
-        return {
-                'success': True,
-        }
-        #except Exception as e:
-        #    return {
-        #        'success': False,
-        #        'error': str(e)
-        #    }
+        return {'success': True}
         
     @api.model
     def actualizar_pedido(self, pedido_id, detalle_pedido, datos):
@@ -961,7 +966,6 @@ class rastreo_paquetes(models.Model):
                 return "vence HOY"
             return f"vence en {dias} día(s)"
 
-        # --- Términos del Proveedor ---
         porcentaje_acum_prov = 0.0
         for termino in pedido.termino_ids.sorted(key=lambda t: t.numero):
             porcentaje_prov = termino.porcentaje or 0.0
@@ -1065,7 +1069,6 @@ class rastreo_paquetes(models.Model):
 
         kpi_saldo_clientes_mxn = 0.0
         kpi_saldo_clientes_usd = 0.0
-        kpi_saldo_proveedores_mxn = 0.0
         kpi_saldo_proveedores_usd = 0.0
 
         moneda_usd = self.env.ref('base.USD', raise_if_not_found=False)
@@ -1106,7 +1109,6 @@ class rastreo_paquetes(models.Model):
                 total_cliente_mxn = total_cotizacion
                 total_cliente_usd = (total_cotizacion / precio_dolar_cliente) if precio_dolar_cliente else 0.0
 
-            
             anticipos_cliente_mod = p.detalle_cliente_ids
             total_pagos_cliente_usd = sum(a.monto_usd for a in anticipos_cliente_mod)
             total_pagos_cliente_mxn = sum(a.monto_mxn for a in anticipos_cliente_mod)
@@ -1172,14 +1174,13 @@ class rastreo_paquetes(models.Model):
             if precio_dolar_proveedor and precio_dolar_proveedor < 1.0:
                 precio_dolar_proveedor = 1.0 / precio_dolar_proveedor
 
-            total_proveedor_mxn = total_proveedor_usd * precio_dolar_proveedor
             saldo_proveedor_usd = total_proveedor_usd - total_anticipos_proveedor_usd
-            saldo_proveedor_mxn = total_proveedor_mxn - total_anticipos_proveedor_mxn
 
-            kpi_saldo_clientes_usd += saldo_cliente_usd
-            kpi_saldo_clientes_mxn += saldo_cliente_mxn
+            if p.estado != 'fase_inicial':
+                kpi_saldo_clientes_usd += saldo_cliente_usd
+                kpi_saldo_clientes_mxn += saldo_cliente_mxn
+
             kpi_saldo_proveedores_usd += saldo_proveedor_usd
-            kpi_saldo_proveedores_mxn += saldo_proveedor_mxn
 
             estados_dict = dict(p._fields['estado'].selection)
 
@@ -1226,9 +1227,7 @@ class rastreo_paquetes(models.Model):
                     'total_usd': total_anticipos_proveedor_usd,
                     'total_mxn': total_anticipos_proveedor_mxn,
                     'saldo_proveedor_usd': saldo_proveedor_usd,
-                    'saldo_proveedor_mxn': saldo_proveedor_mxn,
                     'total_acordado_usd': total_proveedor_usd,
-                    'total_acordado_mxn': total_proveedor_mxn,
                     'precio_dolar': precio_dolar_proveedor,
                 },
 
@@ -1248,7 +1247,6 @@ class rastreo_paquetes(models.Model):
                     'usd': kpi_saldo_clientes_usd,
                 },
                 'proveedor': {
-                    'mxn': kpi_saldo_proveedores_mxn,
                     'usd': kpi_saldo_proveedores_usd,
                 },
             },
@@ -1516,6 +1514,9 @@ class rastreo_paquetes(models.Model):
                 'cotizacion_aduana': pedido.cotizacion_aduana or 0,
                 'cotizacion_aduana_costo_dolar': pedido.cotizacion_aduana_costo_dolar or 0,
                 'pdf_cotizacion_aduana': bool(pedido.pdf_cotizacion_aduana),
+
+                'origen': pedido.origen or '',
+                'destino': pedido.destino or '',
 
                 'ETA':pedido.ETA or '',
                 'CRD': pedido.CRD or '',

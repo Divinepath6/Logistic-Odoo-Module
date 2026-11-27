@@ -18,6 +18,9 @@ export class componente_terminos_condiciones extends Component {
         this.state = useState({
             pedidoId: 0,
             invoice: "",
+            origen: "",
+            destino: "",
+            ETD: "",
             PDF: "",   
             PDFNombre: "", 
             documentoNombre: "", 
@@ -35,7 +38,10 @@ export class componente_terminos_condiciones extends Component {
                 this.state.totalProveedor = d.totalProveedor || 0.0;
                 this.state.terminos = d.terminos ? JSON.parse(JSON.stringify(d.terminos)) : [];
                 this.state.invoice = d.numeroContrato || "";
-                 if (d.pdfContratoProveedor) {
+                this.state.origen = d.origen || "";
+                this.state.destino = d.destino || "";
+                this.state.ETD = d.ETD || "";
+                if (d.pdfContratoProveedor) {
                     this.state.nuevo = false;
                     await this.obtenerPDF();
                 } else {
@@ -178,7 +184,7 @@ export class componente_terminos_condiciones extends Component {
             this.notification.add("Necesita subir documento de contrato PDF", { type: "danger" });
             return;
         }
-        if(!this.state.terminos || this.state.terminos.length === 0){
+        if (!this.state.terminos || this.state.terminos.length === 0) {
             this.notification.add("Necesita agregar al menos un término de pago", { type: "danger" });
             return;
         }
@@ -194,20 +200,19 @@ export class componente_terminos_condiciones extends Component {
             this.notification.add("Por favor coloca el Invoice", { type: "warning" });
             return;
         }
+
         let seguir = true;
-        if(this.state.editado && !this.state.nuevo){
+        if (this.state.editado && !this.state.nuevo) {
             seguir = await this.onConfirmarCambios();
-        }else{
-            if(this.state.nuevo){
-                seguir = await this.onConfirmarInvoice();
-            }
+        } else if (this.state.nuevo) {
+            seguir = await this.onConfirmarInvoice();
         }
-        if(seguir == false){
-            return
+        if (seguir == false) {
+            return;
         }
         
         const total = Number(this.state.totalProveedor) || 0.0;
-        try{
+        try {
             const resultado = await this.orm.call(
                 "rastreo.pedido",
                 "guardar_terminos",
@@ -220,18 +225,25 @@ export class componente_terminos_condiciones extends Component {
                     total,
                     this.state.invoice,
                     this.state.nuevo,
+                    this.state.origen,
+                    this.state.destino,
+                    this.state.ETD || false,
                 ]
             );
-            if (resultado && resultado.success){
+            if (resultado && resultado.success) {
                 this.notification.add("Guardado exitosamente", { type: "success" }); 
                 if (this.props.confirm) {
-                    this.props.confirm(this.state.terminos, this.state.totalProveedor);
+                    this.props.confirm(this.state.terminos, this.state.totalProveedor, {
+                        origen: this.state.origen,
+                        destino: this.state.destino,
+                        ETD: this.state.ETD,
+                    });
                 }
                 this.props.close();  
             } else {
                 this.notification.add("Hubo un error: " + (resultado.error || "desconocido"), { type: "danger" });         
             }
-        }catch(e){
+        } catch (e) {
             this.notification.add("Hubo un error en el servidor: " + (e.message || e), { type: "danger" });  
         }
     }

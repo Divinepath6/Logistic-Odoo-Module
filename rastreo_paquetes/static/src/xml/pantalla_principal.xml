@@ -96,8 +96,6 @@
                         <div class="odoo-kpi-card odoo-kpi-card-danger">
                             <span class="odoo-kpi-label">Saldo Proveedores</span>
                             <div class="d-flex flex-column">
-                                <small class="text-muted">MXN: $<t
-                                        t-esc="state.kpiProveedor.mxn || '0.00'" /></small>
                                 <small class="text-muted">USD: $<t
                                         t-esc="state.kpiProveedor.usd || '0.00'" /></small>
                             </div>

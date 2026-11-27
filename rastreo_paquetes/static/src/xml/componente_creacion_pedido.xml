@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="rastreo_paquetes.componente_creacion_pedido_embed">
-        <Dialog title="'Seleccionar Cliente'" size="'md'">
+        <Dialog title="'Creación de Cotización/Pedido'" size="'md'">
             <div class="odoo-search-row">
                 <input type="text"
                        class="odoo-input"

@@ -86,6 +86,30 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="col-6">
+                                <div class="odoo-field mb-1">
+                                    <label class="odoo-label" for="origen_pedido">Origen</label>
+                                    <input type="text"
+                                        id="origen_pedido"
+                                        class="odoo-input"
+                                        placeholder="Sin origen"
+                                        t-model="state.origen" 
+                                        readonly="readonly"/>
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="odoo-field mb-1">
+                                    <label class="odoo-label" for="destino_pedido">Destino</label>
+                                    <input type="text"
+                                        id="destino_pedido"
+                                        class="odoo-input"
+                                        placeholder="Sin destino"
+                                        t-model="state.destino" 
+                                        readonly="readonly"/>
+                                </div>
+                            </div>
                         </div>
 
                         <hr class="my-2 opacity-25" />
@@ -191,10 +215,6 @@
                                             <span class="odoo-curr-tag">USD</span>
                                             <span t-esc="state.totalProveedorFmt" />
                                         </div>
-                                        <div class="odoo-money-mxn">
-                                            <span class="odoo-curr-tag">MXN</span>
-                                            <span t-esc="state.totalProveedorMxnFmt" />
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -226,10 +246,6 @@
                                         <div class="odoo-money-usd">
                                             <span class="odoo-curr-tag">USD</span>
                                             <span t-esc="state.balanceProveedor" />
-                                        </div>
-                                        <div class="odoo-money-mxn">
-                                            <span class="odoo-curr-tag">MXN</span>
-                                            <span t-esc="state.balanceProveedorMxn" />
                                         </div>
                                     </div>
                                 </div>

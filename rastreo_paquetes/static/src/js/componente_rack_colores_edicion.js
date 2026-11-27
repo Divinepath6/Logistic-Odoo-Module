@@ -2,10 +2,12 @@
 import { Component, useState, onWillStart } from "@odoo/owl";
 import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks";
+import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
+import { _t } from "@web/core/l10n/translation";
 
 export class componente_rack_colores_edicion extends Component {
     static template = "rastreo_paquetes.componente_rack_colores_edicion_embed";
-    static components = { Dialog };
+    static components = { Dialog ,ConfirmationDialog};
 
     setup() {
         this.orm = useService("orm");
@@ -36,6 +38,7 @@ export class componente_rack_colores_edicion extends Component {
             this.state.colores = resultados;
         } catch (error) {
             this.notification.add("Error al cargar los colores de racks.", { type: "danger" });
+            console.log(error)
         } finally {
             this.state.cargando = false;
         }
@@ -80,14 +83,23 @@ export class componente_rack_colores_edicion extends Component {
             await this.cargarColores();
         } catch (error) {
             this.notification.add("Error al guardar el color.", { type: "danger" });
+            console.log(error)
         }
+    }
+    async onEliminarColor(colorId){
+        this.dialogService.add(ConfirmationDialog, {
+            title: _t("¿Estás seguro?"),
+            body: _t("¿Estás seguro de cambiar la fecha de este término? La fecha anterior es: ") + (valorAnterior || "Ninguna"),
+            confirm: async () => {
+                await this.eliminarColor(colorId);
+            },
+            cancel: () => {
+                return;
+            },
+        });
     }
 
     async eliminarColor(colorId) {
-        if (!window.confirm("¿Estás seguro de que deseas eliminar este color?")) {
-            return;
-        }
-
         try {
             await this.orm.call(
                 "rastreo.rack_color",
@@ -101,6 +113,7 @@ export class componente_rack_colores_edicion extends Component {
             await this.cargarColores();
         } catch (error) {
             this.notification.add("No se puede eliminar el color porque está en uso.", { type: "danger" });
+            console.log(error)
         }
     }
 }

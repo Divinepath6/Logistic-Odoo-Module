@@ -78,7 +78,7 @@
                                         <button type="button" class="odoo-btn-icon" title="Editar" t-on-click="() => this.seleccionarColor(c)">
                                             <i class="fa fa-pencil"/>
                                         </button>
-                                        <button type="button" class="odoo-btn-icon odoo-text-danger" title="Eliminar" t-on-click="() => this.eliminarColor(c.id)">
+                                        <button type="button" class="odoo-btn-icon odoo-text-danger" title="Eliminar" t-on-click="() => this.onEliminarColor(c.id)">
                                             <i class="fa fa-trash"/>
                                         </button>
                                     </div>

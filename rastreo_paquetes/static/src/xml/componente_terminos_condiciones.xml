@@ -20,6 +20,33 @@
                                t-model="state.invoice"/>
                     </div>
 
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Origen:</label>
+                            <input type="text"
+                                   class="form-control"
+                                   placeholder="Ej: Ciudad, País"
+                                   t-model="state.origen"
+                                   t-on-input="() => state.editado = true"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Destino:</label>
+                            <input type="text"
+                                   class="form-control"
+                                   placeholder="Ej: Ciudad, País"
+                                   t-model="state.destino"
+                                   t-on-input="() => state.editado = true"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">ETD (Contrato):</label>
+                            <input type="date"
+                                   class="form-control"
+                                   t-model="state.ETD"
+                                   t-on-change="() => state.editado = true"/>
+                        </div>
+                    </div>
+
+
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <label class="form-label fw-bold mb-0">Términos de Pago (1 a 4):</label>
                         <button class="btn btn-sm btn-outline-primary"

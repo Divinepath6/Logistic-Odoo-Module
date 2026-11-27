@@ -40,6 +40,8 @@ export class PantallaPedido extends Component {
             pedidoId: 0,
             nombre: "",
             guia: "",
+            origen: "",
+            destino: "",
             guiaConfirmada: "",
             clienteId: 0,
             clienteNombre: "",
@@ -171,6 +173,9 @@ export class PantallaPedido extends Component {
             this.state.clienteNombre = p.cliente_nombre || '';
             this.state.proveedorId = p.proveedor_id || 0;
             this.state.proveedorNombre = p.proveedor_nombre || '';
+
+            this.state.origen = p.origen || '';
+            this.state.destino = p.destino || '';
 
             this.state.numeroContrato = p.numero_contrato || '';
             this.state.salidaAduana = !!p.salida_aduana;
@@ -452,6 +457,8 @@ export class PantallaPedido extends Component {
             this.state.pedido = resultado.data ?? resultado;
             if(resultado.success){
                 await this.cargarPedido()
+            }else{
+                
             }
         }catch(e){
             console.log(e)
@@ -771,6 +778,8 @@ export class PantallaPedido extends Component {
         const datos = {
             cliente_id: this.state.clienteId,
             proveedor_id: this.state.proveedorId || false,
+
+
             cambio_racks: this.state.cambioRacks,
 
             //bool de PDF
@@ -854,23 +863,31 @@ export class PantallaPedido extends Component {
             return;
         }
         const objeto = {
-            pedidoId:       this.state.pedidoId,
-            documentoNombre:documentoNombre,
+            pedidoId: this.state.pedidoId,
+            documentoNombre: documentoNombre,
             pdfContratoProveedor: this.state.pdfContratoProveedor,
             terminos: this.state.terminos,
             totalProveedor: this.state.totalProveedor,
             numeroContrato: this.state.numeroContrato,
-        }
-        this.dialogService.add(componente_terminos_condiciones,  {
+            origen: this.state.origen,
+            destino: this.state.destino,
+            ETD: this.state.ETD,
+        };
+        this.dialogService.add(componente_terminos_condiciones, {
             title: "Confirmación",
             objeto: objeto,
-            confirm: async (documento) => {
+            confirm: async (terminos, totalProveedor, datosExtra) => {
+                if (datosExtra) {
+                    this.state.origen = datosExtra.origen ?? this.state.origen;
+                    this.state.destino = datosExtra.destino ?? this.state.destino;
+                    this.state.ETD = datosExtra.ETD ?? this.state.ETD;
+                }
                 await this.onGuardarDetalleGeneral();
             },
-            cancel: () => {
-            }
+            cancel: () => {}
         });
     }
+
     async onEscogerProveedor() {
         this.dialogService.add(componente_escoger_proveedor, {
             proveedorActualId: this.state.proveedorId,
